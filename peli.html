@@ -36,44 +36,51 @@
   .btn:hover{border-color:rgba(255,255,255,.18);transform:translateY(-1px)}
   .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547)}
   .toggle{display:inline-flex;gap:8px;align-items:center}
-  .grid{display:grid;gap:14px;grid-template-columns:0.95fr 1.3fr 0.75fr}
+  /* Leveämpi skeema-kolumni */
+  .grid{display:grid;gap:14px;grid-template-columns:0.85fr 1.6fr 0.75fr}
   @media (max-width:1050px){.grid{grid-template-columns:1fr}}
   .panel{
     background:linear-gradient(180deg,var(--panel),#0b1327 60%,#0a1122);
     border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px
   }
-  .title{margin:0 0 10px 0;color:var(--muted);font-size:15px;letter-spacing:.3px}
-  /* CONTROL SIDE */
+  .title{margin:0 0 10px 0;color:#9fb3c8;font-size:15px;letter-spacing:.3px}
+  /* CONTROLS */
   .control-group{display:grid;gap:10px}
-  .row{display:grid;grid-template-columns:120px 1fr 80px;gap:8px;align-items:center}
   .biggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .pill{border:1px solid rgba(255,255,255,.10);background:#0b142a;border-radius:12px;padding:8px 10px;display:inline-flex;gap:8px;align-items:center}
+  .pill{border:1px solid rgba(255,255,255,.10);background:#0b142a;border-radius:12px;padding:8px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between}
   .sublist{display:flex;flex-wrap:wrap;gap:8px}
-  .subbtn{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:#102040;cursor:pointer}
+  .subbtn{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:#102040;cursor:pointer}
   .subbtn.on{background:#15325e;border-color:#3f6bd1}
-  /* SCHEMATIC */
+  .bigbtn{font-size:18px;padding:12px 14px}
+  /* SCHEMATIC (SUUREMPI) */
   svg{width:100%;height:auto;background:linear-gradient(180deg,#0e1630,#0b1226);border:1px solid rgba(255,255,255,.06);border-radius:14px}
   .pipe{fill:none;stroke:#7aa2ff88;stroke-linecap:round;stroke-linejoin:round}
   .node{fill:#0b1226;stroke:#8fb4ff66}
   .meter{fill:#0c162e;stroke:#ffffff22}
-  .txt{fill:#cfe3ff;font-size:12px}
-  .label{fill:#9fb3c8;font-size:12px}
+  .txt{fill:#cfe3ff;font-size:13px}
+  .label{fill:#9fb3c8;font-size:13px}
   /* STATS */
   .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
   .card{background:linear-gradient(180deg,#0c162e,#0b1428);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px}
   .big{font-weight:800;font-size:18px}
-  .ok{color:var(--accent);font-weight:800}
-  .bad{color:var(--danger);font-weight:800}
   .bar{height:10px;background:#0a1120;border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
   .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#7dffb0);width:0;transition:width .25s}
-  .log{max-height:220px;overflow:auto;background:#0b1428;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:8px;font-size:13px;color:#cfe3ff}
-  /* MODALS */
+  .log{max-height:240px;overflow:auto;background:#0b1428;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:8px;font-size:13px;color:#cfe3ff}
+  footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px}
+  /* HELP/GUESS MODALS */
   .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:9999}
   .modal{width:min(720px,92%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#0f172e,#0b1327 60%,#0a1122);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px}
-  /* FOOTER */
-  footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px}
-  /* MOBILE EMPHASIS */
-  .bigbtn{font-size:18px;padding:12px 14px}
+  /* COACH (opastus) */
+  .coach{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;pointer-events:none;z-index:99999}
+  .coach .bubble{
+    position:absolute;max-width:320px;background:#0c162e;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;color:#cfe3ff;pointer-events:auto
+  }
+  .coach .arrow{position:absolute;width:24px;height:24px;background:transparent}
+  .coach .arrow::before{
+    content:"";position:absolute;inset:0;border:12px solid transparent;border-top-color:#0c162e;transform:translate(-50%,-50%) rotate(0deg)
+  }
+  .coach .barrier{position:fixed;inset:0;background:rgba(0,0,0,.35)}
+  .coach .btnrow{display:flex;gap:8px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -82,7 +89,7 @@
     <div class="brand">PSSHT! Vuotojahti 🦊 <span style="opacity:.6;font-weight:600">— Pneumavuoto-etsivä (1–10)</span></div>
     <div class="hdr-right">
       <button id="helpBtn" class="btn">❓ Ohjeet</button>
-      <label class="pill toggle"><input id="mute" type="checkbox"/> Mykistä</label>
+      <label class="pill" style="gap:10px"><span>Äänet</span><input id="mute" type="checkbox"/></label>
       <a class="btn" href="./index.html">⬅ Etusivu</a>
     </div>
   </header>
@@ -92,7 +99,7 @@
     <section class="panel">
       <h3 class="title">Säädöt</h3>
       <div class="control-group">
-        <div class="pill" style="justify-content:space-between;display:flex">
+        <div class="pill">
           <div>Valittu haara: <strong id="selBranch">A</strong> – avautuma <strong id="selOpen">60%</strong></div>
           <div>Kierros: <strong id="round">1</strong>/10</div>
         </div>
@@ -104,7 +111,7 @@
           <button class="btn bigbtn" id="plus10">+10%</button>
         </div>
 
-        <div class="pill">Alahaarat (ON/OFF): <span id="subList" class="sublist"></span></div>
+        <div class="pill" style="justify-content:flex-start">Alahaarat (ON/OFF): <span id="subList" class="sublist"></span></div>
 
         <div class="biggrid">
           <button class="btn" id="hintBtn">💡 Vihje (−10p)</button>
@@ -120,10 +127,10 @@
       </div>
     </section>
 
-    <!-- CENTER: SCHEMATIC -->
+    <!-- CENTER: SCHEMATIC (SUUREMPI) -->
     <section class="panel">
       <h3 class="title">Tehdashalli – skeema</h3>
-      <svg id="schem" viewBox="0 0 1000 520" role="img" aria-label="Kompressori, jakotukki ja haarat A–F"></svg>
+      <svg id="schem" viewBox="0 0 1200 620" role="img" aria-label="Kompressori, jakotukki ja haarat A–F"></svg>
       <div class="pill" style="margin-top:8px">Klikkaa haaraa valitaksesi sen. Putken paksuus ~ virtaus. Mittarit näyttävät haarapaineen.</div>
       <div id="log" class="log" style="margin-top:8px"></div>
     </section>
@@ -209,13 +216,13 @@
       <button id="guessClose" class="btn">✕</button>
     </div>
     <div style="display:grid;gap:10px">
-      <div class="pill">Valitse haara:
+      <div class="pill" style="justify-content:flex-start;gap:10px">Haara:
         <select id="guessBranch"></select>
       </div>
-      <div class="pill">Valitse alahaara (jos on):
+      <div class="pill" style="justify-content:flex-start;gap:10px">Alahaara (jos on):
         <select id="guessSub"></select>
       </div>
-      <div class="pill">Koko:
+      <div class="pill" style="justify-content:flex-start;gap:10px">Koko:
         <select id="guessSize">
           <option value="small">pieni</option>
           <option value="medium" selected>keskisuuri</option>
@@ -227,6 +234,19 @@
         <button id="guessAnother" class="btn">Lisää toinen arvaus</button>
       </div>
       <div id="guessInfo" class="pill">Vihje: jos haaralla on 2 alahaaraa (A1/A2), päättele kumpi eristymällä.</div>
+    </div>
+  </div>
+</div>
+
+<!-- COACH (opastettu kierros) -->
+<div id="coach" class="coach">
+  <div class="barrier"></div>
+  <div id="coachArrow" class="arrow"></div>
+  <div id="coachBubble" class="bubble">
+    <div id="coachText">Tervetuloa! Tehdään nopea opastus.</div>
+    <div class="btnrow">
+      <button id="coachSkip" class="btn">Ohita</button>
+      <button id="coachNext" class="btn primary">Seuraava</button>
     </div>
   </div>
 </div>
@@ -265,32 +285,27 @@ const G = {
   Ps:3.0, // base supply pressure
   alpha:0.08, n:1.6, cE:0.02,
   driftAmp:0, driftHz:0, stuckInfo:false,
-  branches:[], // [{name:'A', open:0.6, Kvs:1.0, r:0.6, stuckMin:0.0, subs:[{name:'A1', on:true}], meterP:0, flow:0}]
-  leaks:[], // [{b:0, sub:null or 0.., size:'small|medium|large', K:... , found:false}]
+  branches:[],
+  leaks:[],
   energy:0, qtot:0, phead:0,
-  selected:0, actions:0, leaksFound:0, finished:false
+  selected:0, actions:0, leaksFound:0, finished:false,
+  tutorial:true, tutorialStep:0
 };
 const BRN=['A','B','C','D','E','F'];
 
 /* ===== Physics ===== */
-// Given phead and state, compute branch flows (demand) and leak flows, return {qtot, branchP[]}
 function branchFlowForP(phead, br){
-  // Demand through branch valve (independent of subs; subs only gate leaks in this model)
   const open = Math.max(br.open, br.stuckMin);
   const K = br.Kvs * Math.pow(clamp(open,0,1), G.n);
-  // Solve series loss: Q = K*sqrt(p_i), p_i = phead - r*Q^2 => Q^2(1 + K^2 r) = K^2 phead
   const denom = 1 + K*K*br.r;
   const q = K * Math.sqrt(Math.max(0, phead) / Math.max(1e-9, denom));
-  // Local branch pressure after loss:
   const p_i = Math.max(0, phead - br.r*q*q);
   let qLeak = 0;
-  // Leaks in this branch (at branch-level or sub-level if sub ON)
   for(const L of G.leaks){
     if(L.found) continue;
     if(L.b === br.idx){
-      if(L.sub==null){
-        qLeak += L.K * Math.sqrt(p_i);
-      } else {
+      if(L.sub==null){ qLeak += L.K * Math.sqrt(p_i); }
+      else {
         const on = br.subs[L.sub] && br.subs[L.sub].on;
         if(on) qLeak += L.K * Math.sqrt(p_i);
       }
@@ -298,23 +313,18 @@ function branchFlowForP(phead, br){
   }
   return {qDemand:q, p_i, qLeak};
 }
-
 function networkGivenP(phead){
   let qtot=0; const branchP=[]; const branchQ=[];
   G.branches.forEach(br=>{
-    const {qDemand, p_i, qLeak} = branchFlowForP(phead, br);
-    branchP.push(p_i);
-    branchQ.push(qDemand + qLeak);
-    qtot += (qDemand + qLeak);
+    const {qDemand,p_i,qLeak} = branchFlowForP(phead, br);
+    branchP.push(p_i); branchQ.push(qDemand+qLeak); qtot += (qDemand+qLeak);
   });
   return {qtot, branchP, branchQ};
 }
-
+let perfNow = performance.now();
 function solveNetwork(){
-  // supply with drift
   const t = perfNow/1000;
   const PsDrift = G.Ps * (1 + G.driftAmp*Math.sin(2*Math.PI*G.driftHz*t)) + (G.driftAmp? (G.Ps*0.005*(Math.random()-0.5)):0);
-  // solve phead in [0, PsDrift] such that phead = PsDrift - alpha*qtot(phead)^2
   let lo=0, hi=Math.max(0.1, PsDrift), mid=0;
   for(let it=0; it<40; it++){
     mid = 0.5*(lo+hi);
@@ -327,24 +337,19 @@ function solveNetwork(){
   }
   const {qtot, branchP, branchQ} = networkGivenP(mid);
   G.qtot=qtot; G.phead=mid;
-  // store to branches
   G.branches.forEach((b,i)=>{ b.meterP=branchP[i]; b.flow=branchQ[i]; });
 }
 
 /* ===== Level Generator ===== */
 function rand(a,b){ return a + Math.random()*(b-a); }
-function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
 function levelConfig(level){
-  // defaults from spec table
   const cfg = {
-    time: 90 + Math.max(0, level-1)*6, // grows a bit
+    time: 90 + Math.max(0, level-1)*6,
     driftAmp: 0, driftHz: 0.03 + level*0.002,
-    leaks:1, leakPattern:'any', // 'any' | 'sameBranchTwo'
-    sizes: ['medium'],
-    noise: 0.015 + level*0.003,
-    stuckMin: 0,
-    subsPer: [0,0,0,0,0,0]
+    leaks:1, sizes:['medium'],
+    noise: 0.015 + level*0.003, stuckMin: 0,
+    subsPer: [0,0,0,0,0,0],
+    forceLeak:null
   };
   const subsVariants = [
     [0,0,0,0,0,0],
@@ -360,32 +365,32 @@ function levelConfig(level){
   ];
   cfg.subsPer = subsVariants[Math.min(9, level-1)];
 
-  if(level===1){ cfg.leaks=1; cfg.sizes=['medium']; }
+  if(level===1){
+    cfg.leaks=1; cfg.sizes=['medium']; cfg.driftAmp=0; cfg.stuckMin=0;
+    cfg.forceLeak={b:1, sub:null, size:'medium'}; // B-haara, ei alahaaraa
+  }
   if(level===2){ cfg.leaks=1; cfg.sizes=['small','medium']; }
   if(level===3){ cfg.leaks=1; cfg.sizes=['small']; }
   if(level===4){ cfg.leaks=1; cfg.sizes=['small','large']; }
   if(level===5){ cfg.leaks=2; cfg.sizes=['small','medium']; cfg.driftAmp=0.01; }
   if(level===6){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.02; }
   if(level===7){ cfg.leaks=2; cfg.sizes=['small','medium']; cfg.driftAmp=0.03; cfg.stuckMin=0.10; }
-  if(level===8){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.04; cfg.stuckMin=0.15; cfg.leakPattern='sameBranchTwo'; }
+  if(level===8){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.04; cfg.stuckMin=0.15; }
   if(level===9){ cfg.leaks=3; cfg.sizes=['small','medium','medium']; cfg.driftAmp=0.05; cfg.stuckMin=0.15; }
   if(level===10){ cfg.leaks=3; cfg.sizes=['small','medium','large']; cfg.driftAmp=0.05; cfg.stuckMin=0.20; }
 
   return cfg;
 }
-
 function sizeToK(size){
   if(size==='small') return rand(0.10,0.16);
   if(size==='medium') return rand(0.18,0.26);
-  return rand(0.30,0.40); // large
+  return rand(0.30,0.40);
 }
-
 function setupLevel(){
   const L = levelConfig(G.level);
   G.timeMax = L.time; G.timeLeft=L.time;
   G.driftAmp = L.driftAmp; G.driftHz = L.driftHz;
   G.energy=0; G.actions=0; G.leaksFound=0; G.finished=false;
-  G.stuckInfo = L.stuckMin>0;
 
   // branches
   G.branches = [];
@@ -395,51 +400,44 @@ function setupLevel(){
     for(let s=0;s<subsN;s++) subs.push({name:BRN[i]+(s+1), on:true, Kvs: rand(0.4,0.8)});
     G.branches.push({
       idx:i, name:BRN[i],
-      open: rand(0.5,0.8),
+      open: rand(0.55,0.8),
       Kvs: rand(0.9,1.2),
       r: rand(0.4,0.8),
-      stuckMin: (Math.random()<0.25)? L.stuckMin : 0, // ei aina
+      stuckMin: (Math.random()<0.25)? L.stuckMin : 0,
       subs,
       meterP:0, flow:0
     });
   }
+  // Level 1: varmista ettei B:llä (idx 1) ole alahaaroja, jotta opastus on selkeä
+  if(G.level===1){ G.branches[1].subs = []; G.branches[1].stuckMin = 0; }
+
   G.selected = 0;
 
   // leaks
   G.leaks = [];
-  if(L.leakPattern==='sameBranchTwo' && L.leaks===2){
-    const bIdx = Math.floor(Math.random()*6);
-    // Need at least 2 subs; if not, fallback to any
-    if(G.branches[bIdx].subs.length>=2){
-      const s1=0, s2=1;
-      G.leaks.push({b:bIdx, sub:s1, size:L.sizes[0], K:sizeToK(L.sizes[0]), found:false});
-      G.leaks.push({b:bIdx, sub:s2, size:L.sizes[1], K:sizeToK(L.sizes[1]), found:false});
-    } else {
-      // fallback random
-      for(let k=0;k<L.leaks;k++){
-        const bi=Math.floor(Math.random()*6);
-        const subOpt = (G.branches[bi].subs.length? Math.floor(Math.random()*G.branches[bi].subs.length): null);
-        G.leaks.push({b:bi, sub:subOpt, size:L.sizes[k]||'small', K:sizeToK(L.sizes[k]||'small'), found:false});
-      }
-    }
+  if(L.forceLeak){
+    G.leaks.push({b:L.forceLeak.b, sub:L.forceLeak.sub, size:L.forceLeak.size, K:sizeToK(L.forceLeak.size), found:false});
   } else {
     for(let k=0;k<L.leaks;k++){
       const bi=Math.floor(Math.random()*6);
       const subOpt = (Math.random()<0.55 && G.branches[bi].subs.length)? Math.floor(Math.random()*G.branches[bi].subs.length): null;
-      G.leaks.push({b:bi, sub:subOpt, size:L.sizes[k]||'small', K:sizeToK(L.sizes[k]||'small'), found:false});
+      const sz = L.sizes[k]||'small';
+      G.leaks.push({b:bi, sub:subOpt, size:sz, K:sizeToK(sz), found:false});
     }
   }
-  // physics init
+
   solveNetwork();
-  // UI
   renderSchematic();
   renderControls();
   log(`Uusi kierros ${G.level}/10. Vuotoja: ${G.leaks.length}.`);
+
+  // Opastus vain tasolla 1
+  if(G.level===1){ startTutorial(); } else { hideCoach(); }
   updateSide();
 }
 
 /* ===== Actions & UI ===== */
-function log(t){ const el=$('log'); const ts=new Date().toLocaleTimeString(); el.innerHTML=`<div>• ${t}</div>`+el.innerHTML; }
+function log(t){ const el=$('log'); el.innerHTML=`<div>• ${t}</div>`+el.innerHTML; }
 
 function renderControls(){
   $('round').textContent=G.level;
@@ -449,13 +447,13 @@ function renderControls(){
   // subs
   const cont = $('subList'); cont.innerHTML='';
   const b = G.branches[G.selected];
-  if(b.subs.length===0){ cont.textContent='(ei alahaaroja)'; }
+  if(b.subs.length===0){ const span=document.createElement('span'); span.textContent='(ei alahaaroja)'; cont.appendChild(span); }
   else b.subs.forEach((s,idx)=>{
     const btn=document.createElement('button');
     btn.className='subbtn '+(s.on?'on':'');
     btn.textContent = s.name + (s.on?' ON':' OFF');
     btn.onclick=()=>{
-      s.on=!s.on; G.actions++; playPssht(); timeCost(1.0); scoreChange(-1);
+      s.on=!s.on; playPssht(); timeCost(1.0); scoreChange(-1);
       log(`${s.name} → ${s.on?'ON':'OFF'}`);
       updateAll();
     };
@@ -468,10 +466,11 @@ function scoreChange(dp){ G.score = Math.max(0, G.score + dp); $('score').textCo
 
 function selectBranch(i){
   G.selected=i; renderControls(); highlightSelected();
+  if(G.tutorial && G.tutorialStep===1 && i===1){ nextCoach(); } // valitse B
 }
 
-$('minus5').onclick=()=>adjOpen(-0.05);
-$('plus5').onclick =()=>adjOpen(+0.05);
+$('minus5').onclick =()=>adjOpen(-0.05);
+$('plus5').onclick  =()=>adjOpen(+0.05);
 $('minus10').onclick=()=>adjOpen(-0.10);
 $('plus10').onclick =()=>adjOpen(+0.10);
 
@@ -479,16 +478,20 @@ function adjOpen(delta){
   const b = G.branches[G.selected];
   const before = b.open;
   b.open = clamp(b.open + delta, 0, 1);
-  // stuck valve lower bound
   if(b.stuckMin>0 && b.open < b.stuckMin) b.open = b.stuckMin;
-  if(Math.abs(b.open-before)<1e-6) { log(`Haaran ${b.name} venttiili ei enää liiku (stuck?)`); return; }
-  G.actions++; playPssht(); timeCost(1.0); scoreChange(-1);
+  if(Math.abs(b.open-before)<1e-6){ log(`Haaran ${b.name} venttiili ei enää liiku (stuck?)`); return; }
+  playPssht(); timeCost(1.0); scoreChange(-1);
   log(`${b.name}: avautuma ${Math.round(before*100)}% → ${Math.round(b.open*100)}%`);
   renderControls(); updateAll();
+
+  // Opastuksen tarkistukset (step 2 ja 3)
+  if(G.tutorial && G.selected===1){
+    if(G.tutorialStep===2 && (before - b.open) >= 0.049){ nextCoach(); }
+    if(G.tutorialStep===3 && (b.open - before) >= 0.049){ nextCoach(); }
+  }
 }
 
 $('hintBtn').onclick=()=>{
-  // branch sensitivity: virtual -5% on each open
   const baseQ = G.qtot;
   let bestI=0, bestDelta=-1;
   for(let i=0;i<G.branches.length;i++){
@@ -499,33 +502,26 @@ $('hintBtn').onclick=()=>{
     if(d > bestDelta){ bestDelta = d; bestI = i; }
     G.branches[i].open = tmp;
   }
-  // sub-hint inside best branch: test toggling ON->OFF for each sub
   let subHint=null, subDelta=0;
   const b = G.branches[bestI];
   if(b.subs.length){
     const baseOn = b.subs.map(s=>s.on);
     for(let j=0;j<b.subs.length;j++){
-      if(!b.subs[j].on) continue; // test only turning OFF
+      if(!b.subs[j].on) continue;
       b.subs[j].on=false; solveNetwork();
       const d = baseQ - G.qtot;
       if(d > subDelta){ subDelta = d; subHint = j; }
       b.subs[j].on = baseOn[j];
     }
   }
-  // restore network value
   solveNetwork(); updateAll();
   scoreChange(-10); timeCost(1.5);
   const hintText = `Vihje: suurin vaikutus ${G.branches[bestI].name}${subHint!=null?('→'+G.branches[bestI].subs[subHint].name):''}.`;
   log(hintText);
-  // flash highlight
   flashHint(bestI, subHint);
 };
 
-$('resetBtn').onclick=()=>{ // cosmetic “re-zero”
-  log('Uudelleenkalibrointi: mittarit nollattu hetkeksi.');
-  playPssht(); // no score change
-};
-
+$('resetBtn').onclick=()=>{ log('Uudelleenkalibrointi: mittarit nollattu hetkeksi.'); playPssht(); };
 $('nextBtn').onclick=()=>{
   if(G.level>=10){ log('Peli läpi! Aloitetaan alusta.'); G.level=1; G.score=0; }
   else G.level++;
@@ -540,28 +536,31 @@ $('guessSubmit').onclick=submitGuess;
 
 function openGuess(){
   const sel = $('guessBranch'); sel.innerHTML='';
-  BRN.forEach((n,i)=>{
-    const opt=document.createElement('option'); opt.value=String(i); opt.textContent=n; sel.appendChild(opt);
-  });
+  BRN.forEach((n,i)=>{ const opt=document.createElement('option'); opt.value=String(i); opt.textContent=n; sel.appendChild(opt); });
   sel.value=String(G.selected);
   fillSubGuess(G.selected);
-  $('guessSize').value='medium';
+  $('guessSize').value=(G.level===1?'medium':'medium');
   $('guessModal').style.display='flex';
+
+  // Opastus step 4: modal avattu -> odotetaan oikeaa valintaa
+  placeCoachOn($('#guessSubmit'), 'Paina "Vahvista arvaus" kun olet valinnut B + keskisuuri.', 'top');
 }
+function $(qsel){ return document.querySelector(qsel); } // quick selector for coach placement
+
 function fillSubGuess(bi){
   const subSel=$('guessSub'); subSel.innerHTML='';
   const b = G.branches[bi];
   const noneOpt=document.createElement('option'); noneOpt.value='-1'; noneOpt.textContent='(ylähaara)'; subSel.appendChild(noneOpt);
   b.subs.forEach((s,idx)=>{ const o=document.createElement('option'); o.value=String(idx); o.textContent=s.name; subSel.appendChild(o); });
 }
-$('guessBranch').addEventListener('change', (e)=>{ fillSubGuess(Number(e.target.value)); });
+document.getElementById('guessBranch').addEventListener('change', (e)=>{ fillSubGuess(Number(e.target.value)); });
 
 function submitGuess(){
-  const bi = Number($('guessBranch').value);
-  const si = Number($('guessSub').value); // -1 for none
-  const size = $('guessSize').value;
+  const bi = Number(document.getElementById('guessBranch').value);
+  const si = Number(document.getElementById('guessSub').value); // -1 for none
+  const size = document.getElementById('guessSize').value;
   const pretty = `${G.branches[bi].name}${si>=0?('→'+G.branches[bi].subs[si].name):''} (${size})`;
-  // check against remaining leaks
+
   let ok=false, matchedIndex=-1;
   for(let i=0;i<G.leaks.length;i++){
     const L=G.leaks[i];
@@ -576,14 +575,15 @@ function submitGuess(){
     G.leaksFound++;
     playBubble();
     const bonus = (size==='small'?30:(size==='medium'?45:60));
-    scoreChange(100 + bonus); // perus + koko
+    scoreChange(100 + bonus);
     log(`✅ Oikein: ${pretty}. +${100+bonus}p`);
+    if(G.tutorial && G.level===1){ endTutorialSuccess(); }
     if(G.leaksFound >= G.leaks.length){
       finishRound(true);
-      $('guessModal').style.display='none';
+      document.getElementById('guessModal').style.display='none';
       return;
     } else {
-      $('guessInfo').textContent=`Hyvä! Vuoto löydetty (${G.leaksFound}/${G.leaks.length}). Jäljellä vielä ${G.leaks.length-G.leaksFound}.`;
+      document.getElementById('guessInfo').textContent=`Hyvä! Vuoto löydetty (${G.leaksFound}/${G.leaks.length}). Jäljellä vielä ${G.leaks.length-G.leaksFound}.`;
     }
   } else {
     scoreChange(-40);
@@ -595,165 +595,224 @@ function submitGuess(){
 function finishRound(success){
   if(G.finished) return;
   G.finished=true;
-  // energy penalty
   const ePenalty = Math.floor(G.cE * G.energy);
   scoreChange(-ePenalty);
-  // time bonus
   const tBonus = success ? Math.round(20 * (G.timeLeft/G.timeMax)) : 0;
   scoreChange(tBonus);
-  // title
   const ePerSec = (G.energy/Math.max(1, (G.timeMax-G.timeLeft)));
   let title='Kompressorin kauhu 🐊';
   if(ePerSec<0.15) title='Nollavuoto-ninja 🥷⚡';
   else if(ePerSec<0.25) title='Vuotokettu 🦊';
   else if(ePerSec<0.35) title='Ilmamurhaaja 🔧';
-
   log(`${success?'🎉 Kierros onnistui':'⏱ Aika loppui'} — Titteli: <strong>${title}</strong> | Energiasakko −${ePenalty}p | Aikabonus +${tBonus}p`);
-  $('nextBtn').disabled=false;
+  document.getElementById('nextBtn').disabled=false;
 }
 
-/* ===== Schematic Rendering ===== */
+/* ===== Schematic Rendering (bigger layout) ===== */
 function renderSchematic(){
-  const svg=$('schem'); svg.innerHTML='';
-  // Main header & pump
+  const svg=document.getElementById('schem'); svg.innerHTML='';
   const g = (tag, attrs)=>{ const el=document.createElementNS('http://www.w3.org/2000/svg', tag); for(const k in attrs){ el.setAttribute(k, attrs[k]); } return el; };
   const group = g('g',{});
+
   // Pump
-  group.appendChild(g('circle',{cx:500, cy:60, r:22, class:'node'}));
-  group.appendChild(g('polygon',{points:'494,52 512,60 494,68', fill:'#5ea0ff'}));
-  group.appendChild(g('rect',{x:430,y:18,width:140,height:30,rx:8,class:'meter'}));
-  const t1=g('text',{x:438,y:38,class:'txt'}); t1.textContent='Pumppu • P_s + drift'; group.appendChild(t1);
+  group.appendChild(g('circle',{cx:600, cy:70, r:24, class:'node'}));
+  group.appendChild(g('polygon',{points:'594,62 614,70 594,78', fill:'#5ea0ff'}));
+  group.appendChild(g('rect',{x:520,y:24,width:160,height:34,rx:8,class:'meter'}));
+  const t1=g('text',{x:528,y:46,class:'txt'}); t1.textContent='Pumppu • P_s + drift'; group.appendChild(t1);
 
   // Header trunk
-  group.appendChild(g('path',{d:'M500 82 L500 120', class:'pipe', 'stroke-width':10}));
-  group.appendChild(g('circle',{cx:500, cy:120, r:6, class:'node'}));
+  group.appendChild(g('path',{d:'M600 94 L600 140', class:'pipe', 'stroke-width':12}));
+  group.appendChild(g('circle',{cx:600, cy:140, r:6, class:'node'}));
 
-  // Six branches positions
-  const x0=220, xstep=120, yTop=120, yBot=420;
+  // Six branches positions (leveämpi väli)
+  const x0=180, xstep=160, yTop=140, yBot=510;
   for(let i=0;i<6;i++){
     const x = x0 + i*xstep;
-    // branch pipe
-    const line = g('path',{id:`bline${i}`, d:`M500 120 L ${x} 180 L ${x} ${yBot}`, class:'pipe','stroke-width':8});
+    const line = g('path',{id:`bline${i}`, d:`M600 140 L ${x} 210 L ${x} ${yBot}`, class:'pipe','stroke-width':10});
     line.style.cursor='pointer';
     line.addEventListener('click',()=>selectBranch(i));
     group.appendChild(line);
-    // end node
-    group.appendChild(g('circle',{cx:x, cy:yBot, r:7, class:'node'}));
-    // meter
-    group.appendChild(g('rect',{x:x-40, y:yBot+18, width:80, height:44, rx:8, class:'meter'}));
-    const lbl=g('text',{x:x-30, y:yBot+36, class:'label'}); lbl.textContent=BRN[i]; group.appendChild(lbl);
-    const ptxt=g('text',{id:`ptxt${i}`, x:x-30, y:yBot+56, class:'txt'}); ptxt.textContent='P=—'; group.appendChild(ptxt);
 
-    // subs (draw small taps)
+    group.appendChild(g('circle',{cx:x, cy:yBot, r:8, class:'node'}));
+    group.appendChild(g('rect',{x:x-46, y:yBot+18, width:92, height:48, rx:8, class:'meter'}));
+    const lbl=g('text',{x:x-36, y:yBot+36, class:'label'}); lbl.textContent=BRN[i]; group.appendChild(lbl);
+    const ptxt=g('text',{id:`ptxt${i}`, x:x-36, y:yBot+58, class:'txt'}); ptxt.textContent='P=—'; group.appendChild(ptxt);
+
+    // subs (small taps)
     const subs = G.branches[i].subs;
     for(let s=0;s<subs.length;s++){
-      const sy = yBot - 70 - s*35;
-      group.appendChild(g('circle',{cx:x, cy:sy, r:5, class:'node'}));
-      const sp = g('path',{id:`subline${i}_${s}`, d:`M ${x} ${sy} L ${x+36} ${sy}`, class:'pipe', 'stroke-width': subs[s].on?6:2, stroke: subs[s].on?'#66ffc2aa':'#6ea8ff55'});
+      const sy = yBot - 90 - s*40;
+      group.appendChild(g('circle',{cx:x, cy:sy, r:6, class:'node'}));
+      const sp = g('path',{id:`subline${i}_${s}`, d:`M ${x} ${sy} L ${x+42} ${sy}`, class:'pipe', 'stroke-width': subs[s].on?7:3, stroke: subs[s].on?'#66ffc2aa':'#6ea8ff55'});
       sp.style.cursor='pointer';
       sp.addEventListener('click',()=>{
         selectBranch(i);
-        subs[s].on = !subs[s].on; G.actions++; playPssht(); timeCost(1.0); scoreChange(-1);
+        subs[s].on = !subs[s].on; playPssht(); timeCost(1.0); scoreChange(-1);
         log(`${subs[s].name} → ${subs[s].on?'ON':'OFF'}`);
         updateAll();
       });
       group.appendChild(sp);
-      const stxt = g('text',{id:`subtxt${i}_${s}`, x:x+44, y:sy+4, class:'txt'}); stxt.textContent=subs[s].name; group.appendChild(stxt);
+      const stxt = g('text',{id:`subtxt${i}_${s}`, x:x+50, y:sy+4, class:'txt'}); stxt.textContent=subs[s].name; group.appendChild(stxt);
     }
   }
   svg.appendChild(group);
   highlightSelected();
   updateSchematicVisuals();
 }
-
 function highlightSelected(){
   for(let i=0;i<6;i++){
-    const el = $('bline'+i);
+    const el = document.getElementById('bline'+i);
     if(!el) continue;
     el.setAttribute('stroke', i===G.selected ? '#9ad1ff' : '#7aa2ff88');
   }
 }
-
 function updateSchematicVisuals(){
-  // pipe width ~ flow, text ~ pressure
   let maxQ=0; G.branches.forEach(b=>{ if(b.flow>maxQ) maxQ=b.flow; });
   for(let i=0;i<6;i++){
     const b=G.branches[i];
-    const w = clamp(6 + 26*(b.flow/Math.max(0.001,maxQ)), 6, 32);
-    const el=$('bline'+i); if(el) el.setAttribute('stroke-width', w.toFixed(1));
-    const pt=$('ptxt'+i); if(pt) pt.textContent=`P=${b.meterP.toFixed(2)}`;
-    // subs stroke on/off
+    const w = clamp(8 + 26*(b.flow/Math.max(0.001,maxQ)), 8, 36);
+    const el=document.getElementById('bline'+i); if(el) el.setAttribute('stroke-width', w.toFixed(1));
+    const pt=document.getElementById('ptxt'+i); if(pt) pt.textContent=`P=${b.meterP.toFixed(2)}`;
     b.subs.forEach((s,idx)=>{
-      const sl=$(`subline${i}_${idx}`); if(sl){ sl.setAttribute('stroke-width', s.on?6:2); sl.setAttribute('stroke', s.on?'#66ffc2aa':'#6ea8ff55'); }
+      const sl=document.getElementById(`subline${i}_${idx}`); if(sl){ sl.setAttribute('stroke-width', s.on?7:3); sl.setAttribute('stroke', s.on?'#66ffc2aa':'#6ea8ff55'); }
     });
   }
 }
 
 /* ===== Side Stats ===== */
 function updateSide(){
-  $('qtot').textContent=G.qtot.toFixed(3);
-  $('phead').textContent=G.phead.toFixed(3);
-  $('qbar').style.width = clamp( (G.qtot/ (6*1.5))*100, 0, 100)+'%';
-  $('pbar').style.width = clamp( (G.phead/ (G.Ps*1.2))*100, 0, 100)+'%';
-  $('energy').textContent = G.energy.toFixed(1);
-  $('time').textContent = Math.ceil(G.timeLeft)+' s';
-  $('tbar').style.width = clamp( (G.timeLeft/G.timeMax)*100, 0, 100)+'%';
+  document.getElementById('qtot').textContent=G.qtot.toFixed(3);
+  document.getElementById('phead').textContent=G.phead.toFixed(3);
+  document.getElementById('qbar').style.width = clamp( (G.qtot/ (6*1.5))*100, 0, 100)+'%';
+  document.getElementById('pbar').style.width = clamp( (G.phead/ (G.Ps*1.2))*100, 0, 100)+'%';
+  document.getElementById('energy').textContent = G.energy.toFixed(1);
+  document.getElementById('time').textContent = Math.ceil(G.timeLeft)+' s';
+  document.getElementById('tbar').style.width = clamp( (G.timeLeft/G.timeMax)*100, 0, 100)+'%';
 
-  // pressures list
-  const pl=$('pressList'); pl.innerHTML='';
+  const pl=document.getElementById('pressList'); pl.innerHTML='';
   G.branches.forEach((b,i)=>{
-    const d=document.createElement('div'); d.className='pill';
-    d.style.cursor='pointer';
+    const d=document.createElement('div'); d.className='pill'; d.style.cursor='pointer';
     d.onclick=()=>selectBranch(i);
     d.innerHTML = `<strong>${b.name}</strong>&nbsp; P=${b.meterP.toFixed(2)} • open=${Math.round(b.open*100)}%${b.stuckMin>0?' (min '+Math.round(b.stuckMin*100)+'%)':''}`;
     pl.appendChild(d);
   });
 
-  $('leaksLeft').textContent = (G.leaks.length - G.leaksFound);
-  $('stuckInfo').textContent = G.stuckInfo ? 'mahdollinen' : 'ei';
-  $('driftInfo').textContent = (G.driftAmp*100).toFixed(0)+'%';
-  $('selBranch').textContent = G.branches[G.selected].name;
-  $('selOpen').textContent = Math.round(G.branches[G.selected].open*100)+'%';
+  document.getElementById('leaksLeft').textContent = (G.leaks.length - G.leaksFound);
+  document.getElementById('stuckInfo').textContent = (G.level>=7 ? 'mahdollinen' : 'ei');
+  document.getElementById('driftInfo').textContent = (G.driftAmp*100).toFixed(0)+'%';
+  document.getElementById('selBranch').textContent = G.branches[G.selected].name;
+  document.getElementById('selOpen').textContent = Math.round(G.branches[G.selected].open*100)+'%';
 }
 
 /* ===== Hint Flash ===== */
 function flashHint(bi, si){
-  const el=$('bline'+bi);
+  const el=document.getElementById('bline'+bi);
   if(el){ const old=el.getAttribute('stroke'); el.setAttribute('stroke','#ffd166'); setTimeout(()=>{ el.setAttribute('stroke',old); },900); }
   if(si!=null){
-    const sl=$(`subline${bi}_${si}`); if(sl){ const old=sl.getAttribute('stroke'); sl.setAttribute('stroke','#ffd166'); setTimeout(()=>{ sl.setAttribute('stroke',old); },900); }
+    const sl=document.getElementById(`subline${bi}_${si}`); if(sl){ const old=sl.getAttribute('stroke'); sl.setAttribute('stroke','#ffd166'); setTimeout(()=>{ sl.setAttribute('stroke',old); },900); }
   }
 }
 
 /* ===== Help Modal ===== */
-$('helpBtn').onclick=()=>{ $('helpModal').style.display='flex'; };
-$('helpClose').onclick=()=>{ $('helpModal').style.display='none'; };
-$('helpModal').addEventListener('click',(e)=>{ if(e.target.id==='helpModal') e.currentTarget.style.display='none'; });
-
-/* ===== Guess Modal open from controls ===== */
-function perfms(){ return performance.now(); }
+document.getElementById('helpBtn').onclick=()=>{ document.getElementById('helpModal').style.display='flex'; };
+document.getElementById('helpClose').onclick=()=>{ document.getElementById('helpModal').style.display='none'; };
+document.getElementById('helpModal').addEventListener('click',(e)=>{ if(e.target.id==='helpModal') e.currentTarget.style.display='none'; });
 
 /* ===== Game Loop ===== */
-let perfNow = performance.now();
-function updateAll(){
-  solveNetwork();
-  updateSchematicVisuals();
-  updateSide();
-}
+function updateAll(){ solveNetwork(); updateSchematicVisuals(); updateSide(); }
 function gameTick(){
   perfNow = performance.now();
   if(!G.finished){
-    // integrate energy
     G.energy += G.qtot * G.phead * G.dt;
-    // time
     G.timeLeft -= G.dt;
-    if(G.timeLeft<=0){
-      G.timeLeft=0; finishRound(false);
-    }
+    if(G.timeLeft<=0){ G.timeLeft=0; finishRound(false); }
   }
   updateSide();
 }
 setInterval(gameTick, G.dt*1000);
+
+/* ===== Tutorial (Coach) ===== */
+const coach = {
+  el: document.getElementById('coach'),
+  arrow: document.getElementById('coachArrow'),
+  bubble: document.getElementById('coachBubble'),
+  text: document.getElementById('coachText'),
+  nextBtn: document.getElementById('coachNext'),
+  skipBtn: document.getElementById('coachSkip'),
+  step: 0
+};
+function showCoach(){ coach.el.style.display='flex'; }
+function hideCoach(){ coach.el.style.display='none'; }
+function placeCoachOn(target, msg, where='bottom'){
+  if(!target) return;
+  const r = target.getBoundingClientRect();
+  const B = coach.bubble;
+  const A = coach.arrow;
+  coach.text.textContent = msg;
+  const pad=10;
+  let top, left, aTop, aLeft;
+  if(where==='bottom'){
+    top = r.bottom + pad; left = r.left + r.width/2 - 140;
+    aTop = r.bottom; aLeft = r.left + r.width/2;
+    A.style.transform='translate(-50%,-50%) rotate(180deg)';
+  } else if(where==='top'){
+    top = r.top - 90; left = r.left + r.width/2 - 140;
+    aTop = r.top; aLeft = r.left + r.width/2;
+    A.style.transform='translate(-50%,-50%) rotate(0deg)';
+  } else if(where==='right'){
+    top = r.top - 10; left = r.right + pad;
+    aTop = r.top + 10; aLeft = r.right;
+    A.style.transform='translate(-50%,-50%) rotate(-90deg)';
+  } else { // left
+    top = r.top - 10; left = r.left - 300;
+    aTop = r.top + 10; aLeft = r.left;
+    A.style.transform='translate(-50%,-50%) rotate(90deg)';
+  }
+  B.style.top = Math.max(10, top) + 'px';
+  B.style.left = Math.max(10, left) + 'px';
+  A.style.top = aTop + 'px';
+  A.style.left = aLeft + 'px';
+  showCoach();
+}
+function startTutorial(){
+  G.tutorial=true; G.tutorialStep=0;
+  stepCoach(0);
+}
+function stepCoach(n){
+  coach.step = n; G.tutorialStep = n;
+  const bB = document.getElementById('bline1');
+  if(n===0){
+    placeCoachOn(bB, 'Tervetuloa! Opitaan perusjutut yhdellä kierroksella. Voit myös ohittaa.', 'top');
+  }
+  if(n===1){
+    placeCoachOn(bB, '1) Valitse B-haara klikkaamalla putkea.', 'top');
+  }
+  if(n===2){
+    placeCoachOn(document.getElementById('minus5'), '2) Sulje B 5 % painamalla −5 %.', 'top');
+  }
+  if(n===3){
+    placeCoachOn(document.getElementById('plus5'), '3) Avaa B takaisin 5 % painamalla +5 %.', 'top');
+  }
+  if(n===4){
+    placeCoachOn(document.getElementById('guessBtn'), '4) Tee arvaus: B (ylähaara) + koko "keskisuuri".', 'top');
+  }
+  if(n>=5){
+    hideCoach();
+  }
+}
+function nextCoach(){ stepCoach(coach.step+1); }
+function endTutorialSuccess(){
+  // Kun oikea arvaus tehty tasolla 1
+  hideCoach();
+  G.tutorial=false;
+}
+coach.nextBtn.addEventListener('click', ()=> nextCoach());
+coach.skipBtn.addEventListener('click', ()=>{
+  hideCoach(); G.tutorial=false;
+});
+window.addEventListener('resize', ()=>{ // reposition current step on resize
+  if(G.tutorial) stepCoach(coach.step);
+});
 
 /* ===== Init ===== */
 setupLevel();
@@ -765,7 +824,8 @@ window.addEventListener('keydown',(e)=>{
   if(e.key==='ArrowRight') adjOpen(+0.05);
 });
 
-/* ===== Expose for select change ===== */
+/* ===== Guess modal reopen placement helper ===== */
+function $(q){ return document.querySelector(q); } // already defined earlier for coach use
 </script>
 </body>
 </html>
