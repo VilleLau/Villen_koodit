@@ -73,7 +73,7 @@
   /* COACH (opastus) */
   .coach{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;pointer-events:none;z-index:99999}
   .coach .bubble{
-    position:absolute;max-width:320px;background:#0c162e;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;color:#cfe3ff;pointer-events:auto
+    position:absolute;max-width:340px;background:#0c162e;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;color:#cfe3ff;pointer-events:auto
   }
   .coach .arrow{position:absolute;width:24px;height:24px;background:transparent}
   .coach .arrow::before{
@@ -81,6 +81,22 @@
   }
   .coach .barrier{position:fixed;inset:0;background:rgba(0,0,0,.35)}
   .coach .btnrow{display:flex;gap:8px;margin-top:8px}
+  /* COACH RING + CHECKLIST */
+  .coach .ring{
+    position:absolute;width:90px;height:90px;border-radius:999px;border:2px solid #ffd166;
+    box-shadow:0 0 0 6px rgba(255,209,102,.15), 0 0 18px rgba(255,209,102,.6);
+    transform:translate(-50%,-50%);animation:pulse 1.2s ease-out infinite;pointer-events:none
+  }
+  @keyframes pulse{
+    0%{transform:translate(-50%,-50%) scale(0.9);opacity:.9}
+    70%{transform:translate(-50%,-50%) scale(1.1);opacity:.45}
+    100%{transform:translate(-50%,-50%) scale(1.0);opacity:.3}
+  }
+  .coach .checklist{list-style:none;margin:8px 0 0 0;padding:0}
+  .coach .checklist li{display:flex;gap:8px;align-items:center;color:#b8c8e6}
+  .coach .checklist li::before{content:"○";color:#ffd166}
+  .coach .checklist li.done{color:#9cffc1;font-weight:700}
+  .coach .checklist li.done::before{content:"✓";color:#39d353}
 </style>
 </head>
 <body>
@@ -242,8 +258,16 @@
 <div id="coach" class="coach">
   <div class="barrier"></div>
   <div id="coachArrow" class="arrow"></div>
+  <div id="coachRing" class="ring" style="display:none"></div> <!-- pulssikehä -->
   <div id="coachBubble" class="bubble">
     <div id="coachText">Tervetuloa! Tehdään nopea opastus.</div>
+    <!-- COACH RING + CHECKLIST -->
+    <ul id="coachList" class="checklist">
+      <li id="c1">Valitse B-haara</li>
+      <li id="c2">Sulje B 5 % (−5 %)</li>
+      <li id="c3">Avaa B 5 % takaisin (+5 %)</li>
+      <li id="c4">Tee arvaus: B (ylähaara) + “keskisuuri”</li>
+    </ul>
     <div class="btnrow">
       <button id="coachSkip" class="btn">Ohita</button>
       <button id="coachNext" class="btn primary">Seuraava</button>
@@ -282,11 +306,9 @@ $('mute').addEventListener('change',e=>{ muted=e.target.checked; });
 /* ===== Game State ===== */
 const G = {
   level:1, round:1, score:0, timeLeft:90, timeMax:90, dt:0.2,
-  Ps:3.0, // base supply pressure
-  alpha:0.08, n:1.6, cE:0.02,
+  Ps:3.0, alpha:0.08, n:1.6, cE:0.02,
   driftAmp:0, driftHz:0, stuckInfo:false,
-  branches:[],
-  leaks:[],
+  branches:[], leaks:[],
   energy:0, qtot:0, phead:0,
   selected:0, actions:0, leaksFound:0, finished:false,
   tutorial:true, tutorialStep:0
@@ -367,7 +389,7 @@ function levelConfig(level){
 
   if(level===1){
     cfg.leaks=1; cfg.sizes=['medium']; cfg.driftAmp=0; cfg.stuckMin=0;
-    cfg.forceLeak={b:1, sub:null, size:'medium'}; // B-haara, ei alahaaraa
+    cfg.forceLeak={b:1, sub:null, size:'medium'}; // B-haara
   }
   if(level===2){ cfg.leaks=1; cfg.sizes=['small','medium']; }
   if(level===3){ cfg.leaks=1; cfg.sizes=['small']; }
@@ -408,7 +430,6 @@ function setupLevel(){
       meterP:0, flow:0
     });
   }
-  // Level 1: varmista ettei B:llä (idx 1) ole alahaaroja, jotta opastus on selkeä
   if(G.level===1){ G.branches[1].subs = []; G.branches[1].stuckMin = 0; }
 
   G.selected = 0;
@@ -431,8 +452,7 @@ function setupLevel(){
   renderControls();
   log(`Uusi kierros ${G.level}/10. Vuotoja: ${G.leaks.length}.`);
 
-  // Opastus vain tasolla 1
-  if(G.level===1){ startTutorial(); } else { hideCoach(); }
+  if(G.level===1){ startTutorial(); } else { hideCoach(); G.tutorial=false; }
   updateSide();
 }
 
@@ -444,7 +464,6 @@ function renderControls(){
   $('selBranch').textContent = G.branches[G.selected].name;
   $('selOpen').textContent = Math.round(G.branches[G.selected].open*100)+'%';
 
-  // subs
   const cont = $('subList'); cont.innerHTML='';
   const b = G.branches[G.selected];
   if(b.subs.length===0){ const span=document.createElement('span'); span.textContent='(ei alahaaroja)'; cont.appendChild(span); }
@@ -466,7 +485,7 @@ function scoreChange(dp){ G.score = Math.max(0, G.score + dp); $('score').textCo
 
 function selectBranch(i){
   G.selected=i; renderControls(); highlightSelected();
-  if(G.tutorial && G.tutorialStep===1 && i===1){ nextCoach(); } // valitse B
+  if(G.tutorial && G.tutorialStep===1 && i===1){ markDone(1); nextCoach(); }
 }
 
 $('minus5').onclick =()=>adjOpen(-0.05);
@@ -484,10 +503,9 @@ function adjOpen(delta){
   log(`${b.name}: avautuma ${Math.round(before*100)}% → ${Math.round(b.open*100)}%`);
   renderControls(); updateAll();
 
-  // Opastuksen tarkistukset (step 2 ja 3)
   if(G.tutorial && G.selected===1){
-    if(G.tutorialStep===2 && (before - b.open) >= 0.049){ nextCoach(); }
-    if(G.tutorialStep===3 && (b.open - before) >= 0.049){ nextCoach(); }
+    if(G.tutorialStep===2 && (before - b.open) >= 0.049){ markDone(2); nextCoach(); }
+    if(G.tutorialStep===3 && (b.open - before) >= 0.049){ markDone(3); nextCoach(); }
   }
 }
 
@@ -542,22 +560,19 @@ function openGuess(){
   $('guessSize').value=(G.level===1?'medium':'medium');
   $('guessModal').style.display='flex';
 
-  // Opastus step 4: modal avattu -> odotetaan oikeaa valintaa
-  placeCoachOn($('#guessSubmit'), 'Paina "Vahvista arvaus" kun olet valinnut B + keskisuuri.', 'top');
+  // Opastus step 4: modali avattu -> ohjaa "Vahvista arvaus" -napille
+  placeCoachOn(document.getElementById('guessSubmit'), 'Paina “Vahvista arvaus” valittuasi B + keskisuuri.', 'top', true);
 }
-function $(qsel){ return document.querySelector(qsel); } // quick selector for coach placement
-
 function fillSubGuess(bi){
   const subSel=$('guessSub'); subSel.innerHTML='';
   const b = G.branches[bi];
   const noneOpt=document.createElement('option'); noneOpt.value='-1'; noneOpt.textContent='(ylähaara)'; subSel.appendChild(noneOpt);
   b.subs.forEach((s,idx)=>{ const o=document.createElement('option'); o.value=String(idx); o.textContent=s.name; subSel.appendChild(o); });
 }
-document.getElementById('guessBranch').addEventListener('change', (e)=>{ fillSubGuess(Number(e.target.value)); });
 
 function submitGuess(){
   const bi = Number(document.getElementById('guessBranch').value);
-  const si = Number(document.getElementById('guessSub').value); // -1 for none
+  const si = Number(document.getElementById('guessSub').value);
   const size = document.getElementById('guessSize').value;
   const pretty = `${G.branches[bi].name}${si>=0?('→'+G.branches[bi].subs[si].name):''} (${size})`;
 
@@ -577,7 +592,7 @@ function submitGuess(){
     const bonus = (size==='small'?30:(size==='medium'?45:60));
     scoreChange(100 + bonus);
     log(`✅ Oikein: ${pretty}. +${100+bonus}p`);
-    if(G.tutorial && G.level===1){ endTutorialSuccess(); }
+    if(G.tutorial && G.level===1){ markDone(4); endTutorialSuccess(); }
     if(G.leaksFound >= G.leaks.length){
       finishRound(true);
       document.getElementById('guessModal').style.display='none';
@@ -624,8 +639,8 @@ function renderSchematic(){
   group.appendChild(g('path',{d:'M600 94 L600 140', class:'pipe', 'stroke-width':12}));
   group.appendChild(g('circle',{cx:600, cy:140, r:6, class:'node'}));
 
-  // Six branches positions (leveämpi väli)
-  const x0=180, xstep=160, yTop=140, yBot=510;
+  // Six branches positions
+  const x0=180, xstep=160, yBot=510;
   for(let i=0;i<6;i++){
     const x = x0 + i*xstep;
     const line = g('path',{id:`bline${i}`, d:`M600 140 L ${x} 210 L ${x} ${yBot}`, class:'pipe','stroke-width':10});
@@ -638,7 +653,6 @@ function renderSchematic(){
     const lbl=g('text',{x:x-36, y:yBot+36, class:'label'}); lbl.textContent=BRN[i]; group.appendChild(lbl);
     const ptxt=g('text',{id:`ptxt${i}`, x:x-36, y:yBot+58, class:'txt'}); ptxt.textContent='P=—'; group.appendChild(ptxt);
 
-    // subs (small taps)
     const subs = G.branches[i].subs;
     for(let s=0;s<subs.length;s++){
       const sy = yBot - 90 - s*40;
@@ -731,88 +745,69 @@ function gameTick(){
 }
 setInterval(gameTick, G.dt*1000);
 
-/* ===== Tutorial (Coach) ===== */
+/* ===== Tutorial (Coach) + Ring + Checklist ===== */
 const coach = {
-  el: document.getElementById('coach'),
-  arrow: document.getElementById('coachArrow'),
-  bubble: document.getElementById('coachBubble'),
-  text: document.getElementById('coachText'),
-  nextBtn: document.getElementById('coachNext'),
-  skipBtn: document.getElementById('coachSkip'),
+  el: $('coach'),
+  arrow: $('coachArrow'),
+  ring: $('coachRing'),
+  bubble: $('coachBubble'),
+  text: $('coachText'),
+  list: [$('c1'), $('c2'), $('c3'), $('c4')],
+  nextBtn: $('coachNext'),
+  skipBtn: $('coachSkip'),
   step: 0
 };
 function showCoach(){ coach.el.style.display='flex'; }
-function hideCoach(){ coach.el.style.display='none'; }
-function placeCoachOn(target, msg, where='bottom'){
+function hideCoach(){ coach.el.style.display='none'; hideRing(); }
+function hideRing(){ coach.ring.style.display='none'; }
+function placeRingOn(target){
+  if(!target) return;
+  const r = target.getBoundingClientRect();
+  const size = Math.max(60, Math.min(140, Math.min(r.width, r.height)*0.9));
+  coach.ring.style.width = size+'px';
+  coach.ring.style.height = size+'px';
+  coach.ring.style.left = (r.left + r.width/2)+'px';
+  coach.ring.style.top  = (r.top + r.height/2)+'px';
+  coach.ring.style.display='block';
+}
+function placeCoachOn(target, msg, where='bottom', withRing=false){
   if(!target) return;
   const r = target.getBoundingClientRect();
   const B = coach.bubble;
   const A = coach.arrow;
   coach.text.textContent = msg;
-  const pad=10;
-  let top, left, aTop, aLeft;
-  if(where==='bottom'){
-    top = r.bottom + pad; left = r.left + r.width/2 - 140;
-    aTop = r.bottom; aLeft = r.left + r.width/2;
-    A.style.transform='translate(-50%,-50%) rotate(180deg)';
-  } else if(where==='top'){
-    top = r.top - 90; left = r.left + r.width/2 - 140;
-    aTop = r.top; aLeft = r.left + r.width/2;
-    A.style.transform='translate(-50%,-50%) rotate(0deg)';
-  } else if(where==='right'){
-    top = r.top - 10; left = r.right + pad;
-    aTop = r.top + 10; aLeft = r.right;
-    A.style.transform='translate(-50%,-50%) rotate(-90deg)';
-  } else { // left
-    top = r.top - 10; left = r.left - 300;
-    aTop = r.top + 10; aLeft = r.left;
-    A.style.transform='translate(-50%,-50%) rotate(90deg)';
-  }
+  const pad=10; let top, left, aTop, aLeft;
+  if(where==='bottom'){ top = r.bottom + pad; left = r.left + r.width/2 - 160; aTop = r.bottom; aLeft = r.left + r.width/2; A.style.transform='translate(-50%,-50%) rotate(180deg)'; }
+  else if(where==='top'){ top = r.top - 110; left = r.left + r.width/2 - 160; aTop = r.top; aLeft = r.left + r.width/2; A.style.transform='translate(-50%,-50%) rotate(0deg)'; }
+  else if(where==='right'){ top = r.top - 10; left = r.right + pad; aTop = r.top + 10; aLeft = r.right; A.style.transform='translate(-50%,-50%) rotate(-90deg)'; }
+  else { top = r.top - 10; left = r.left - 340; aTop = r.top + 10; aLeft = r.left; A.style.transform='translate(-50%,-50%) rotate(90deg)'; }
   B.style.top = Math.max(10, top) + 'px';
   B.style.left = Math.max(10, left) + 'px';
   A.style.top = aTop + 'px';
   A.style.left = aLeft + 'px';
+  if(withRing) placeRingOn(target); else hideRing();
   showCoach();
 }
-function startTutorial(){
-  G.tutorial=true; G.tutorialStep=0;
-  stepCoach(0);
+function markDone(i){ // i = 1..4
+  const el = coach.list[i-1];
+  if(el && !el.classList.contains('done')) el.classList.add('done');
 }
+function startTutorial(){ G.tutorial=true; G.tutorialStep=0; stepCoach(0); }
 function stepCoach(n){
   coach.step = n; G.tutorialStep = n;
   const bB = document.getElementById('bline1');
-  if(n===0){
-    placeCoachOn(bB, 'Tervetuloa! Opitaan perusjutut yhdellä kierroksella. Voit myös ohittaa.', 'top');
-  }
-  if(n===1){
-    placeCoachOn(bB, '1) Valitse B-haara klikkaamalla putkea.', 'top');
-  }
-  if(n===2){
-    placeCoachOn(document.getElementById('minus5'), '2) Sulje B 5 % painamalla −5 %.', 'top');
-  }
-  if(n===3){
-    placeCoachOn(document.getElementById('plus5'), '3) Avaa B takaisin 5 % painamalla +5 %.', 'top');
-  }
-  if(n===4){
-    placeCoachOn(document.getElementById('guessBtn'), '4) Tee arvaus: B (ylähaara) + koko "keskisuuri".', 'top');
-  }
-  if(n>=5){
-    hideCoach();
-  }
+  if(n===0){ placeCoachOn(bB, 'Tervetuloa! Opitaan perusjutut yhdellä kierroksella. Voit myös ohittaa.', 'top', false); }
+  if(n===1){ placeCoachOn(bB, '1) Valitse B-haara klikkaamalla putkea.', 'top', true); }
+  if(n===2){ placeCoachOn(document.getElementById('minus5'), '2) Sulje B 5 % painamalla −5 %.', 'top', true); }
+  if(n===3){ placeCoachOn(document.getElementById('plus5'), '3) Avaa B takaisin 5 % painamalla +5 %.', 'top', true); }
+  if(n===4){ placeCoachOn(document.getElementById('guessBtn'), '4) Tee arvaus: B (ylähaara) + koko “keskisuuri”.', 'top', true); }
+  if(n>=5){ hideCoach(); }
 }
 function nextCoach(){ stepCoach(coach.step+1); }
-function endTutorialSuccess(){
-  // Kun oikea arvaus tehty tasolla 1
-  hideCoach();
-  G.tutorial=false;
-}
+function endTutorialSuccess(){ hideCoach(); G.tutorial=false; }
 coach.nextBtn.addEventListener('click', ()=> nextCoach());
-coach.skipBtn.addEventListener('click', ()=>{
-  hideCoach(); G.tutorial=false;
-});
-window.addEventListener('resize', ()=>{ // reposition current step on resize
-  if(G.tutorial) stepCoach(coach.step);
-});
+coach.skipBtn.addEventListener('click', ()=>{ hideCoach(); G.tutorial=false; });
+window.addEventListener('resize', ()=>{ if(G.tutorial){ stepCoach(coach.step); } });
 
 /* ===== Init ===== */
 setupLevel();
@@ -823,9 +818,6 @@ window.addEventListener('keydown',(e)=>{
   if(e.key==='ArrowLeft') adjOpen(-0.05);
   if(e.key==='ArrowRight') adjOpen(+0.05);
 });
-
-/* ===== Guess modal reopen placement helper ===== */
-function $(q){ return document.querySelector(q); } // already defined earlier for coach use
 </script>
 </body>
 </html>
