@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Virtauslaskuri · Jukkola Systems Oy</title>
+    <link rel="icon" href="logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style> html,body,#root { height:100%; } </style>
+  </head>
+  <body class="bg-gray-50">
+    <nav class="bg-white/80 backdrop-blur border-b">
+      <div class="max-w-6xl mx-auto px-4 py-2 text-sm text-gray-600 flex items-center gap-3">
+        <a href="index.html" class="hover:underline">← Etusivu</a>
+        <span class="text-gray-300">|</span>
+        <span>Virtauslaskuri</span>
+      </div>
+    </nav>
+    <div id="root"></div>
+
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- App -->
+    <script type="text/babel">
+      const { useState, useMemo, useEffect } = React;
+      const LOGO_SRC = "logo.png";
+
+      const materials = [
+        { key: "pehd", label: "PE/HDPE (sileä)", eps_mm: 0.0015 },
+        { key: "pvc", label: "PVC/PEX", eps_mm: 0.0015 },
+        { key: "kupari", label: "Kupari", eps_mm: 0.0015 },
+        { key: "teräs", label: "Hiiliteräs (kaupallinen)", eps_mm: 0.045 },
+        { key: "rst", label: "Ruostumaton teräs", eps_mm: 0.015 },
+        { key: "valurauta", label: "Valurauta", eps_mm: 0.26 },
+        { key: "betoni", label: "Betoni", eps_mm: 0.3 },
+      ];
+      const fluids = [
+        { key: "water", label: "Vesi", temps: [
+          { t: 10, rho: 999.7, nu: 1.307e-6 },
+          { t: 20, rho: 998.0, nu: 1.004e-6 },
+          { t: 40, rho: 992.0, nu: 0.658e-6 },
+          { t: 60, rho: 983.0, nu: 0.476e-6 },
+        ]},
+        { key: "sea", label: "Merivesi", temps: [
+          { t: 20, rho: 1025.0, nu: 1.07e-6 },
+          { t: 40, rho: 1020.0, nu: 0.72e-6 },
+        ]},
+        { key: "pg30", label: "Propyleeniglykoli 30%", temps: [
+          { t: 20, rho: 1036.0, nu: 3.8e-6 },
+          { t: 40, rho: 1026.0, nu: 2.0e-6 },
+          { t: 60, rho: 1014.0, nu: 1.2e-6 },
+        ]},
+        { key: "oil32", label: "Hydrauliikkaöljy ISO VG 32", temps: [
+          { t: 20, rho: 870.0, nu: 150e-6 },
+          { t: 40, rho: 860.0, nu: 32e-6 },
+          { t: 60, rho: 850.0, nu: 12e-6 },
+        ]},
+      ];
+      const minorComponents = [
+        { key: "elbow90_std", label: "Mutka 90° (vakio)", K: 0.9 },
+        { key: "elbow90_lr", label: "Mutka 90° (loiva)", K: 0.2 },
+        { key: "elbow45", label: "Mutka 45°", K: 0.4 },
+        { key: "gate_open", label: "Sulkuvent_
