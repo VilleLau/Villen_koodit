@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="fi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HydroBalance – Venttiiliverkon tasapainotuspeli</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PSSHT! Vuotojahti 🦊 – Villen koodailut</title>
 <style>
   :root{
     --bg:#0b1020;--panel:#0f172e;--panel2:#0c1428;--muted:#9fb3c8;
@@ -14,463 +14,758 @@
   html,body{height:100%}
   body{
     margin:0;background:
-      radial-gradient(1200px 600px at 20% -10%, rgba(94,160,255,.12), transparent 60%),
-      radial-gradient(1000px 500px at 110% 10%, rgba(57,211,83,.10), transparent 60%),
+      radial-gradient(1400px 700px at 15% -10%, rgba(94,160,255,.10), transparent 60%),
+      radial-gradient(1200px 600px at 110% 10%, rgba(57,211,83,.08), transparent 60%),
       linear-gradient(#0b1020,#0b1020);
-    color:#e8f0ff;font:16px/1.4 ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
-    display:flex;align-items:center;justify-content:center;padding:20px;
+    color:#e8f0ff;font:16px/1.5 ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+    display:flex;align-items:center;justify-content:center;padding:14px;
   }
-  .wrap{width:min(100%,1100px);display:grid;gap:16px}
+  .wrap{width:min(1200px,100%);display:grid;gap:14px}
   header{
     background:linear-gradient(180deg,#111a33,#0f1730 50%,#0c142a);
     border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px
+    padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px
   }
-  .brand{display:flex;align-items:center;gap:12px;font-weight:800}
-  .chip{height:34px;width:34px;border-radius:8px;background:#0b132a;display:grid;place-items:center;
-    border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 12px rgba(94,160,255,.25)}
-  .chip .dot{height:8px;width:8px;border-radius:2px;background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
-  .links a{color:#b8c8e6;text-decoration:none;border:1px solid rgba(255,255,255,.08);
-    padding:8px 12px;border-radius:10px;transition:.15s;background:#0c152b}
-  .links a:hover{color:#fff;border-color:rgba(255,255,255,.18);transform:translateY(-1px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+  .hdr-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{
+    border:1px solid rgba(255,255,255,.10);background:#0c152b;color:#e9f2ff;padding:10px 14px;border-radius:12px;
+    cursor:pointer;font-weight:800;letter-spacing:.2px;box-shadow:var(--shadow);font-size:16px
+  }
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn:hover{border-color:rgba(255,255,255,.18);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547)}
+  .toggle{display:inline-flex;gap:8px;align-items:center}
+  .grid{display:grid;gap:14px;grid-template-columns:0.95fr 1.3fr 0.75fr}
+  @media (max-width:1050px){.grid{grid-template-columns:1fr}}
   .panel{
     background:linear-gradient(180deg,var(--panel),#0b1327 60%,#0a1122);
-    border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px
+    border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px
   }
-  .title{margin:0 0 10px 0;font-size:15px;color:var(--muted);letter-spacing:.3px}
-  .grid{display:grid;gap:16px;grid-template-columns:1.1fr .9fr}
-  @media (max-width:980px){.grid{grid-template-columns:1fr}}
-  .controls{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
-  .btn{
-    border:1px solid rgba(255,255,255,.08);background:#0c152b;color:#e9f2ff;padding:10px 14px;border-radius:12px;
-    cursor:pointer;font-weight:800;letter-spacing:.3px;transition:.08s ease;box-shadow:var(--shadow)
-  }
-  .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.18)}
-  .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547);border-color:rgba(94,160,255,.35)}
-  .btn.good{background:linear-gradient(180deg,#133523,#0f2b1d);border-color:rgba(57,211,83,.35)}
-  .btn.warn{background:linear-gradient(180deg,#3a2d12,#2b2110);border-color:rgba(255,176,32,.35)}
-  .row{display:grid;grid-template-columns:130px 1fr 100px 100px;gap:10px;align-items:center;margin:8px 0}
-  .label{opacity:.9}
-  input[type=range]{width:100%}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:right}
-  th:first-child,td:first-child{text-align:left}
-  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .card{background:linear-gradient(180deg,#0c162e,#0b1428);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px}
-  .big{font-weight:800}
-  .bar{height:10px;background:#0a1120;border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
-  .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#5bd26d 60%,#9cffc1);width:0;transition:width .25s ease}
-  .err{color:var(--danger);font-weight:800}
-  .ok{color:var(--accent);font-weight:800}
-  .hint{font-size:13px;color:var(--muted)}
-  details{margin-top:8px}
-  footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px;margin-top:10px}
-
-  /* Skeema */
-  .schem-panel{grid-column:1/-1}
-  svg#schem{width:100%;height:auto;background:linear-gradient(180deg,#0e1630,#0b1226)}
-  .pipe{fill:none;stroke:#6ea8ff55;stroke-linecap:round;stroke-linejoin:round}
+  .title{margin:0 0 10px 0;color:var(--muted);font-size:15px;letter-spacing:.3px}
+  /* CONTROL SIDE */
+  .control-group{display:grid;gap:10px}
+  .row{display:grid;grid-template-columns:120px 1fr 80px;gap:8px;align-items:center}
+  .biggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .pill{border:1px solid rgba(255,255,255,.10);background:#0b142a;border-radius:12px;padding:8px 10px;display:inline-flex;gap:8px;align-items:center}
+  .sublist{display:flex;flex-wrap:wrap;gap:8px}
+  .subbtn{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:#102040;cursor:pointer}
+  .subbtn.on{background:#15325e;border-color:#3f6bd1}
+  /* SCHEMATIC */
+  svg{width:100%;height:auto;background:linear-gradient(180deg,#0e1630,#0b1226);border:1px solid rgba(255,255,255,.06);border-radius:14px}
+  .pipe{fill:none;stroke:#7aa2ff88;stroke-linecap:round;stroke-linejoin:round}
   .node{fill:#0b1226;stroke:#8fb4ff66}
-  .pumpText,.branchText{font-size:13px;fill:#cfe3ff}
-  .bubble{fill:#0b142a;stroke:#ffffff20}
-  .badge{font-size:11px;fill:#9fb3c8}
+  .meter{fill:#0c162e;stroke:#ffffff22}
+  .txt{fill:#cfe3ff;font-size:12px}
+  .label{fill:#9fb3c8;font-size:12px}
+  /* STATS */
+  .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .card{background:linear-gradient(180deg,#0c162e,#0b1428);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px}
+  .big{font-weight:800;font-size:18px}
+  .ok{color:var(--accent);font-weight:800}
+  .bad{color:var(--danger);font-weight:800}
+  .bar{height:10px;background:#0a1120;border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+  .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#7dffb0);width:0;transition:width .25s}
+  .log{max-height:220px;overflow:auto;background:#0b1428;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:8px;font-size:13px;color:#cfe3ff}
+  /* MODALS */
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:9999}
+  .modal{width:min(720px,92%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#0f172e,#0b1327 60%,#0a1122);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px}
+  /* FOOTER */
+  footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px}
+  /* MOBILE EMPHASIS */
+  .bigbtn{font-size:18px;padding:12px 14px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">
-      <div class="chip"><div class="dot"></div></div>
-      <div>HydroBalance <span style="opacity:.6;font-weight:600">— Venttiiliverkon tasapainotuspeli</span></div>
-    </div>
-    <div class="links">
-      <a href="./index.html">⬅ Etusivu</a>
-      <a href="https://github.com/villelau/Villen_koodit" target="_blank" rel="noopener">GitHub</a>
+    <div class="brand">PSSHT! Vuotojahti 🦊 <span style="opacity:.6;font-weight:600">— Pneumavuoto-etsivä (1–10)</span></div>
+    <div class="hdr-right">
+      <button id="helpBtn" class="btn">❓ Ohjeet</button>
+      <label class="pill toggle"><input id="mute" type="checkbox"/> Mykistä</label>
+      <a class="btn" href="./index.html">⬅ Etusivu</a>
     </div>
   </header>
 
-  <!-- SKEEMA -->
-  <section class="panel schem-panel">
-    <h3 class="title">Verkon skeema</h3>
-    <svg id="schem" viewBox="0 0 800 420" role="img" aria-label="Pumppu ja kolme rinnakkaista haaraa"></svg>
-    <div class="hint" style="margin-top:8px">
-      Putken <strong>paksuus</strong> = virtaama. <span style="color:#39d353">Vihreä</span> = tavoite (±5 %) ok, <span style="color:#ff4d6d">punainen</span> = vielä pielessä.
-      Infokuplat näyttävät kunkin haaran Q, Q<sub>tgt</sub>, virhe% ja venttiilin avautuman.
-    </div>
-  </section>
-
   <div class="grid">
-    <!-- VASEN: SÄÄTIMET -->
-    <section class="panel" id="left">
+    <!-- LEFT: CONTROLS -->
+    <section class="panel">
       <h3 class="title">Säädöt</h3>
-      <div class="controls">
-        <button class="btn primary" id="new">Uusi kierros (N)</button>
-        <button class="btn good" id="hint">Vihje</button>
-        <button class="btn good" id="aihint">AI-vinkki+</button>
-        <button class="btn warn" id="fault">Häiriö</button>
-        <label class="hint" style="padding-left:6px"><input id="pro" type="checkbox" /> Insinööritila</label>
+      <div class="control-group">
+        <div class="pill" style="justify-content:space-between;display:flex">
+          <div>Valittu haara: <strong id="selBranch">A</strong> – avautuma <strong id="selOpen">60%</strong></div>
+          <div>Kierros: <strong id="round">1</strong>/10</div>
+        </div>
+
+        <div class="biggrid">
+          <button class="btn bigbtn" id="minus10">−10%</button>
+          <button class="btn bigbtn" id="minus5">−5%</button>
+          <button class="btn bigbtn" id="plus5">+5%</button>
+          <button class="btn bigbtn" id="plus10">+10%</button>
+        </div>
+
+        <div class="pill">Alahaarat (ON/OFF): <span id="subList" class="sublist"></span></div>
+
+        <div class="biggrid">
+          <button class="btn" id="hintBtn">💡 Vihje (−10p)</button>
+          <button class="btn primary" id="guessBtn">🕵️ Arvaa</button>
+          <button class="btn" id="resetBtn">⟲ Uudelleenkalibrointi</button>
+          <button class="btn" id="nextBtn" disabled>⏭ Seuraava kierros</button>
+        </div>
+
+        <div id="quickHelp" class="pill" style="line-height:1.6">
+          <strong>Pikaohje:</strong> säädä venttiilejä 5 % askelin ja tarkkaile Q<sub>tot</sub> & P<sub>haar</sub>. Vihje = −10p. 
+          Energiasakko c<sub>E</sub>=0.02. Myöhemmillä tasoilla drift & stuck valve. Eristä vuoto alahaaroilla (ON/OFF) ja tee arvaus.
+        </div>
       </div>
-
-      <div class="row">
-        <div class="label">Pumppunopeus (Hz)</div>
-        <input type="range" min="30" max="60" value="50" step="1" id="hz" />
-        <div><span id="hzval">50</span></div>
-        <div>Hz</div>
-      </div>
-
-      <div id="rows"></div>
-
-      <details style="margin-top:12px">
-        <summary><strong>Miten pelataan</strong></summary>
-        <ul class="hint" style="margin:8px 0 0 18px; line-height:1.6">
-          <li>Säädä <strong>venttiilejä</strong> (A–C) ja tarvittaessa <strong>pumppunopeutta</strong>, kunnes jokaisen haaran Q osuu Q<sub>tgt</sub> (±5&nbsp;%).</li>
-          <li>Yhden haaran muutos vaikuttaa muihin yhteisen Δp:n kautta.</li>
-          <li><strong>Vihje</strong> tekee pienen automaattisen säädön (−2p/kierros). <strong>AI-vinkki+</strong> kertoo haara+askel+mahd. Hz (−4p/kierros).</li>
-          <li><strong>Häiriö</strong> kuristaa satunnaista haaraa (Kvs↓) – kompensoi.</li>
-          <li><kbd>N</kbd> = uusi kierros.</li>
-        </ul>
-      </details>
     </section>
 
-    <!-- OIKEA: MITTARIT & TILASTOT -->
-    <aside class="panel" id="right">
-      <h3 class="title">Mittarit</h3>
+    <!-- CENTER: SCHEMATIC -->
+    <section class="panel">
+      <h3 class="title">Tehdashalli – skeema</h3>
+      <svg id="schem" viewBox="0 0 1000 520" role="img" aria-label="Kompressori, jakotukki ja haarat A–F"></svg>
+      <div class="pill" style="margin-top:8px">Klikkaa haaraa valitaksesi sen. Putken paksuus ~ virtaus. Mittarit näyttävät haarapaineen.</div>
+      <div id="log" class="log" style="margin-top:8px"></div>
+    </section>
+
+    <!-- RIGHT: STATS -->
+    <aside class="panel">
+      <h3 class="title">Mittarit & pisteet</h3>
       <div class="statgrid">
-        <div class="card">
-          <div>RMS-virhe</div>
-          <div id="rms" class="big err">—</div>
-          <div class="bar"><div id="rmsbar"></div></div>
-        </div>
-        <div class="card">
-          <div>Δp</div>
-          <div id="dp" class="big">—</div>
-        </div>
         <div class="card">
           <div>Q<sub>tot</sub></div>
           <div id="qtot" class="big">—</div>
+          <div class="bar"><div id="qbar"></div></div>
         </div>
         <div class="card">
-          <div>Pumpputeho</div>
-          <div id="power" class="big">—</div>
+          <div>P<sub>header</sub></div>
+          <div id="phead" class="big">—</div>
+          <div class="bar"><div id="pbar"></div></div>
+        </div>
+        <div class="card">
+          <div>Aika</div>
+          <div id="time" class="big">—</div>
+          <div class="bar"><div id="tbar"></div></div>
+        </div>
+        <div class="card">
+          <div>Pisteet</div>
+          <div id="score" class="big">0</div>
+          <div class="pill">Energia: <span id="energy">0.0</span></div>
         </div>
       </div>
 
-      <h3 class="title" style="margin-top:14px">Taulukko</h3>
-      <table id="table">
-        <thead>
-          <tr><th>Haara</th><th>Q (nyt)</th><th>Q<sub>tgt</sub></th><th>Virhe %</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <h3 class="title" style="margin-top:10px">Haarapaineet</h3>
+      <div id="pressList" class="card" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
 
-      <details id="probox">
-        <summary>Insinööritila – kaavat</summary>
-        <div class="card" style="margin-top:8px">
-          <div><strong>Pumppu:</strong> H(Q) = H<sub>0</sub>·n² − a·n²·Q²</div>
-          <div><strong>Haara:</strong> Q<sub>i</sub> = K<sub>vs,i</sub>·open<sup>n</sup>·√Δp</div>
-        </div>
-      </details>
-
-      <div class="card" style="margin-top:12px">
-        <div>Score: <strong id="score">0</strong> | Paras: <strong id="best">0</strong> | Kierros: <strong id="round">1</strong></div>
-        <div id="msg" style="margin-top:6px"></div>
+      <h3 class="title" style="margin-top:10px">Tilanne</h3>
+      <div class="card">
+        <div>Vuotoja jäljellä: <strong id="leaksLeft">—</strong></div>
+        <div>Stuck valve? <strong id="stuckInfo">ei</strong></div>
+        <div>Supply drift: <strong id="driftInfo">0%</strong></div>
       </div>
     </aside>
   </div>
 
-  <footer>© <span id="year"></span> HydroBalance – Villen koodailut</footer>
+  <footer>© <span id="year"></span> PSSHT! Vuotojahti 🦊 – <strong>Villen koodailut</strong></footer>
+</div>
+
+<!-- HELP MODAL -->
+<div id="helpModal" class="overlay">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:800">PSSHT! Vuotojahti 🦊 – Ohjeet</div>
+      <button id="helpClose" class="btn">✕</button>
+    </div>
+    <div style="color:#b8c8e6;line-height:1.6">
+      <p><strong>Tavoite:</strong> paikanna <em>vuodon sijainti</em> (haara/alahara) ja <em>koko</em> (pieni/keskisuuri/suuri) mahdollisimman vähillä toimilla ja pienellä energialla.</p>
+      <h4 style="margin:10px 0 6px 0;color:#cfe3ff">Miten edetä</h4>
+      <ol>
+        <li>Säädä valittua haaraa <strong>±5 %</strong> (±10 % nappi) ja tarkkaile <strong>Q<sub>tot</sub></strong> & haarapaineita.</li>
+        <li>Eristä alahaaroja <strong>ON/OFF</strong> -napeilla (jos haarassa on alahaaroja).</li>
+        <li>Kun olet varma, paina <strong>Arvaa</strong> → valitse <em>haara</em>, (tarv.) <em>alahara</em> ja <em>koko</em>.</li>
+      </ol>
+      <h4 style="margin:10px 0 6px 0;color:#cfe3ff">Säännöt & pisteet</h4>
+      <ul>
+        <li>Perus +100p, oikea koko +30/+45/+60p, väärä −40p. Vihje −10p. Venttiilisäätö −1p/toimi.</li>
+        <li>Aikaraja tasokohtainen; ylittyessä −20p. Energiasta sakko: −⌊<strong>0.02</strong> · ∫Q<sub>tot</sub>·P<sub>h</sub> dt⌋ p.</li>
+        <li>Tasoissa 7–10: <em>supply drift</em> (±3–5 %) ja joskus <em>stuck valve</em> (min 10–20 % auki).</li>
+      </ul>
+      <h4 style="margin:10px 0 6px 0;color:#cfe3ff">Vinkkejä</h4>
+      <ul>
+        <li>Vuotava haara vaikuttaa usein eniten <strong>Q<sub>tot</sub></strong>:iin, kun sitä <em>suljetaan</em> vähän.</li>
+        <li>Driftin aikana katso <strong>suhteellisia</strong> muutoksia (Δ ennen/jälkeen), ei absoluuttisia.</li>
+        <li>Jos venttiili on “stuck”, sen sulkeminen ei muuta virtausta odotetusti → epäile ko. haaraa.</li>
+      </ul>
+      <div style="margin-top:10px;opacity:.8">Onnea metsästykseen – tavoittele titteliä <strong>Nollavuoto-ninja 🥷⚡</strong>!</div>
+    </div>
+  </div>
+</div>
+
+<!-- GUESS MODAL -->
+<div id="guessModal" class="overlay">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:800">🕵️ Arvaa vuoto</div>
+      <button id="guessClose" class="btn">✕</button>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div class="pill">Valitse haara:
+        <select id="guessBranch"></select>
+      </div>
+      <div class="pill">Valitse alahaara (jos on):
+        <select id="guessSub"></select>
+      </div>
+      <div class="pill">Koko:
+        <select id="guessSize">
+          <option value="small">pieni</option>
+          <option value="medium" selected>keskisuuri</option>
+          <option value="large">suuri</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="guessSubmit" class="btn primary">Vahvista arvaus</button>
+        <button id="guessAnother" class="btn">Lisää toinen arvaus</button>
+      </div>
+      <div id="guessInfo" class="pill">Vihje: jos haaralla on 2 alahaaraa (A1/A2), päättele kumpi eristymällä.</div>
+    </div>
+  </div>
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
+/* ===== Utilities ===== */
+const $ = (id)=>document.getElementById(id);
 const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
 $('year').textContent = new Date().getFullYear();
 
-const S = {
-  H0: 20, a: 0.08, n: 1.6,
-  hz: 50,
-  branches: [], round: 1, score: 0,
-  best: Number(localStorage.getItem('network_best')||0),
-  tol: 0.05,
-  helpDebt: 0, // apujen pistevähennys kierrokselle
-  // kiinteästi 3 haaraa skeemaa varten
-  N: 3
-};
+/* ===== Sound (WebAudio) ===== */
+let AC; let muted=false;
+function initAudio(){ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); } }
+function playPssht(){
+  if(muted) return; initAudio();
+  const dur=0.12; const n=AC.createBuffer(1, AC.sampleRate*dur, AC.sampleRate);
+  const d=n.getChannelData(0);
+  for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.7)); }
+  const src=AC.createBufferSource(); src.buffer=n;
+  const g=AC.createGain(); g.gain.setValueAtTime(0.25, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+dur);
+  src.connect(g).connect(AC.destination); src.start();
+}
+function playBubble(){
+  if(muted) return; initAudio();
+  const o=AC.createOscillator(); const g=AC.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(500,AC.currentTime);
+  o.frequency.exponentialRampToValueAtTime(1200,AC.currentTime+0.08);
+  g.gain.setValueAtTime(0.2,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.2);
+  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+0.21);
+}
+$('mute').addEventListener('change',e=>{ muted=e.target.checked; });
 
-// ---- Fysiikka ----
-function flow_i(br, dp){
-  const k = br.Kvs * Math.pow(clamp(br.open,0,1), S.n) * (br.faultFactor||1);
-  return k * Math.sqrt(Math.max(0, dp));
+/* ===== Game State ===== */
+const G = {
+  level:1, round:1, score:0, timeLeft:90, timeMax:90, dt:0.2,
+  Ps:3.0, // base supply pressure
+  alpha:0.08, n:1.6, cE:0.02,
+  driftAmp:0, driftHz:0, stuckInfo:false,
+  branches:[], // [{name:'A', open:0.6, Kvs:1.0, r:0.6, stuckMin:0.0, subs:[{name:'A1', on:true}], meterP:0, flow:0}]
+  leaks:[], // [{b:0, sub:null or 0.., size:'small|medium|large', K:... , found:false}]
+  energy:0, qtot:0, phead:0,
+  selected:0, actions:0, leaksFound:0, finished:false
+};
+const BRN=['A','B','C','D','E','F'];
+
+/* ===== Physics ===== */
+// Given phead and state, compute branch flows (demand) and leak flows, return {qtot, branchP[]}
+function branchFlowForP(phead, br){
+  // Demand through branch valve (independent of subs; subs only gate leaks in this model)
+  const open = Math.max(br.open, br.stuckMin);
+  const K = br.Kvs * Math.pow(clamp(open,0,1), G.n);
+  // Solve series loss: Q = K*sqrt(p_i), p_i = phead - r*Q^2 => Q^2(1 + K^2 r) = K^2 phead
+  const denom = 1 + K*K*br.r;
+  const q = K * Math.sqrt(Math.max(0, phead) / Math.max(1e-9, denom));
+  // Local branch pressure after loss:
+  const p_i = Math.max(0, phead - br.r*q*q);
+  let qLeak = 0;
+  // Leaks in this branch (at branch-level or sub-level if sub ON)
+  for(const L of G.leaks){
+    if(L.found) continue;
+    if(L.b === br.idx){
+      if(L.sub==null){
+        qLeak += L.K * Math.sqrt(p_i);
+      } else {
+        const on = br.subs[L.sub] && br.subs[L.sub].on;
+        if(on) qLeak += L.K * Math.sqrt(p_i);
+      }
+    }
+  }
+  return {qDemand:q, p_i, qLeak};
 }
-function qsum(dp){ return S.branches.reduce((acc,b)=>acc + flow_i(b, dp), 0); }
-function pumpHead(Q){
-  const scale = S.hz/50; // affiniteetit
-  return Math.max(0, (S.H0*scale*scale) - (S.a*scale*scale)*Q*Q);
+
+function networkGivenP(phead){
+  let qtot=0; const branchP=[]; const branchQ=[];
+  G.branches.forEach(br=>{
+    const {qDemand, p_i, qLeak} = branchFlowForP(phead, br);
+    branchP.push(p_i);
+    branchQ.push(qDemand + qLeak);
+    qtot += (qDemand + qLeak);
+  });
+  return {qtot, branchP, branchQ};
 }
-function solve_dp(){
-  let lo=0, hi=S.H0*2, mid=0;
+
+function solveNetwork(){
+  // supply with drift
+  const t = perfNow/1000;
+  const PsDrift = G.Ps * (1 + G.driftAmp*Math.sin(2*Math.PI*G.driftHz*t)) + (G.driftAmp? (G.Ps*0.005*(Math.random()-0.5)):0);
+  // solve phead in [0, PsDrift] such that phead = PsDrift - alpha*qtot(phead)^2
+  let lo=0, hi=Math.max(0.1, PsDrift), mid=0;
   for(let it=0; it<40; it++){
-    mid=0.5*(lo+hi);
-    const Q=qsum(mid);
-    const f=mid-pumpHead(Q);
+    mid = 0.5*(lo+hi);
+    const {qtot} = networkGivenP(mid);
+    const f = mid - (PsDrift - G.alpha*qtot*qtot);
     if(Math.abs(f)<1e-4) break;
-    const flo=lo-pumpHead(qsum(lo));
+    const {qtot:ql} = networkGivenP(lo);
+    const flo = lo - (PsDrift - G.alpha*ql*ql);
     if(Math.sign(flo)===Math.sign(f)) lo=mid; else hi=mid;
   }
-  return Math.max(0,mid);
-}
-function compute(){
-  const dp=solve_dp();
-  const Qs=S.branches.map(b=>flow_i(b,dp));
-  const Qtot=Qs.reduce((a,b)=>a+b,0);
-  const errPct=S.branches.map((b,i)=>b.targetQ>0?(Qs[i]-b.targetQ)/b.targetQ:0);
-  const rms=Math.sqrt(errPct.reduce((a,e)=>a+e*e,0)/S.branches.length);
-  const power=Qtot*dp; // pelillinen “teho”
-  return {dp,Qs,Qtot,rms,errPct,power};
+  const {qtot, branchP, branchQ} = networkGivenP(mid);
+  G.qtot=qtot; G.phead=mid;
+  // store to branches
+  G.branches.forEach((b,i)=>{ b.meterP=branchP[i]; b.flow=branchQ[i]; });
 }
 
-// ---- UI: säätimet & taulukko ----
-const rows=$('rows'); const tbody=$('table').querySelector('tbody');
+/* ===== Level Generator ===== */
+function rand(a,b){ return a + Math.random()*(b-a); }
+function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-function renderRows(){
-  rows.innerHTML='';
-  S.branches.forEach((b,i)=>{
-    const row=document.createElement('div'); row.className='row';
-    row.innerHTML=`
-      <div class="label">Haara ${b.name}</div>
-      <input type="range" min="0" max="100" value="${Math.round(b.open*100)}" step="1" />
-      <div><span id="q_${i}">—</span></div>
-      <div><span id="err_${i}">—</span></div>`;
-    row.querySelector('input').addEventListener('input',e=>{
-      S.branches[i].open=Number(e.target.value)/100; update();
+function levelConfig(level){
+  // defaults from spec table
+  const cfg = {
+    time: 90 + Math.max(0, level-1)*6, // grows a bit
+    driftAmp: 0, driftHz: 0.03 + level*0.002,
+    leaks:1, leakPattern:'any', // 'any' | 'sameBranchTwo'
+    sizes: ['medium'],
+    noise: 0.015 + level*0.003,
+    stuckMin: 0,
+    subsPer: [0,0,0,0,0,0]
+  };
+  const subsVariants = [
+    [0,0,0,0,0,0],
+    [1,0,0,0,0,0],
+    [1,1,0,0,0,0],
+    [1,1,1,0,0,0],
+    [2,1,1,0,0,0],
+    [2,1,1,1,0,0],
+    [2,2,1,1,0,0],
+    [2,2,2,1,1,0],
+    [2,2,2,2,1,1],
+    [2,2,2,2,2,2],
+  ];
+  cfg.subsPer = subsVariants[Math.min(9, level-1)];
+
+  if(level===1){ cfg.leaks=1; cfg.sizes=['medium']; }
+  if(level===2){ cfg.leaks=1; cfg.sizes=['small','medium']; }
+  if(level===3){ cfg.leaks=1; cfg.sizes=['small']; }
+  if(level===4){ cfg.leaks=1; cfg.sizes=['small','large']; }
+  if(level===5){ cfg.leaks=2; cfg.sizes=['small','medium']; cfg.driftAmp=0.01; }
+  if(level===6){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.02; }
+  if(level===7){ cfg.leaks=2; cfg.sizes=['small','medium']; cfg.driftAmp=0.03; cfg.stuckMin=0.10; }
+  if(level===8){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.04; cfg.stuckMin=0.15; cfg.leakPattern='sameBranchTwo'; }
+  if(level===9){ cfg.leaks=3; cfg.sizes=['small','medium','medium']; cfg.driftAmp=0.05; cfg.stuckMin=0.15; }
+  if(level===10){ cfg.leaks=3; cfg.sizes=['small','medium','large']; cfg.driftAmp=0.05; cfg.stuckMin=0.20; }
+
+  return cfg;
+}
+
+function sizeToK(size){
+  if(size==='small') return rand(0.10,0.16);
+  if(size==='medium') return rand(0.18,0.26);
+  return rand(0.30,0.40); // large
+}
+
+function setupLevel(){
+  const L = levelConfig(G.level);
+  G.timeMax = L.time; G.timeLeft=L.time;
+  G.driftAmp = L.driftAmp; G.driftHz = L.driftHz;
+  G.energy=0; G.actions=0; G.leaksFound=0; G.finished=false;
+  G.stuckInfo = L.stuckMin>0;
+
+  // branches
+  G.branches = [];
+  for(let i=0;i<6;i++){
+    const subsN = L.subsPer[i]||0;
+    const subs=[];
+    for(let s=0;s<subsN;s++) subs.push({name:BRN[i]+(s+1), on:true, Kvs: rand(0.4,0.8)});
+    G.branches.push({
+      idx:i, name:BRN[i],
+      open: rand(0.5,0.8),
+      Kvs: rand(0.9,1.2),
+      r: rand(0.4,0.8),
+      stuckMin: (Math.random()<0.25)? L.stuckMin : 0, // ei aina
+      subs,
+      meterP:0, flow:0
     });
-    rows.appendChild(row);
+  }
+  G.selected = 0;
+
+  // leaks
+  G.leaks = [];
+  if(L.leakPattern==='sameBranchTwo' && L.leaks===2){
+    const bIdx = Math.floor(Math.random()*6);
+    // Need at least 2 subs; if not, fallback to any
+    if(G.branches[bIdx].subs.length>=2){
+      const s1=0, s2=1;
+      G.leaks.push({b:bIdx, sub:s1, size:L.sizes[0], K:sizeToK(L.sizes[0]), found:false});
+      G.leaks.push({b:bIdx, sub:s2, size:L.sizes[1], K:sizeToK(L.sizes[1]), found:false});
+    } else {
+      // fallback random
+      for(let k=0;k<L.leaks;k++){
+        const bi=Math.floor(Math.random()*6);
+        const subOpt = (G.branches[bi].subs.length? Math.floor(Math.random()*G.branches[bi].subs.length): null);
+        G.leaks.push({b:bi, sub:subOpt, size:L.sizes[k]||'small', K:sizeToK(L.sizes[k]||'small'), found:false});
+      }
+    }
+  } else {
+    for(let k=0;k<L.leaks;k++){
+      const bi=Math.floor(Math.random()*6);
+      const subOpt = (Math.random()<0.55 && G.branches[bi].subs.length)? Math.floor(Math.random()*G.branches[bi].subs.length): null;
+      G.leaks.push({b:bi, sub:subOpt, size:L.sizes[k]||'small', K:sizeToK(L.sizes[k]||'small'), found:false});
+    }
+  }
+  // physics init
+  solveNetwork();
+  // UI
+  renderSchematic();
+  renderControls();
+  log(`Uusi kierros ${G.level}/10. Vuotoja: ${G.leaks.length}.`);
+  updateSide();
+}
+
+/* ===== Actions & UI ===== */
+function log(t){ const el=$('log'); const ts=new Date().toLocaleTimeString(); el.innerHTML=`<div>• ${t}</div>`+el.innerHTML; }
+
+function renderControls(){
+  $('round').textContent=G.level;
+  $('selBranch').textContent = G.branches[G.selected].name;
+  $('selOpen').textContent = Math.round(G.branches[G.selected].open*100)+'%';
+
+  // subs
+  const cont = $('subList'); cont.innerHTML='';
+  const b = G.branches[G.selected];
+  if(b.subs.length===0){ cont.textContent='(ei alahaaroja)'; }
+  else b.subs.forEach((s,idx)=>{
+    const btn=document.createElement('button');
+    btn.className='subbtn '+(s.on?'on':'');
+    btn.textContent = s.name + (s.on?' ON':' OFF');
+    btn.onclick=()=>{
+      s.on=!s.on; G.actions++; playPssht(); timeCost(1.0); scoreChange(-1);
+      log(`${s.name} → ${s.on?'ON':'OFF'}`);
+      updateAll();
+    };
+    cont.appendChild(btn);
   });
 }
 
-function renderTable(Qs,errPct){
-  tbody.innerHTML='';
-  S.branches.forEach((b,i)=>{
-    const tr=document.createElement('tr');
-    const err=errPct[i]*100;
-    tr.innerHTML=`
-      <td>Haara ${b.name}</td>
-      <td>${Qs[i].toFixed(3)}</td>
-      <td>${b.targetQ.toFixed(3)}</td>
-      <td style="font-weight:800;${Math.abs(err)<=S.tol*100?'color:#39d353':'color:#ff4d6d'}">${err.toFixed(1)}%</td>`;
-    tbody.appendChild(tr);
+function timeCost(sec){ G.timeLeft = Math.max(0, G.timeLeft - sec); }
+function scoreChange(dp){ G.score = Math.max(0, G.score + dp); $('score').textContent=Math.round(G.score); }
+
+function selectBranch(i){
+  G.selected=i; renderControls(); highlightSelected();
+}
+
+$('minus5').onclick=()=>adjOpen(-0.05);
+$('plus5').onclick =()=>adjOpen(+0.05);
+$('minus10').onclick=()=>adjOpen(-0.10);
+$('plus10').onclick =()=>adjOpen(+0.10);
+
+function adjOpen(delta){
+  const b = G.branches[G.selected];
+  const before = b.open;
+  b.open = clamp(b.open + delta, 0, 1);
+  // stuck valve lower bound
+  if(b.stuckMin>0 && b.open < b.stuckMin) b.open = b.stuckMin;
+  if(Math.abs(b.open-before)<1e-6) { log(`Haaran ${b.name} venttiili ei enää liiku (stuck?)`); return; }
+  G.actions++; playPssht(); timeCost(1.0); scoreChange(-1);
+  log(`${b.name}: avautuma ${Math.round(before*100)}% → ${Math.round(b.open*100)}%`);
+  renderControls(); updateAll();
+}
+
+$('hintBtn').onclick=()=>{
+  // branch sensitivity: virtual -5% on each open
+  const baseQ = G.qtot;
+  let bestI=0, bestDelta=-1;
+  for(let i=0;i<G.branches.length;i++){
+    const tmp = G.branches[i].open;
+    const stuck = G.branches[i].stuckMin||0;
+    G.branches[i].open = Math.max(stuck, clamp(tmp - 0.05, 0, 1));
+    solveNetwork(); const d = baseQ - G.qtot;
+    if(d > bestDelta){ bestDelta = d; bestI = i; }
+    G.branches[i].open = tmp;
+  }
+  // sub-hint inside best branch: test toggling ON->OFF for each sub
+  let subHint=null, subDelta=0;
+  const b = G.branches[bestI];
+  if(b.subs.length){
+    const baseOn = b.subs.map(s=>s.on);
+    for(let j=0;j<b.subs.length;j++){
+      if(!b.subs[j].on) continue; // test only turning OFF
+      b.subs[j].on=false; solveNetwork();
+      const d = baseQ - G.qtot;
+      if(d > subDelta){ subDelta = d; subHint = j; }
+      b.subs[j].on = baseOn[j];
+    }
+  }
+  // restore network value
+  solveNetwork(); updateAll();
+  scoreChange(-10); timeCost(1.5);
+  const hintText = `Vihje: suurin vaikutus ${G.branches[bestI].name}${subHint!=null?('→'+G.branches[bestI].subs[subHint].name):''}.`;
+  log(hintText);
+  // flash highlight
+  flashHint(bestI, subHint);
+};
+
+$('resetBtn').onclick=()=>{ // cosmetic “re-zero”
+  log('Uudelleenkalibrointi: mittarit nollattu hetkeksi.');
+  playPssht(); // no score change
+};
+
+$('nextBtn').onclick=()=>{
+  if(G.level>=10){ log('Peli läpi! Aloitetaan alusta.'); G.level=1; G.score=0; }
+  else G.level++;
+  setupLevel(); $('nextBtn').disabled=true;
+};
+
+/* ===== Guess UI ===== */
+$('guessBtn').onclick=()=>openGuess();
+$('guessClose').onclick=()=>$('guessModal').style.display='none';
+$('guessAnother').onclick=()=>{ $('guessInfo').textContent='Voit tehdä toisen arvauksen samalla kierroksella (jos vuotoja on useampi).'; };
+$('guessSubmit').onclick=submitGuess;
+
+function openGuess(){
+  const sel = $('guessBranch'); sel.innerHTML='';
+  BRN.forEach((n,i)=>{
+    const opt=document.createElement('option'); opt.value=String(i); opt.textContent=n; sel.appendChild(opt);
   });
+  sel.value=String(G.selected);
+  fillSubGuess(G.selected);
+  $('guessSize').value='medium';
+  $('guessModal').style.display='flex';
+}
+function fillSubGuess(bi){
+  const subSel=$('guessSub'); subSel.innerHTML='';
+  const b = G.branches[bi];
+  const noneOpt=document.createElement('option'); noneOpt.value='-1'; noneOpt.textContent='(ylähaara)'; subSel.appendChild(noneOpt);
+  b.subs.forEach((s,idx)=>{ const o=document.createElement('option'); o.value=String(idx); o.textContent=s.name; subSel.appendChild(o); });
+}
+$('guessBranch').addEventListener('change', (e)=>{ fillSubGuess(Number(e.target.value)); });
+
+function submitGuess(){
+  const bi = Number($('guessBranch').value);
+  const si = Number($('guessSub').value); // -1 for none
+  const size = $('guessSize').value;
+  const pretty = `${G.branches[bi].name}${si>=0?('→'+G.branches[bi].subs[si].name):''} (${size})`;
+  // check against remaining leaks
+  let ok=false, matchedIndex=-1;
+  for(let i=0;i<G.leaks.length;i++){
+    const L=G.leaks[i];
+    if(L.found) continue;
+    const subMatch = ( (si<0 && L.sub==null) || (si>=0 && L.sub===si) );
+    if(L.b===bi && subMatch && L.size===size){
+      ok=true; matchedIndex=i; break;
+    }
+  }
+  if(ok){
+    G.leaks[matchedIndex].found=true;
+    G.leaksFound++;
+    playBubble();
+    const bonus = (size==='small'?30:(size==='medium'?45:60));
+    scoreChange(100 + bonus); // perus + koko
+    log(`✅ Oikein: ${pretty}. +${100+bonus}p`);
+    if(G.leaksFound >= G.leaks.length){
+      finishRound(true);
+      $('guessModal').style.display='none';
+      return;
+    } else {
+      $('guessInfo').textContent=`Hyvä! Vuoto löydetty (${G.leaksFound}/${G.leaks.length}). Jäljellä vielä ${G.leaks.length-G.leaksFound}.`;
+    }
+  } else {
+    scoreChange(-40);
+    log(`❌ Väärä arvaus: ${pretty} (−40p)`);
+  }
 }
 
-// ---- Skeema (SVG) ----
-function buildSchematic(){
-  const svg = $('schem');
-  svg.innerHTML = `
-    <defs>
-      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#7fb3ff88"></path>
-      </marker>
-    </defs>
+/* ===== Round End ===== */
+function finishRound(success){
+  if(G.finished) return;
+  G.finished=true;
+  // energy penalty
+  const ePenalty = Math.floor(G.cE * G.energy);
+  scoreChange(-ePenalty);
+  // time bonus
+  const tBonus = success ? Math.round(20 * (G.timeLeft/G.timeMax)) : 0;
+  scoreChange(tBonus);
+  // title
+  const ePerSec = (G.energy/Math.max(1, (G.timeMax-G.timeLeft)));
+  let title='Kompressorin kauhu 🐊';
+  if(ePerSec<0.15) title='Nollavuoto-ninja 🥷⚡';
+  else if(ePerSec<0.25) title='Vuotokettu 🦊';
+  else if(ePerSec<0.35) title='Ilmamurhaaja 🔧';
 
-    <!-- päälinja -->
-    <path id="main" class="pipe" d="M400 70 L400 140" stroke-width="10" />
-    <!-- haaroitus -->
-    <circle cx="400" cy="140" r="6" class="node"/>
-
-    <!-- haarat -->
-    <path id="lineA" class="pipe" d="M400 140 L 300 220 L 220 340" stroke-width="8" />
-    <path id="lineB" class="pipe" d="M400 140 L 400 340" stroke-width="8" />
-    <path id="lineC" class="pipe" d="M400 140 L 500 220 L 580 340" stroke-width="8" />
-
-    <!-- päät -->
-    <circle id="endA" cx="220" cy="340" r="7" class="node"/>
-    <circle id="endB" cx="400" cy="340" r="7" class="node"/>
-    <circle id="endC" cx="580" cy="340" r="7" class="node"/>
-
-    <!-- pumppu -->
-    <g id="pump" transform="translate(400,70)">
-      <circle r="22" class="node"></circle>
-      <polygon points="-6,-8 10,0 -6,8" fill="#5ea0ff" />
-    </g>
-    <rect x="330" y="20" width="140" height="32" rx="8" class="bubble"></rect>
-    <text x="340" y="41" class="pumpText">
-      Pumppu • Hz: <tspan id="tHz">50</tspan> • Δp: <tspan id="tDP">—</tspan>
-    </text>
-
-    <!-- infokuplat A,B,C -->
-    <g id="infoA">
-      <rect x="120" y="350" width="200" height="58" rx="10" class="bubble"></rect>
-      <text x="130" y="370" class="branchText">A: Q=<tspan id="tQA">—</tspan> | Qₜ=<tspan id="tQAt">—</tspan></text>
-      <text x="130" y="388" class="badge">virhe <tspan id="tEA">—</tspan>% • vent <tspan id="tOA">—</tspan>%</text>
-    </g>
-    <g id="infoB">
-      <rect x="300" y="350" width="200" height="58" rx="10" class="bubble"></rect>
-      <text x="310" y="370" class="branchText">B: Q=<tspan id="tQB">—</tspan> | Qₜ=<tspan id="tQBt">—</tspan></text>
-      <text x="310" y="388" class="badge">virhe <tspan id="tEB">—</tspan>% • vent <tspan id="tOB">—</tspan>%</text>
-    </g>
-    <g id="infoC">
-      <rect x="480" y="350" width="200" height="58" rx="10" class="bubble"></rect>
-      <text x="490" y="370" class="branchText">C: Q=<tspan id="tQC">—</tspan> | Qₜ=<tspan id="tQCt">—</tspan></text>
-      <text x="490" y="388" class="badge">virhe <tspan id="tEC">—</tspan>% • vent <tspan id="tOC">—</tspan>%</text>
-    </g>
-  `;
-}
-function paintBranch(i, flow, target, errPct){
-  const id = ['A','B','C'][i];
-  const line = $('line'+id);
-  const ok = Math.abs(errPct*100) <= S.tol*100;
-  // paksuus suhteessa virtaamaan (skaalataan maltillisesti)
-  const maxQ = Math.max(...S.branches.map((_,k)=>flow)); // per-kutsu ei ideaalinen, mutta riittää
-  const w = clamp(6 + 24*(flow/Math.max(0.001, target)), 6, 30);
-  line.setAttribute('stroke', ok ? '#39d353' : '#ff4d6d');
-  line.setAttribute('stroke-width', w.toFixed(1));
-  // tekstit
-  $('tQ'+id).textContent = flow.toFixed(3);
-  $('tQ'+id+'t').textContent = target.toFixed(3);
-  $('tE'+id).textContent = (errPct*100).toFixed(1);
-  $('tO'+id).textContent = Math.round(S.branches[i].open*100);
-}
-function updateSchematic(dp,Qs,errPct){
-  $('tHz').textContent = S.hz;
-  $('tDP').textContent = dp.toFixed(2);
-  paintBranch(0,Qs[0],S.branches[0].targetQ,errPct[0]);
-  paintBranch(1,Qs[1],S.branches[1].targetQ,errPct[1]);
-  paintBranch(2,Qs[2],S.branches[2].targetQ,errPct[2]);
+  log(`${success?'🎉 Kierros onnistui':'⏱ Aika loppui'} — Titteli: <strong>${title}</strong> | Energiasakko −${ePenalty}p | Aikabonus +${tBonus}p`);
+  $('nextBtn').disabled=false;
 }
 
-// ---- Eco-tittelit & pisteet ----
-function ecoTitle(power, Qtot){
-  const sp = power / Math.max(Qtot,1e-6);
-  if (sp < 2.5) return {title:'Sähkön Säästömestari ⚡🌱', bonus:15, sp};
-  if (sp < 3.5) return {title:'Hydro-Eko Insinööri ♻️',   bonus: 8, sp};
-  if (sp < 5.0) return {title:'Perussäätäjä 🔧',           bonus: 3, sp};
-  return {title:'Pumpun Kurittaja 🐊',                      bonus: 0, sp};
+/* ===== Schematic Rendering ===== */
+function renderSchematic(){
+  const svg=$('schem'); svg.innerHTML='';
+  // Main header & pump
+  const g = (tag, attrs)=>{ const el=document.createElementNS('http://www.w3.org/2000/svg', tag); for(const k in attrs){ el.setAttribute(k, attrs[k]); } return el; };
+  const group = g('g',{});
+  // Pump
+  group.appendChild(g('circle',{cx:500, cy:60, r:22, class:'node'}));
+  group.appendChild(g('polygon',{points:'494,52 512,60 494,68', fill:'#5ea0ff'}));
+  group.appendChild(g('rect',{x:430,y:18,width:140,height:30,rx:8,class:'meter'}));
+  const t1=g('text',{x:438,y:38,class:'txt'}); t1.textContent='Pumppu • P_s + drift'; group.appendChild(t1);
+
+  // Header trunk
+  group.appendChild(g('path',{d:'M500 82 L500 120', class:'pipe', 'stroke-width':10}));
+  group.appendChild(g('circle',{cx:500, cy:120, r:6, class:'node'}));
+
+  // Six branches positions
+  const x0=220, xstep=120, yTop=120, yBot=420;
+  for(let i=0;i<6;i++){
+    const x = x0 + i*xstep;
+    // branch pipe
+    const line = g('path',{id:`bline${i}`, d:`M500 120 L ${x} 180 L ${x} ${yBot}`, class:'pipe','stroke-width':8});
+    line.style.cursor='pointer';
+    line.addEventListener('click',()=>selectBranch(i));
+    group.appendChild(line);
+    // end node
+    group.appendChild(g('circle',{cx:x, cy:yBot, r:7, class:'node'}));
+    // meter
+    group.appendChild(g('rect',{x:x-40, y:yBot+18, width:80, height:44, rx:8, class:'meter'}));
+    const lbl=g('text',{x:x-30, y:yBot+36, class:'label'}); lbl.textContent=BRN[i]; group.appendChild(lbl);
+    const ptxt=g('text',{id:`ptxt${i}`, x:x-30, y:yBot+56, class:'txt'}); ptxt.textContent='P=—'; group.appendChild(ptxt);
+
+    // subs (draw small taps)
+    const subs = G.branches[i].subs;
+    for(let s=0;s<subs.length;s++){
+      const sy = yBot - 70 - s*35;
+      group.appendChild(g('circle',{cx:x, cy:sy, r:5, class:'node'}));
+      const sp = g('path',{id:`subline${i}_${s}`, d:`M ${x} ${sy} L ${x+36} ${sy}`, class:'pipe', 'stroke-width': subs[s].on?6:2, stroke: subs[s].on?'#66ffc2aa':'#6ea8ff55'});
+      sp.style.cursor='pointer';
+      sp.addEventListener('click',()=>{
+        selectBranch(i);
+        subs[s].on = !subs[s].on; G.actions++; playPssht(); timeCost(1.0); scoreChange(-1);
+        log(`${subs[s].name} → ${subs[s].on?'ON':'OFF'}`);
+        updateAll();
+      });
+      group.appendChild(sp);
+      const stxt = g('text',{id:`subtxt${i}_${s}`, x:x+44, y:sy+4, class:'txt'}); stxt.textContent=subs[s].name; group.appendChild(stxt);
+    }
+  }
+  svg.appendChild(group);
+  highlightSelected();
+  updateSchematicVisuals();
 }
 
-// ---- Päivityssilmukka ----
-function msg(text,good=false){const m=$('msg');m.textContent=text||'';m.style.color=text?(good?'var(--accent)':'var(--warn)'):'';}
+function highlightSelected(){
+  for(let i=0;i<6;i++){
+    const el = $('bline'+i);
+    if(!el) continue;
+    el.setAttribute('stroke', i===G.selected ? '#9ad1ff' : '#7aa2ff88');
+  }
+}
 
-function update(){
-  const {dp,Qs,Qtot,rms,errPct,power}=compute();
-  $('dp').textContent=dp.toFixed(3);
-  $('qtot').textContent=Qtot.toFixed(3);
-  $('rms').textContent=(rms*100).toFixed(2)+' %';
-  $('rmsbar').style.width=clamp(100-(rms*1000),0,100)+'%';
-  $('power').textContent=power.toFixed(1);
-  $('hzval').textContent=S.hz;
-  // rivit ja taulukko
-  S.branches.forEach((b,i)=>{
-    $('q_'+i).textContent=Qs[i].toFixed(3);
-    const err=errPct[i]*100;
-    $('err_'+i).textContent=(err>0?'+':'')+err.toFixed(1)+'%';
-    $('err_'+i).className=Math.abs(err)<=S.tol*100?'ok':'err';
+function updateSchematicVisuals(){
+  // pipe width ~ flow, text ~ pressure
+  let maxQ=0; G.branches.forEach(b=>{ if(b.flow>maxQ) maxQ=b.flow; });
+  for(let i=0;i<6;i++){
+    const b=G.branches[i];
+    const w = clamp(6 + 26*(b.flow/Math.max(0.001,maxQ)), 6, 32);
+    const el=$('bline'+i); if(el) el.setAttribute('stroke-width', w.toFixed(1));
+    const pt=$('ptxt'+i); if(pt) pt.textContent=`P=${b.meterP.toFixed(2)}`;
+    // subs stroke on/off
+    b.subs.forEach((s,idx)=>{
+      const sl=$(`subline${i}_${idx}`); if(sl){ sl.setAttribute('stroke-width', s.on?6:2); sl.setAttribute('stroke', s.on?'#66ffc2aa':'#6ea8ff55'); }
+    });
+  }
+}
+
+/* ===== Side Stats ===== */
+function updateSide(){
+  $('qtot').textContent=G.qtot.toFixed(3);
+  $('phead').textContent=G.phead.toFixed(3);
+  $('qbar').style.width = clamp( (G.qtot/ (6*1.5))*100, 0, 100)+'%';
+  $('pbar').style.width = clamp( (G.phead/ (G.Ps*1.2))*100, 0, 100)+'%';
+  $('energy').textContent = G.energy.toFixed(1);
+  $('time').textContent = Math.ceil(G.timeLeft)+' s';
+  $('tbar').style.width = clamp( (G.timeLeft/G.timeMax)*100, 0, 100)+'%';
+
+  // pressures list
+  const pl=$('pressList'); pl.innerHTML='';
+  G.branches.forEach((b,i)=>{
+    const d=document.createElement('div'); d.className='pill';
+    d.style.cursor='pointer';
+    d.onclick=()=>selectBranch(i);
+    d.innerHTML = `<strong>${b.name}</strong>&nbsp; P=${b.meterP.toFixed(2)} • open=${Math.round(b.open*100)}%${b.stuckMin>0?' (min '+Math.round(b.stuckMin*100)+'%)':''}`;
+    pl.appendChild(d);
   });
-  renderTable(Qs,errPct);
-  // skeema
-  updateSchematic(dp,Qs,errPct);
 
-  if(rms<=S.tol){
-    const baseGain=Math.max(1,Math.round(50*(S.tol-rms+0.0001)));
-    const eco = ecoTitle(power, Qtot);
-    const penalty = S.helpDebt;
-    const netGain = Math.max(0, baseGain + eco.bonus - penalty);
-    S.score += netGain;
-    if(S.score>S.best){S.best=S.score;localStorage.setItem('network_best',S.best);}
-    $('score').textContent=S.score; $('best').textContent=S.best;
-    msg(`Tasapaino! RMS ${(rms*100).toFixed(2)} %. ${eco.title} (P/Q=${eco.sp.toFixed(2)})  +${eco.bonus}p  ${penalty?`| Apuvähennys −${penalty}p`:''}  ⇒ +${netGain}p`, true);
-    nextRound();
-  } else msg('');
+  $('leaksLeft').textContent = (G.leaks.length - G.leaksFound);
+  $('stuckInfo').textContent = G.stuckInfo ? 'mahdollinen' : 'ei';
+  $('driftInfo').textContent = (G.driftAmp*100).toFixed(0)+'%';
+  $('selBranch').textContent = G.branches[G.selected].name;
+  $('selOpen').textContent = Math.round(G.branches[G.selected].open*100)+'%';
 }
 
-// ---- Kierrokset ----
-function initBranches(){
-  S.branches=Array.from({length:S.N},(_,i)=>({
-    name:['A','B','C'][i],
-    Kvs:1 + (Math.random()*0.6 - 0.3), // 0.7–1.3
-    open:0.3 + Math.random()*0.4,      // 0.3–0.7
-    targetQ:0, faultFactor:1
-  }));
-  renderRows();
-}
-function bakeTargets(){
-  const backup=S.branches.map(b=>b.open);
-  S.branches.forEach(b=> b.open = 0.25 + Math.random()*0.65);
-  const {Qs}=compute();
-  S.branches.forEach((b,i)=> b.targetQ = Qs[i]);
-  S.branches.forEach((b,i)=> b.open = clamp(backup[i] + (Math.random()*0.4-0.2), 0.05, 0.95));
-}
-function resetOpens(){
-  S.branches.forEach(b=>{
-    b.open = clamp(b.open + (Math.random()*0.3-0.15), 0.05, 0.95);
-    b.faultFactor = 1;
-  });
-  S.helpDebt = 0;
-}
-function nextRound(){
-  S.round++; $('round').textContent=S.round;
-  initBranches(); bakeTargets(); resetOpens(); update();
+/* ===== Hint Flash ===== */
+function flashHint(bi, si){
+  const el=$('bline'+bi);
+  if(el){ const old=el.getAttribute('stroke'); el.setAttribute('stroke','#ffd166'); setTimeout(()=>{ el.setAttribute('stroke',old); },900); }
+  if(si!=null){
+    const sl=$(`subline${bi}_${si}`); if(sl){ const old=sl.getAttribute('stroke'); sl.setAttribute('stroke','#ffd166'); setTimeout(()=>{ sl.setAttribute('stroke',old); },900); }
+  }
 }
 
-// ---- AI-vinkki ja vihje ----
-function aiAdvice(){
-  const {dp,Qs,Qtot}=compute();
-  const Qtot_tgt = S.branches.reduce((a,b)=>a+b.targetQ,0);
-  let worstI=0, worstErr=-1;
-  S.branches.forEach((b,i)=>{
-    const e=Math.abs(Qs[i]-b.targetQ)/(b.targetQ||1);
-    if(e>worstErr){ worstErr=e; worstI=i; }
-  });
-  const b=S.branches[worstI];
-  const localSlope = (b.Kvs*(b.faultFactor||1)) * S.n * Math.pow(clamp(b.open,0.001,1), S.n-1) * Math.sqrt(Math.max(0,dp));
-  const deltaOpen = clamp(((b.targetQ - Qs[worstI]) / Math.max(1e-6,localSlope)) * 0.5, -0.2, 0.2);
-  const deltaPct = Math.round(deltaOpen*100);
-  let hzTip='';
-  const sysErr = (Qtot - Qtot_tgt)/(Qtot_tgt||1);
-  if(sysErr < -0.08) hzTip='Lisää pumppunopeutta +2…3 Hz.';
-  else if(sysErr > 0.08) hzTip='Pienennä pumppunopeutta −2…3 Hz.';
-  S.helpDebt += 4;
-  msg(`AI-vinkki+: säädä haaraa ${b.name} ${deltaPct>0?('+'+deltaPct):deltaPct}% ${deltaPct>=0?'auki':'kiinni'}. ${hzTip?hzTip+' ':''}(Apuvähennys −4p)`);
-}
+/* ===== Help Modal ===== */
+$('helpBtn').onclick=()=>{ $('helpModal').style.display='flex'; };
+$('helpClose').onclick=()=>{ $('helpModal').style.display='none'; };
+$('helpModal').addEventListener('click',(e)=>{ if(e.target.id==='helpModal') e.currentTarget.style.display='none'; });
 
-$('new').addEventListener('click', ()=>{
-  S.score = 0; $('score').textContent = S.score;
-  S.round = 1; $('round').textContent = S.round;
-  S.hz = 50; $('hz').value = 50; $('hzval').textContent = 50;
-  initBranches(); bakeTargets(); resetOpens(); update();
+/* ===== Guess Modal open from controls ===== */
+function perfms(){ return performance.now(); }
+
+/* ===== Game Loop ===== */
+let perfNow = performance.now();
+function updateAll(){
+  solveNetwork();
+  updateSchematicVisuals();
+  updateSide();
+}
+function gameTick(){
+  perfNow = performance.now();
+  if(!G.finished){
+    // integrate energy
+    G.energy += G.qtot * G.phead * G.dt;
+    // time
+    G.timeLeft -= G.dt;
+    if(G.timeLeft<=0){
+      G.timeLeft=0; finishRound(false);
+    }
+  }
+  updateSide();
+}
+setInterval(gameTick, G.dt*1000);
+
+/* ===== Init ===== */
+setupLevel();
+updateAll();
+
+/* ===== Keyboard helpers ===== */
+window.addEventListener('keydown',(e)=>{
+  if(e.key==='ArrowLeft') adjOpen(-0.05);
+  if(e.key==='ArrowRight') adjOpen(+0.05);
 });
-$('hint').addEventListener('click', ()=>{
-  const {Qs}=compute();
-  let worstI=0, worstErr=-1;
-  S.branches.forEach((b,i)=>{
-    const e=Math.abs(Qs[i]-b.targetQ)/(b.targetQ||1);
-    if(e>worstErr){ worstErr=e; worstI=i; }
-  });
-  const b=S.branches[worstI];
-  const dir = (Qs[worstI] < b.targetQ) ? +1 : -1;
-  b.open = clamp(b.open + dir*0.03, 0.0, 1.0);
-  S.helpDebt += 2;
-  msg(`Vihje: säädä haaraa ${b.name} hieman ${dir>0?'auki':'kiinni'} (−2p).`);
-  update();
-});
-$('aihint').addEventListener('click', aiAdvice);
-$('fault').addEventListener('click', ()=>{
-  const i=Math.floor(Math.random()*S.branches.length);
-  const b=S.branches[i];
-  b.faultFactor = 0.6 + Math.random()*0.2;
-  msg(`Häiriö: haara ${b.name} kuristui (Kvs × ${b.faultFactor.toFixed(2)}). Kompensoi säädöillä!`);
-  update();
-});
-$('pro').addEventListener('change', (e)=>{ $('probox').open = e.target.checked; });
-$('hz').addEventListener('input', (e)=>{ S.hz = Number(e.target.value); $('hzval').textContent=S.hz; update(); });
-window.addEventListener('keydown', (e)=>{ if(e.key==='n'||e.key==='N') $('new').click(); });
 
-// INIT
-(function init(){
-  $('best').textContent=S.best; $('round').textContent=S.round;
-  $('hz').value=S.hz; $('hzval').textContent=S.hz;
-  buildSchematic();
-  initBranches(); bakeTargets(); resetOpens(); update();
-})();
+/* ===== Expose for select change ===== */
 </script>
 </body>
 </html>
