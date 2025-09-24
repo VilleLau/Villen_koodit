@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sitaattikone • Villen koodailut</title>
+  <link rel="icon" href="favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Sama hero-tausta kuin etusivulla */
+    .bg-hero{
+      background-image:
+        linear-gradient(135deg, rgba(2,6,23,.90), rgba(15,23,42,.85)),
+        url('bg.jpg'); /* varmistu että bg.jpg on repon juuressa */
+      background-size: cover;
+      background-position: center 20%;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .glass {
+      backdrop-filter: blur(6px);
+      background: rgba(17, 24, 39, 0.35);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .text-glow { text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+    blockquote { quotes: "“" "”" "‘" "’"; }
+    blockquote::before { content: open-quote; }
+    blockquote::after  { content: close-quote; }
+  </style>
+</head>
+<body class="bg-hero text-white min-h-screen">
+  <!-- Yläpalkki -->
+  <nav class="bg-white/10 backdrop-blur border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-2 text-sm text-slate-200 flex items-center gap-3">
+      <a href="index.html" class="hover:underline">← Etusivu</a>
+      <span class="text-slate-400">|</span>
+      <span>Sitaattikone</span>
+      <span class="ml-auto text-xs text-slate-300">Vinkki: paina välilyöntiä saadaksesi uuden sitaatin</span>
+    </div>
+  </nav>
+
+  <!-- Pääsisältö -->
+  <main class="max-w-4xl mx-auto px-4 py-10">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-glow">Sitaattikone</h1>
+      <p class="text-slate-300">Tekniikan ja tieteen hengessä – mukana myös muiden alojen viisauksia. (Suomennoksia)</p>
+    </header>
+
+    <section class="glass rounded-3xl p-6 sm:p-10 shadow-xl">
+      <figure class="space-y-4">
+        <blockquote id="quote-text" class="text-2xl sm:text-3xl leading-tight text-slate-50"></blockquote>
+        <figcaption id="quote-author" class="text-right text-slate-300 text-lg"></figcaption>
+      </figure>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <button id="btn-next" class="px-5 py-3 rounded-2xl bg-violet-500 hover:bg-violet-400 text-slate-900 font-semibold shadow">
+          Uusi sitaatti
+        </button>
+        <button id="btn-copy" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-slate-100">
+          Kopioi leikepöydälle
+        </button>
+        <label class="inline-flex items-center gap-2 text-slate-200 ml-auto">
+          <input id="auto-toggle" type="checkbox" class="h-4 w-4">
+          <span class="text-sm">Automaattinen vaihto (10 s)</span>
+        </label>
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-slate-300 py-6">
+      © <script>document.write(new Date().getFullYear())</script> Jukkola Systems Oy • Villen koodailut
+    </footer>
+  </main>
+
+  <script>
+    // Suomenkielisiä sitaatteja (suomennoksia), tekniikka/tiede + muut alat
+    // Huom: nämä ovat yleisesti tunnettuja lainauksia käännettyinä vapaasti.
+    const QUOTES = [
+      { t: "Kuvittelu on tärkeämpää kuin tieto, sillä tieto on rajallista.", a: "Albert Einstein" },
+      { t: "Jos et pysty selittämään asiaa yksinkertaisesti, et ymmärrä sitä tarpeeksi hyvin.", a: "Albert Einstein" },
+      { t: "Luontoa täytyy yksinkertaistaa, mutta ei yksinkertaistaa liikaa.", a: "Albert Einstein (mukaillen)" },
+      { t: "Tiede on tapa olla olematta typerä.", a: "Richard Feynman (mukaillen)" },
+      { t: "Mitä en pysty rakentamaan, sitä en ymmärrä.", a: "Richard Feynman" },
+      { t: "Ihmiset, jotka ovat tarpeeksi hulluja uskoakseen voivansa muuttaa maailmaa, ovat niitä, jotka niin tekevät.", a: "Steve Jobs" },
+      { t: "Laadulla tarkoitan sitä, että teet sen oikein silloinkin, kun kukaan ei katso.", a: "Henry Ford" },
+      { t: "Paras tapa ennustaa tulevaisuus on keksiä se.", a: "Alan Kay" },
+      { t: "Jos haluat ymmärtää funktion, katso sen koodia; jos haluat ymmärtää ohjelmaa, katso sen käyttöä.", a: "Gerald Weinberg" },
+      { t: "Yksinkertaisuus on tehokkuuden sielu.", a: "Austin Freeman (mukaillen)" },
+      { t: "Täydellisyys saavutetaan, ei kun ei ole enää mitään lisättävää, vaan kun ei ole enää mitään poistettavaa.", a: "Antoine de Saint-Exupéry" },
+      { t: "Onnistuminen on siirtymistä epäonnistumisesta toiseen innostusta menettämättä.", a: "Winston Churchill" },
+      { t: "Nopeammin, korkeammalle, vahvemmin – mutta älä unohda: viisaammin.", a: "Tuntematon" },
+      { t: "Jos sinulla on vain vasara, kaikki näyttää naulalta.", a: "Abraham Maslow" },
+      { t: "Mittaus on tietämisen äiti.", a: "Lord Kelvin (mukaillen)" },
+      { t: "Sitä saat, mitä mittaat.", a: "Peter Drucker (mukaillen)" },
+      { t: "Suunnitelmat eivät ole mitään; suunnittelu on kaikki.", a: "Dwight D. Eisenhower" },
+      { t: "Nopeuta palautejännettä – parannat laatua.", a: "W. Edwards Deming (mukaillen)" },
+      { t: "Kauneus syntyy rajoitteista.", a: "Paul Graham (mukaillen)" },
+      { t: "Hyvät ohjelmoijat ratkaisevat ongelmia; erinomaiset ehkäisevät niitä.", a: "Tuntematon" },
+      { t: "Optimointi ennen aikojaan on kaiken pahan alku ja juuri.", a: "Donald Knuth" },
+      { t: "Tietoturva ei ole tuote vaan prosessi.", a: "Bruce Schneier" },
+      { t: "Innovaatiota ei voi ulkoistaa.", a: "Jeff Bezos (mukaillen)" },
+      { t: "Sähkö on vain järjestettyä salamaa.", a: "George Carlin (leikillinen)" },
+      { t: "Hyvä suunnittelu on näkymätöntä.", a: "Dieter Rams (mukaillen)" },
+      { t: "Koneet tekevät työn, mutta ihmiset tekevät ihmeet.", a: "Tuntematon" },
+      { t: "Insinööri on joku, joka tekee yhden euron osasta tuotteen, jota voi myydä kahdella eurolla.", a: "Tuntematon (leikillinen)" },
+      { t: "Kaksi vaikeaa asiaa tietojenkäsittelyssä: välimuistin mitätöinti ja nimeäminen.", a: "Phil Karlton" },
+      { t: "Tieto kasvaa jakamalla.", a: "Tuntematon" },
+      { t: "Jos et voi mitata sitä, et voi parantaa sitä.", a: "Lord Kelvin (mukaillen)" },
+      { t: "Älä selitä, osoita.", a: "Ludwig Wittgenstein (mukaillen)" },
+      { t: "Luotettavuus ei ole ominaisuus vaan seuraus hyvästä suunnittelusta.", a: "Tuntematon" },
+      { t: "Kaikki mallit ovat vääriä, mutta jotkut ovat hyödyllisiä.", a: "George Box" },
+      { t: "Koodaa niin kuin se, joka lukee sen, on väkivaltainen ja tietää missä asut.", a: "John Woods (leikillinen)" },
+      { t: "Sähkön hinta unohtuu, jos tehokkuus on pielessä.", a: "Tuntematon" },
+      { t: "Jos algoritmi on monimutkainen, ongelma on väärin muotoiltu.", a: "Edsger Dijkstra (mukaillen)" },
+      { t: "Yksinkertainen on vaikeampaa kuin monimutkainen: pitää työskennellä kovemmin saadakseen ajattelun selkeäksi.", a: "Steve Jobs (mukaillen)" },
+      { t: "Ei ole olemassa epäonnistumista – on dataa.", a: "Tuntematon" },
+      { t: "Älä optimoi minuutteja, optimoi virtaus.", a: "Tuntematon (flow)" },
+      { t: "Pidä kaikki niin yksinkertaisena kuin mahdollista, mutta ei yksinkertaisempana.", a: "Albert Einstein (mukaillen)" },
+      { t: "Parempi hyvä arvio nyt kuin täydellinen tieto liian myöhään.", a: "Tuntematon" },
+      { t: "Vika löytyy sieltä, missä sitä ei etsitä.", a: "Murphyn laki (mukaillen)" },
+      { t: "Teoria kertoo, mitä voidaan tehdä; käytäntö, mitä pitää tehdä.", a: "Karl Popper (mukaillen)" },
+      { t: "Tiede on järjestettyä uteliaisuutta.", a: "Peter Medawar (mukaillen)" },
+      { t: "On kaksi tapaa suunnitella: tee se yksinkertaiseksi tai tee se uudelleen.", a: "Tuntematon" },
+      { t: "Sankari ei ole se, joka koodaa eniten, vaan se, joka poistaa eniten turhaa.", a: "Tuntematon" },
+      { t: "Aika, ei raha, on kovin rajoite.", a: "Tim Cook (mukaillen)" },
+      { t: "Järjestelmät käyttäytyvät kuten ne on suunniteltu käyttäytymään, ei kuten toivot.", a: "Tuntematon" },
+      { t: "Kestävää on vain se, mikä on yksinkertaista ja selkeää.", a: "Ludwig Mies van der Rohe (mukaillen)" },
+      { t: "Pieni parannus joka päivä voittaa ison kertarysäyksen.", a: "Kaizen-periaate (mukaillen)" },
+      { t: "Kokeilu on paras dokumentaatio.", a: "Tuntematon" },
+      { t: "Kun mittaat, yllätyt; kun seuraat, opit; kun ohjaat, parannat.", a: "Tuntematon" },
+      { t: "Turvallisin koodi on koodi, jota ei ole.", a: "Tuntematon" },
+      { t: "Visio ilman toteutusta on pelkkä harha.", a: "Henry Ford (mukaillen)" },
+      { t: "Menestys on 1% inspiraatiota ja 99% hikoilua.", a: "Thomas Edison" },
+      { t: "Jos haluat löytää salaisuudet, ajattele energiaa, taajuutta ja värähtelyä.", a: "Nikola Tesla (mukaillen)" },
+      { t: "Mittauksessa on viisauden alku.", a: "Arkhimedes (mukaillen)" },
+      { t: "Luova mieli ratkaisee ongelman ennen kuin se syntyy.", a: "Niels Bohr (mukaillen)" },
+      { t: "Koneet oppivat, koska me opetamme niille, mitä kannattaa oppia.", a: "Tuntematon (ML)" },
+      { t: "Hyvä arkkitehtuuri on päätöksiä, joita ei tarvitse katua.", a: "Tuntematon" },
+      { t: "Virhe on dataa siitä, missä mallisi loppuu.", a: "Tuntematon" }
+    ];
+
+    const elText   = document.getElementById('quote-text');
+    const elAuthor = document.getElementById('quote-author');
+    const btnNext  = document.getElementById('btn-next');
+    const btnCopy  = document.getElementById('btn-copy');
+    const autoTgl  = document.getElementById('auto-toggle');
+
+    let idx = -1, timer = null;
+    const KEY = 'muuta_quote_idx';
+
+    function render(i){
+      const q = QUOTES[i];
+      elText.textContent = q.t;
+      elAuthor.textContent = "— " + q.a;
+      idx = i;
+      try { localStorage.setItem(KEY, String(i)); } catch {}
+    }
+
+    function nextQuote(){
+      if (QUOTES.length === 0) return;
+      let i = Math.floor(Math.random() * QUOTES.length);
+      if (idx >= 0 && QUOTES.length > 1) {
+        // vältä samaa peräkkäin
+        while (i === idx) i = Math.floor(Math.random() * QUOTES.length);
+      }
+      render(i);
+    }
+
+    function startAuto(){ stopAuto(); timer = setInterval(nextQuote, 10000); }
+    function stopAuto(){ if (timer) { clearInterval(timer); timer = null; } }
+
+    // Tapahtumat
+    btnNext.addEventListener('click', nextQuote);
+    btnCopy.addEventListener('click', async () => {
+      const txt = `${elText.textContent}\n${elAuthor.textContent}`;
+      try { await navigator.clipboard.writeText(txt); btnCopy.textContent = "Kopioitu!"; setTimeout(()=>btnCopy.textContent="Kopioi leikepöydälle", 1200); }
+      catch { alert("Kopiointi ei onnistunut tässä selaimessa."); }
+    });
+    autoTgl.addEventListener('change', e => e.target.checked ? startAuto() : stopAuto());
+    window.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); nextQuote(); } });
+
+    // Alustus: jatka edellisestä tai arvo uusi
+    (function init(){
+      const saved = parseInt(localStorage.getItem(KEY) || "-1", 10);
+      if (!Number.isNaN(saved) && saved >= 0 && saved < QUOTES.length) {
+        render(saved);
+      } else {
+        nextQuote();
+      }
+    })();
+  </script>
+</body>
+</html>
