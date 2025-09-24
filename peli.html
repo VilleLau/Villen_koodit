@@ -1,399 +1,476 @@
 <!doctype html>
 <html lang="fi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>HydroBalance – Venttiiliverkon tasapainotuspeli</title>
-  <style>
-    :root{
-      --bg:#0b1020;--panel:#0f172e;--panel2:#0c1428;--muted:#9fb3c8;
-      --accent:#39d353;--accent2:#5ea0ff;--warn:#ffb020;--danger:#ff4d6d;
-      --radius:18px;--shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;background:radial-gradient(1200px 600px at 20% -10%, rgba(94,160,255,.12), transparent 60%),
-      radial-gradient(1000px 500px at 110% 10%, rgba(57,211,83,.10), transparent 60%), linear-gradient(#0b1020,#0b1020);
-      color:#e8f0ff;font:16px/1.4 ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
-      display:flex;align-items:center;justify-content:center;padding:20px;
-    }
-    .wrap{width:min(100%,1100px);display:grid;gap:16px}
-    header{
-      background:linear-gradient(180deg,#111a33,#0f1730 50%,#0c142a);
-      border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);
-      padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px
-    }
-    .brand{display:flex;align-items:center;gap:12px;font-weight:800}
-    .chip{height:34px;width:34px;border-radius:8px;background:#0b132a;display:grid;place-items:center;
-      border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 12px rgba(94,160,255,.25)}
-    .chip .dot{height:8px;width:8px;border-radius:2px;background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
-    .links a{color:#b8c8e6;text-decoration:none;border:1px solid rgba(255,255,255,.08);
-      padding:8px 12px;border-radius:10px;transition:.15s;background:#0c152b}
-    .links a:hover{color:#fff;border-color:rgba(255,255,255,.18);transform:translateY(-1px)}
-    .grid{display:grid;gap:16px;grid-template-columns:1.1fr .9fr}
-    @media (max-width:980px){.grid{grid-template-columns:1fr}}
-    .panel{
-      background:linear-gradient(180deg, var(--panel), #0b1327 60%, #0a1122);
-      border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px
-    }
-    .title{margin:0 0 10px 0;font-size:15px;color:var(--muted);letter-spacing:.3px}
-    .row{display:grid;grid-template-columns:130px 1fr 100px 100px;gap:10px;align-items:center;margin:8px 0}
-    .label{opacity:.9}
-    input[type=range]{width:100%}
-    .pill{border:1px solid rgba(255,255,255,.08);background:#0b142a;padding:8px 10px;border-radius:12px;display:inline-flex;gap:6px;align-items:center}
-    .controls{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
-    .btn{
-      border:1px solid rgba(255,255,255,.08);background:#0c152b;color:#e9f2ff;padding:10px 14px;border-radius:12px;
-      cursor:pointer;font-weight:800;letter-spacing:.3px;transition:.08s ease;box-shadow:var(--shadow)
-    }
-    .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.18)}
-    .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547);border-color:rgba(94,160,255,.35)}
-    .btn.good{background:linear-gradient(180deg,#133523,#0f2b1d);border-color:rgba(57,211,83,.35)}
-    .btn.warn{background:linear-gradient(180deg,#3a2d12,#2b2110);border-color:rgba(255,176,32,.35)}
-    .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-    .card{background:linear-gradient(180deg,#0c162e,#0b1428);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px}
-    .big{font-weight:800}
-    .bar{height:10px;background:#0a1120;border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
-    .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#5bd26d 60%,#9cffc1);width:0;transition:width .25s ease}
-    .err{color:var(--danger);font-weight:800}
-    .ok{color:var(--accent);font-weight:800}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:right}
-    th:first-child,td:first-child{text-align:left}
-    .hint{font-size:13px;color:var(--muted)}
-    details{margin-top:8px}
-    footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px;margin-top:10px}
-    kbd{background:#0c152b;border:1px solid rgba(255,255,255,.15);border-bottom-color:rgba(0,0,0,.6);border-radius:6px;padding:1px 6px;font-size:12px;color:#d9e6ff}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HydroBalance – Venttiiliverkon tasapainotuspeli</title>
+<style>
+  :root{
+    --bg:#0b1020;--panel:#0f172e;--panel2:#0c1428;--muted:#9fb3c8;
+    --accent:#39d353;--accent2:#5ea0ff;--warn:#ffb020;--danger:#ff4d6d;
+    --radius:18px;--shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(94,160,255,.12), transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, rgba(57,211,83,.10), transparent 60%),
+      linear-gradient(#0b1020,#0b1020);
+    color:#e8f0ff;font:16px/1.4 ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .wrap{width:min(100%,1100px);display:grid;gap:16px}
+  header{
+    background:linear-gradient(180deg,#111a33,#0f1730 50%,#0c142a);
+    border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800}
+  .chip{height:34px;width:34px;border-radius:8px;background:#0b132a;display:grid;place-items:center;
+    border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 12px rgba(94,160,255,.25)}
+  .chip .dot{height:8px;width:8px;border-radius:2px;background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
+  .links a{color:#b8c8e6;text-decoration:none;border:1px solid rgba(255,255,255,.08);
+    padding:8px 12px;border-radius:10px;transition:.15s;background:#0c152b}
+  .links a:hover{color:#fff;border-color:rgba(255,255,255,.18);transform:translateY(-1px)}
+  .panel{
+    background:linear-gradient(180deg,var(--panel),#0b1327 60%,#0a1122);
+    border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px
+  }
+  .title{margin:0 0 10px 0;font-size:15px;color:var(--muted);letter-spacing:.3px}
+  .grid{display:grid;gap:16px;grid-template-columns:1.1fr .9fr}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+  .btn{
+    border:1px solid rgba(255,255,255,.08);background:#0c152b;color:#e9f2ff;padding:10px 14px;border-radius:12px;
+    cursor:pointer;font-weight:800;letter-spacing:.3px;transition:.08s ease;box-shadow:var(--shadow)
+  }
+  .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.18)}
+  .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547);border-color:rgba(94,160,255,.35)}
+  .btn.good{background:linear-gradient(180deg,#133523,#0f2b1d);border-color:rgba(57,211,83,.35)}
+  .btn.warn{background:linear-gradient(180deg,#3a2d12,#2b2110);border-color:rgba(255,176,32,.35)}
+  .row{display:grid;grid-template-columns:130px 1fr 100px 100px;gap:10px;align-items:center;margin:8px 0}
+  .label{opacity:.9}
+  input[type=range]{width:100%}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .card{background:linear-gradient(180deg,#0c162e,#0b1428);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px}
+  .big{font-weight:800}
+  .bar{height:10px;background:#0a1120;border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+  .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#5bd26d 60%,#9cffc1);width:0;transition:width .25s ease}
+  .err{color:var(--danger);font-weight:800}
+  .ok{color:var(--accent);font-weight:800}
+  .hint{font-size:13px;color:var(--muted)}
+  details{margin-top:8px}
+  footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px;margin-top:10px}
+
+  /* Skeema */
+  .schem-panel{grid-column:1/-1}
+  svg#schem{width:100%;height:auto;background:linear-gradient(180deg,#0e1630,#0b1226)}
+  .pipe{fill:none;stroke:#6ea8ff55;stroke-linecap:round;stroke-linejoin:round}
+  .node{fill:#0b1226;stroke:#8fb4ff66}
+  .pumpText,.branchText{font-size:13px;fill:#cfe3ff}
+  .bubble{fill:#0b142a;stroke:#ffffff20}
+  .badge{font-size:11px;fill:#9fb3c8}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="chip"><div class="dot"></div></div>
-        <div>HydroBalance <span style="opacity:.6;font-weight:600">— Venttiiliverkon tasapainotuspeli</span></div>
-      </div>
-      <div class="links">
-        <a href="./index.html">⬅ Etusivu</a>
-        <a href="https://github.com/villelau/Villen_koodit" target="_blank" rel="noopener">GitHub</a>
-      </div>
-    </header>
-
-    <div class="grid">
-      <!-- VASEN: SÄÄTIMET -->
-      <section class="panel" id="left">
-        <h3 class="title">Venttiilien säädöt</h3>
-        <div class="controls">
-          <button class="btn primary" id="new">Uusi kierros (N)</button>
-          <button class="btn good" id="hint">Vihje</button>
-          <button class="btn good" id="aihint">AI-vinkki+</button>
-          <button class="btn warn" id="fault">Häiriö</button>
-          <label class="pill"><input id="pro" type="checkbox" /> Insinööritila</label>
-        </div>
-        <div class="row">
-          <div class="label">Pumppunopeus (Hz)</div>
-          <input type="range" min="30" max="60" value="50" step="1" id="hz" />
-          <div><span id="hzval">50</span></div>
-          <div>Hz</div>
-        </div>
-        <div id="rows"></div>
-
-        <details style="margin-top:12px">
-          <summary><strong>Miten pelataan</strong></summary>
-          <ul class="hint" style="margin:8px 0 0 18px; line-height:1.6">
-            <li>Tavoite: säädä jokaisen haaran virtaama Q<sub>tgt</sub>-arvoonsa (±5&nbsp;%).</li>
-            <li>Venttiilit vaikuttavat <em>toisiinsa</em> yhteisen Δp:n kautta.</li>
-            <li>Pumppunopeus (Hz) muuttaa pumpun käyrää (affiniteetit).</li>
-            <li><strong>Vihje</strong> tekee pienen automaattisen säädön (−2p, kertyy kierrokselle).</li>
-            <li><strong>AI-vinkki+</strong> ehdottaa haaraa ja askelta (−4p, kertyy kierrokselle).</li>
-            <li><strong>Häiriö</strong> kuristaa satunnaista haaraa; kompensoi säädöillä.</li>
-            <li><kbd>N</kbd> = uusi kierros.</li>
-          </ul>
-        </details>
-
-        <div class="hint" style="margin-top:8px">Säädä venttiilejä ja pumppunopeutta: tavoitteena haarojen Q<sub>tgt</sub> (±5 %).</div>
-      </section>
-
-      <!-- OIKEA: MITTARIT & TILASTOT -->
-      <aside class="panel" id="right">
-        <h3 class="title">Verkon tila</h3>
-
-        <div class="statgrid">
-          <div class="card">
-            <div>RMS-virhe</div>
-            <div id="rms" class="big err">—</div>
-            <div class="bar"><div id="rmsbar"></div></div>
-          </div>
-          <div class="card">
-            <div>Δp</div>
-            <div id="dp" class="big">—</div>
-          </div>
-          <div class="card">
-            <div>Q<sub>tot</sub></div>
-            <div id="qtot" class="big">—</div>
-          </div>
-          <div class="card">
-            <div>Pumpputeho</div>
-            <div id="power" class="big">—</div>
-          </div>
-        </div>
-
-        <h3 class="title" style="margin-top:14px">Haarojen virtaamat</h3>
-        <table id="table">
-          <thead>
-            <tr><th>Haara</th><th>Q (nyt)</th><th>Q<sub>tgt</sub></th><th>Virhe %</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-
-        <details id="probox">
-          <summary>Insinööritila – parametrit & kaavat</summary>
-          <div class="card" style="margin-top:8px">
-            <div><strong>Pumppu:</strong> H(Q) = H<sub>0</sub>·n² − a·n²·Q²</div>
-            <div><strong>Haara:</strong> Q<sub>i</sub> = K<sub>vs,i</sub>·open<sup>n</sup>·√Δp</div>
-          </div>
-        </details>
-
-        <div class="card" style="margin-top:12px">
-          <div>Score: <strong id="score">0</strong> | Paras: <strong id="best">0</strong> | Kierros: <strong id="round">1</strong></div>
-          <div id="msg" style="margin-top:6px"></div>
-        </div>
-      </aside>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="chip"><div class="dot"></div></div>
+      <div>HydroBalance <span style="opacity:.6;font-weight:600">— Venttiiliverkon tasapainotuspeli</span></div>
     </div>
+    <div class="links">
+      <a href="./index.html">⬅ Etusivu</a>
+      <a href="https://github.com/villelau/Villen_koodit" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
 
-    <footer>© <span id="year"></span> HydroBalance – Villen koodailut</footer>
+  <!-- SKEEMA -->
+  <section class="panel schem-panel">
+    <h3 class="title">Verkon skeema</h3>
+    <svg id="schem" viewBox="0 0 800 420" role="img" aria-label="Pumppu ja kolme rinnakkaista haaraa"></svg>
+    <div class="hint" style="margin-top:8px">
+      Putken <strong>paksuus</strong> = virtaama. <span style="color:#39d353">Vihreä</span> = tavoite (±5 %) ok, <span style="color:#ff4d6d">punainen</span> = vielä pielessä.
+      Infokuplat näyttävät kunkin haaran Q, Q<sub>tgt</sub>, virhe% ja venttiilin avautuman.
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- VASEN: SÄÄTIMET -->
+    <section class="panel" id="left">
+      <h3 class="title">Säädöt</h3>
+      <div class="controls">
+        <button class="btn primary" id="new">Uusi kierros (N)</button>
+        <button class="btn good" id="hint">Vihje</button>
+        <button class="btn good" id="aihint">AI-vinkki+</button>
+        <button class="btn warn" id="fault">Häiriö</button>
+        <label class="hint" style="padding-left:6px"><input id="pro" type="checkbox" /> Insinööritila</label>
+      </div>
+
+      <div class="row">
+        <div class="label">Pumppunopeus (Hz)</div>
+        <input type="range" min="30" max="60" value="50" step="1" id="hz" />
+        <div><span id="hzval">50</span></div>
+        <div>Hz</div>
+      </div>
+
+      <div id="rows"></div>
+
+      <details style="margin-top:12px">
+        <summary><strong>Miten pelataan</strong></summary>
+        <ul class="hint" style="margin:8px 0 0 18px; line-height:1.6">
+          <li>Säädä <strong>venttiilejä</strong> (A–C) ja tarvittaessa <strong>pumppunopeutta</strong>, kunnes jokaisen haaran Q osuu Q<sub>tgt</sub> (±5&nbsp;%).</li>
+          <li>Yhden haaran muutos vaikuttaa muihin yhteisen Δp:n kautta.</li>
+          <li><strong>Vihje</strong> tekee pienen automaattisen säädön (−2p/kierros). <strong>AI-vinkki+</strong> kertoo haara+askel+mahd. Hz (−4p/kierros).</li>
+          <li><strong>Häiriö</strong> kuristaa satunnaista haaraa (Kvs↓) – kompensoi.</li>
+          <li><kbd>N</kbd> = uusi kierros.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- OIKEA: MITTARIT & TILASTOT -->
+    <aside class="panel" id="right">
+      <h3 class="title">Mittarit</h3>
+      <div class="statgrid">
+        <div class="card">
+          <div>RMS-virhe</div>
+          <div id="rms" class="big err">—</div>
+          <div class="bar"><div id="rmsbar"></div></div>
+        </div>
+        <div class="card">
+          <div>Δp</div>
+          <div id="dp" class="big">—</div>
+        </div>
+        <div class="card">
+          <div>Q<sub>tot</sub></div>
+          <div id="qtot" class="big">—</div>
+        </div>
+        <div class="card">
+          <div>Pumpputeho</div>
+          <div id="power" class="big">—</div>
+        </div>
+      </div>
+
+      <h3 class="title" style="margin-top:14px">Taulukko</h3>
+      <table id="table">
+        <thead>
+          <tr><th>Haara</th><th>Q (nyt)</th><th>Q<sub>tgt</sub></th><th>Virhe %</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <details id="probox">
+        <summary>Insinööritila – kaavat</summary>
+        <div class="card" style="margin-top:8px">
+          <div><strong>Pumppu:</strong> H(Q) = H<sub>0</sub>·n² − a·n²·Q²</div>
+          <div><strong>Haara:</strong> Q<sub>i</sub> = K<sub>vs,i</sub>·open<sup>n</sup>·√Δp</div>
+        </div>
+      </details>
+
+      <div class="card" style="margin-top:12px">
+        <div>Score: <strong id="score">0</strong> | Paras: <strong id="best">0</strong> | Kierros: <strong id="round">1</strong></div>
+        <div id="msg" style="margin-top:6px"></div>
+      </div>
+    </aside>
   </div>
 
-  <script>
-  const $ = (id)=>document.getElementById(id);
-  const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
-  const YEAR = $('year'); YEAR.textContent = new Date().getFullYear();
+  <footer>© <span id="year"></span> HydroBalance – Villen koodailut</footer>
+</div>
 
-  const S = {
-    H0: 20, a: 0.08, n: 1.6,
-    hz: 50,
-    branches: [], round: 1, score: 0,
-    best: Number(localStorage.getItem('network_best')||0),
-    tol: 0.05, maxBranches: 6,
-    helpDebt: 0 // apujen pistevähennys kertyy kierrokselle
-  };
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+$('year').textContent = new Date().getFullYear();
 
-  // --- Fysiikka ---
-  function flow_i(br, dp){
-    const k = br.Kvs * Math.pow(clamp(br.open,0,1), S.n) * (br.faultFactor||1);
-    return k * Math.sqrt(Math.max(0, dp));
-  }
-  function qsum(dp){ return S.branches.reduce((acc,b)=>acc + flow_i(b, dp), 0); }
-  function pumpHead(Q){
-    // Affiniteetit: H0 ~ n^2, a ~ n^2
-    const scale = S.hz/50;
-    return Math.max(0, (S.H0*scale*scale) - (S.a*scale*scale)*Q*Q);
-  }
-  function solve_dp(){
-    // Ehto: dp = pumpHead(Qsum(dp)) → bisection
-    let lo=0, hi=S.H0*2, mid=0;
-    for(let it=0; it<40; it++){
-      mid=0.5*(lo+hi);
-      const Q=qsum(mid);
-      const f=mid-pumpHead(Q);
-      if(Math.abs(f)<1e-4) break;
-      const flo=lo-pumpHead(qsum(lo));
-      if(Math.sign(flo)===Math.sign(f)) lo=mid; else hi=mid;
-    }
-    return Math.max(0,mid);
-  }
-  function compute(){
-    const dp=solve_dp();
-    const Qs=S.branches.map(b=>flow_i(b,dp));
-    const Qtot=Qs.reduce((a,b)=>a+b,0);
-    const errPct=S.branches.map((b,i)=>b.targetQ>0?(Qs[i]-b.targetQ)/b.targetQ:0);
-    const rms=Math.sqrt(errPct.reduce((a,e)=>a+e*e,0)/S.branches.length);
-    const power=Qtot*dp; // pelillinen “teho”
-    return {dp,Qs,Qtot,rms,errPct,power};
-  }
+const S = {
+  H0: 20, a: 0.08, n: 1.6,
+  hz: 50,
+  branches: [], round: 1, score: 0,
+  best: Number(localStorage.getItem('network_best')||0),
+  tol: 0.05,
+  helpDebt: 0, // apujen pistevähennys kierrokselle
+  // kiinteästi 3 haaraa skeemaa varten
+  N: 3
+};
 
-  // --- UI ---
-  const rows=$('rows'); const tbody=$('table').querySelector('tbody');
+// ---- Fysiikka ----
+function flow_i(br, dp){
+  const k = br.Kvs * Math.pow(clamp(br.open,0,1), S.n) * (br.faultFactor||1);
+  return k * Math.sqrt(Math.max(0, dp));
+}
+function qsum(dp){ return S.branches.reduce((acc,b)=>acc + flow_i(b, dp), 0); }
+function pumpHead(Q){
+  const scale = S.hz/50; // affiniteetit
+  return Math.max(0, (S.H0*scale*scale) - (S.a*scale*scale)*Q*Q);
+}
+function solve_dp(){
+  let lo=0, hi=S.H0*2, mid=0;
+  for(let it=0; it<40; it++){
+    mid=0.5*(lo+hi);
+    const Q=qsum(mid);
+    const f=mid-pumpHead(Q);
+    if(Math.abs(f)<1e-4) break;
+    const flo=lo-pumpHead(qsum(lo));
+    if(Math.sign(flo)===Math.sign(f)) lo=mid; else hi=mid;
+  }
+  return Math.max(0,mid);
+}
+function compute(){
+  const dp=solve_dp();
+  const Qs=S.branches.map(b=>flow_i(b,dp));
+  const Qtot=Qs.reduce((a,b)=>a+b,0);
+  const errPct=S.branches.map((b,i)=>b.targetQ>0?(Qs[i]-b.targetQ)/b.targetQ:0);
+  const rms=Math.sqrt(errPct.reduce((a,e)=>a+e*e,0)/S.branches.length);
+  const power=Qtot*dp; // pelillinen “teho”
+  return {dp,Qs,Qtot,rms,errPct,power};
+}
 
-  function renderRows(){
-    rows.innerHTML='';
-    S.branches.forEach((b,i)=>{
-      const row=document.createElement('div'); row.className='row';
-      row.innerHTML=`
-        <div class="label">Haara ${b.name}</div>
-        <input type="range" min="0" max="100" value="${Math.round(b.open*100)}" step="1" data-i="${i}" />
-        <div><span id="q_${i}">—</span></div>
-        <div><span id="err_${i}">—</span></div>`;
-      row.querySelector('input').addEventListener('input',e=>{
-        S.branches[i].open=Number(e.target.value)/100; update();
-      });
-      rows.appendChild(row);
+// ---- UI: säätimet & taulukko ----
+const rows=$('rows'); const tbody=$('table').querySelector('tbody');
+
+function renderRows(){
+  rows.innerHTML='';
+  S.branches.forEach((b,i)=>{
+    const row=document.createElement('div'); row.className='row';
+    row.innerHTML=`
+      <div class="label">Haara ${b.name}</div>
+      <input type="range" min="0" max="100" value="${Math.round(b.open*100)}" step="1" />
+      <div><span id="q_${i}">—</span></div>
+      <div><span id="err_${i}">—</span></div>`;
+    row.querySelector('input').addEventListener('input',e=>{
+      S.branches[i].open=Number(e.target.value)/100; update();
     });
-  }
-
-  function renderTable(Qs,errPct){
-    tbody.innerHTML='';
-    S.branches.forEach((b,i)=>{
-      const tr=document.createElement('tr');
-      const err=errPct[i]*100;
-      tr.innerHTML=`
-        <td>Haara ${b.name}</td>
-        <td>${Qs[i].toFixed(3)}</td>
-        <td>${b.targetQ.toFixed(3)}</td>
-        <td style="font-weight:800;${Math.abs(err)<=S.tol*100?'color:#39d353':'color:#ff4d6d'}">${err.toFixed(1)}%</td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function msg(text,good=false){const m=$('msg');m.textContent=text||'';m.style.color=text?(good?'var(--accent)':'var(--warn)'):'';}
-
-  // Energiatitteli + bonus pisteet spesifisen tehon (P/Q) mukaan
-  function ecoTitle(power, Qtot){
-    const sp = power / Math.max(Qtot,1e-6); // ominaisteho
-    if (sp < 2.5) return {title:'Sähkön Säästömestari ⚡🌱', bonus:15, sp};
-    if (sp < 3.5) return {title:'Hydro-Eko Insinööri ♻️',   bonus: 8, sp};
-    if (sp < 5.0) return {title:'Perussäätäjä 🔧',           bonus: 3, sp};
-    return {title:'Pumpun Kurittaja 🐊',                      bonus: 0, sp};
-  }
-
-  function update(){
-    const {dp,Qs,Qtot,rms,errPct,power}=compute();
-    $('dp').textContent=dp.toFixed(3);
-    $('qtot').textContent=Qtot.toFixed(3);
-    $('rms').textContent=(rms*100).toFixed(2)+' %';
-    $('rmsbar').style.width=clamp(100-(rms*1000),0,100)+'%';
-    $('power').textContent=power.toFixed(1);
-    $('hzval').textContent=S.hz;
-    S.branches.forEach((b,i)=>{
-      $('q_'+i).textContent=Qs[i].toFixed(3);
-      const err=errPct[i]*100;
-      $('err_'+i).textContent=(err>0?'+':'')+err.toFixed(1)+'%';
-      $('err_'+i).className=Math.abs(err)<=S.tol*100?'ok':'err';
-    });
-    renderTable(Qs,errPct);
-
-    if(rms<=S.tol){
-      const baseGain=Math.max(1,Math.round(50*(S.tol-rms+0.0001)));
-      const eco = ecoTitle(power, Qtot);         // {title, bonus, sp}
-      const penalty = S.helpDebt;               // kertyneet apuvähennykset
-      const netGain = Math.max(0, baseGain + eco.bonus - penalty);
-
-      S.score += netGain;
-      if(S.score>S.best){S.best=S.score;localStorage.setItem('network_best',S.best);}
-      $('score').textContent=S.score; $('best').textContent=S.best;
-
-      msg(`Tasapaino! RMS ${(rms*100).toFixed(2)} %. ${eco.title} (P/Q=${eco.sp.toFixed(2)})  +${eco.bonus}p  ${penalty?`| Apuvähennys −${penalty}p`:''}  ⇒ **+${netGain}p**`, true);
-
-      // seuraava kierros
-      nextRound();
-    } else {
-      msg('');
-    }
-  }
-
-  // --- Kierroksen luonti ja tavoitteen teko ---
-  function initBranches(n){
-    S.branches=Array.from({length:n},(_,i)=>({
-      name:String.fromCharCode(65+i), // A,B,C...
-      Kvs:1+Math.random()*0.6-0.3,    // 0.7–1.3
-      open:0.3+Math.random()*0.4,     // 0.3–0.7
-      targetQ:0,
-      faultFactor:1
-    }));
-    renderRows();
-  }
-
-  function bakeTargets(){
-    const backup=S.branches.map(b=>b.open);
-    S.branches.forEach(b=> b.open = 0.25 + Math.random()*0.65);
-    const {Qs}=compute();
-    S.branches.forEach((b,i)=> b.targetQ = Qs[i]);
-    S.branches.forEach((b,i)=> b.open = clamp(backup[i] + (Math.random()*0.4-0.2), 0.05, 0.95));
-  }
-
-  function resetOpens(){
-    S.branches.forEach(b=>{
-      b.open = clamp(b.open + (Math.random()*0.3-0.15), 0.05, 0.95);
-      b.faultFactor = 1;
-    });
-    S.helpDebt = 0; // nollaa apuvähennys uudelle kierrokselle
-  }
-
-  function nextRound(){
-    S.round++; $('round').textContent=S.round;
-    const n=clamp(3+Math.floor((S.round-1)/2),3,S.maxBranches);
-    initBranches(n); bakeTargets(); resetOpens(); update();
-  }
-
-  // --- AI-vinkki+: laskennallinen ehdotus (ei muuta asetuksia automaattisesti) ---
-  function aiAdvice(){
-    const {dp,Qs,Qtot}=compute();
-    const Qtot_tgt = S.branches.reduce((a,b)=>a+b.targetQ,0);
-
-    let worstI=0, worstErr=-1;
-    S.branches.forEach((b,i)=>{
-      const e=Math.abs(Qs[i]-b.targetQ)/(b.targetQ||1);
-      if(e>worstErr){ worstErr=e; worstI=i; }
-    });
-
-    const b=S.branches[worstI];
-    const localSlope = (b.Kvs*(b.faultFactor||1)) * S.n * Math.pow(clamp(b.open,0.001,1), S.n-1) * Math.sqrt(Math.max(0,dp));
-    const deltaOpen = clamp(((b.targetQ - Qs[worstI]) / Math.max(1e-6,localSlope)) * 0.5, -0.2, 0.2);
-    const deltaPct = Math.round(deltaOpen*100);
-
-    let hzTip='';
-    const sysErr = (Qtot - Qtot_tgt)/(Qtot_tgt||1);
-    if(sysErr < -0.08) hzTip='Lisää pumppunopeutta +2…3 Hz.';
-    else if(sysErr > 0.08) hzTip='Pienennä pumppunopeutta −2…3 Hz.';
-
-    S.helpDebt += 4;
-    msg(`AI-vinkki+: säädä haaraa ${b.name} ${deltaPct>0?('+'+deltaPct):deltaPct}% ${deltaPct>=0?'auki':'kiinni'}. ${hzTip?hzTip+' ':''}(Apuvähennys −4p tällä kierroksella)`);
-  }
-
-  // --- Napit ja syötteet ---
-  $('new').addEventListener('click', ()=>{
-    S.score = 0; $('score').textContent = S.score;
-    S.round = 1; $('round').textContent = S.round;
-    S.hz = 50; $('hz').value = 50; $('hzval').textContent = 50;
-    initBranches(3); bakeTargets(); resetOpens(); update();
+    rows.appendChild(row);
   });
+}
 
-  $('hint').addEventListener('click', ()=>{
-    const {Qs} = compute();
-    let worstI=0, worstErr=-1;
-    S.branches.forEach((b,i)=>{
-      const e=Math.abs(Qs[i]-b.targetQ)/(b.targetQ||1);
-      if(e>worstErr){ worstErr=e; worstI=i; }
-    });
-    const b=S.branches[worstI];
-    const dir = (Qs[worstI] < b.targetQ) ? +1 : -1;
-    b.open = clamp(b.open + dir*0.03, 0.0, 1.0);
-    S.helpDebt += 2;
-    msg(`Vihje: säädä haaraa ${b.name} hieman ${dir>0?'auki':'kiinni'}. (Apuvähennys −2p tällä kierroksella)`);
-    update();
+function renderTable(Qs,errPct){
+  tbody.innerHTML='';
+  S.branches.forEach((b,i)=>{
+    const tr=document.createElement('tr');
+    const err=errPct[i]*100;
+    tr.innerHTML=`
+      <td>Haara ${b.name}</td>
+      <td>${Qs[i].toFixed(3)}</td>
+      <td>${b.targetQ.toFixed(3)}</td>
+      <td style="font-weight:800;${Math.abs(err)<=S.tol*100?'color:#39d353':'color:#ff4d6d'}">${err.toFixed(1)}%</td>`;
+    tbody.appendChild(tr);
   });
+}
 
-  $('aihint').addEventListener('click', aiAdvice);
+// ---- Skeema (SVG) ----
+function buildSchematic(){
+  const svg = $('schem');
+  svg.innerHTML = `
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#7fb3ff88"></path>
+      </marker>
+    </defs>
 
-  $('fault').addEventListener('click', ()=>{
-    const i=Math.floor(Math.random()*S.branches.length);
-    const b=S.branches[i];
-    b.faultFactor = 0.6 + Math.random()*0.2; // 0.6–0.8
-    msg(`Häiriö: haara ${b.name} kuristui (Kvs × ${b.faultFactor.toFixed(2)}). Kompensoi säädöillä!`);
-    update();
+    <!-- päälinja -->
+    <path id="main" class="pipe" d="M400 70 L400 140" stroke-width="10" />
+    <!-- haaroitus -->
+    <circle cx="400" cy="140" r="6" class="node"/>
+
+    <!-- haarat -->
+    <path id="lineA" class="pipe" d="M400 140 L 300 220 L 220 340" stroke-width="8" />
+    <path id="lineB" class="pipe" d="M400 140 L 400 340" stroke-width="8" />
+    <path id="lineC" class="pipe" d="M400 140 L 500 220 L 580 340" stroke-width="8" />
+
+    <!-- päät -->
+    <circle id="endA" cx="220" cy="340" r="7" class="node"/>
+    <circle id="endB" cx="400" cy="340" r="7" class="node"/>
+    <circle id="endC" cx="580" cy="340" r="7" class="node"/>
+
+    <!-- pumppu -->
+    <g id="pump" transform="translate(400,70)">
+      <circle r="22" class="node"></circle>
+      <polygon points="-6,-8 10,0 -6,8" fill="#5ea0ff" />
+    </g>
+    <rect x="330" y="20" width="140" height="32" rx="8" class="bubble"></rect>
+    <text x="340" y="41" class="pumpText">
+      Pumppu • Hz: <tspan id="tHz">50</tspan> • Δp: <tspan id="tDP">—</tspan>
+    </text>
+
+    <!-- infokuplat A,B,C -->
+    <g id="infoA">
+      <rect x="120" y="350" width="200" height="58" rx="10" class="bubble"></rect>
+      <text x="130" y="370" class="branchText">A: Q=<tspan id="tQA">—</tspan> | Qₜ=<tspan id="tQAt">—</tspan></text>
+      <text x="130" y="388" class="badge">virhe <tspan id="tEA">—</tspan>% • vent <tspan id="tOA">—</tspan>%</text>
+    </g>
+    <g id="infoB">
+      <rect x="300" y="350" width="200" height="58" rx="10" class="bubble"></rect>
+      <text x="310" y="370" class="branchText">B: Q=<tspan id="tQB">—</tspan> | Qₜ=<tspan id="tQBt">—</tspan></text>
+      <text x="310" y="388" class="badge">virhe <tspan id="tEB">—</tspan>% • vent <tspan id="tOB">—</tspan>%</text>
+    </g>
+    <g id="infoC">
+      <rect x="480" y="350" width="200" height="58" rx="10" class="bubble"></rect>
+      <text x="490" y="370" class="branchText">C: Q=<tspan id="tQC">—</tspan> | Qₜ=<tspan id="tQCt">—</tspan></text>
+      <text x="490" y="388" class="badge">virhe <tspan id="tEC">—</tspan>% • vent <tspan id="tOC">—</tspan>%</text>
+    </g>
+  `;
+}
+function paintBranch(i, flow, target, errPct){
+  const id = ['A','B','C'][i];
+  const line = $('line'+id);
+  const ok = Math.abs(errPct*100) <= S.tol*100;
+  // paksuus suhteessa virtaamaan (skaalataan maltillisesti)
+  const maxQ = Math.max(...S.branches.map((_,k)=>flow)); // per-kutsu ei ideaalinen, mutta riittää
+  const w = clamp(6 + 24*(flow/Math.max(0.001, target)), 6, 30);
+  line.setAttribute('stroke', ok ? '#39d353' : '#ff4d6d');
+  line.setAttribute('stroke-width', w.toFixed(1));
+  // tekstit
+  $('tQ'+id).textContent = flow.toFixed(3);
+  $('tQ'+id+'t').textContent = target.toFixed(3);
+  $('tE'+id).textContent = (errPct*100).toFixed(1);
+  $('tO'+id).textContent = Math.round(S.branches[i].open*100);
+}
+function updateSchematic(dp,Qs,errPct){
+  $('tHz').textContent = S.hz;
+  $('tDP').textContent = dp.toFixed(2);
+  paintBranch(0,Qs[0],S.branches[0].targetQ,errPct[0]);
+  paintBranch(1,Qs[1],S.branches[1].targetQ,errPct[1]);
+  paintBranch(2,Qs[2],S.branches[2].targetQ,errPct[2]);
+}
+
+// ---- Eco-tittelit & pisteet ----
+function ecoTitle(power, Qtot){
+  const sp = power / Math.max(Qtot,1e-6);
+  if (sp < 2.5) return {title:'Sähkön Säästömestari ⚡🌱', bonus:15, sp};
+  if (sp < 3.5) return {title:'Hydro-Eko Insinööri ♻️',   bonus: 8, sp};
+  if (sp < 5.0) return {title:'Perussäätäjä 🔧',           bonus: 3, sp};
+  return {title:'Pumpun Kurittaja 🐊',                      bonus: 0, sp};
+}
+
+// ---- Päivityssilmukka ----
+function msg(text,good=false){const m=$('msg');m.textContent=text||'';m.style.color=text?(good?'var(--accent)':'var(--warn)'):'';}
+
+function update(){
+  const {dp,Qs,Qtot,rms,errPct,power}=compute();
+  $('dp').textContent=dp.toFixed(3);
+  $('qtot').textContent=Qtot.toFixed(3);
+  $('rms').textContent=(rms*100).toFixed(2)+' %';
+  $('rmsbar').style.width=clamp(100-(rms*1000),0,100)+'%';
+  $('power').textContent=power.toFixed(1);
+  $('hzval').textContent=S.hz;
+  // rivit ja taulukko
+  S.branches.forEach((b,i)=>{
+    $('q_'+i).textContent=Qs[i].toFixed(3);
+    const err=errPct[i]*100;
+    $('err_'+i).textContent=(err>0?'+':'')+err.toFixed(1)+'%';
+    $('err_'+i).className=Math.abs(err)<=S.tol*100?'ok':'err';
   });
+  renderTable(Qs,errPct);
+  // skeema
+  updateSchematic(dp,Qs,errPct);
 
-  $('pro').addEventListener('change', (e)=>{ $('probox').open = e.target.checked; });
-  $('hz').addEventListener('input', (e)=>{ S.hz = Number(e.target.value); $('hzval').textContent=S.hz; update(); });
-  window.addEventListener('keydown', (e)=>{ if(e.key==='n'||e.key==='N') $('new').click(); });
+  if(rms<=S.tol){
+    const baseGain=Math.max(1,Math.round(50*(S.tol-rms+0.0001)));
+    const eco = ecoTitle(power, Qtot);
+    const penalty = S.helpDebt;
+    const netGain = Math.max(0, baseGain + eco.bonus - penalty);
+    S.score += netGain;
+    if(S.score>S.best){S.best=S.score;localStorage.setItem('network_best',S.best);}
+    $('score').textContent=S.score; $('best').textContent=S.best;
+    msg(`Tasapaino! RMS ${(rms*100).toFixed(2)} %. ${eco.title} (P/Q=${eco.sp.toFixed(2)})  +${eco.bonus}p  ${penalty?`| Apuvähennys −${penalty}p`:''}  ⇒ +${netGain}p`, true);
+    nextRound();
+  } else msg('');
+}
 
-  // --- INIT ---
-  (function init(){
-    $('best').textContent=S.best; $('round').textContent=S.round;
-    $('hz').value=S.hz; $('hzval').textContent=S.hz;
-    initBranches(3); bakeTargets(); resetOpens(); update();
-  })();
-  </script>
+// ---- Kierrokset ----
+function initBranches(){
+  S.branches=Array.from({length:S.N},(_,i)=>({
+    name:['A','B','C'][i],
+    Kvs:1 + (Math.random()*0.6 - 0.3), // 0.7–1.3
+    open:0.3 + Math.random()*0.4,      // 0.3–0.7
+    targetQ:0, faultFactor:1
+  }));
+  renderRows();
+}
+function bakeTargets(){
+  const backup=S.branches.map(b=>b.open);
+  S.branches.forEach(b=> b.open = 0.25 + Math.random()*0.65);
+  const {Qs}=compute();
+  S.branches.forEach((b,i)=> b.targetQ = Qs[i]);
+  S.branches.forEach((b,i)=> b.open = clamp(backup[i] + (Math.random()*0.4-0.2), 0.05, 0.95));
+}
+function resetOpens(){
+  S.branches.forEach(b=>{
+    b.open = clamp(b.open + (Math.random()*0.3-0.15), 0.05, 0.95);
+    b.faultFactor = 1;
+  });
+  S.helpDebt = 0;
+}
+function nextRound(){
+  S.round++; $('round').textContent=S.round;
+  initBranches(); bakeTargets(); resetOpens(); update();
+}
+
+// ---- AI-vinkki ja vihje ----
+function aiAdvice(){
+  const {dp,Qs,Qtot}=compute();
+  const Qtot_tgt = S.branches.reduce((a,b)=>a+b.targetQ,0);
+  let worstI=0, worstErr=-1;
+  S.branches.forEach((b,i)=>{
+    const e=Math.abs(Qs[i]-b.targetQ)/(b.targetQ||1);
+    if(e>worstErr){ worstErr=e; worstI=i; }
+  });
+  const b=S.branches[worstI];
+  const localSlope = (b.Kvs*(b.faultFactor||1)) * S.n * Math.pow(clamp(b.open,0.001,1), S.n-1) * Math.sqrt(Math.max(0,dp));
+  const deltaOpen = clamp(((b.targetQ - Qs[worstI]) / Math.max(1e-6,localSlope)) * 0.5, -0.2, 0.2);
+  const deltaPct = Math.round(deltaOpen*100);
+  let hzTip='';
+  const sysErr = (Qtot - Qtot_tgt)/(Qtot_tgt||1);
+  if(sysErr < -0.08) hzTip='Lisää pumppunopeutta +2…3 Hz.';
+  else if(sysErr > 0.08) hzTip='Pienennä pumppunopeutta −2…3 Hz.';
+  S.helpDebt += 4;
+  msg(`AI-vinkki+: säädä haaraa ${b.name} ${deltaPct>0?('+'+deltaPct):deltaPct}% ${deltaPct>=0?'auki':'kiinni'}. ${hzTip?hzTip+' ':''}(Apuvähennys −4p)`);
+}
+
+$('new').addEventListener('click', ()=>{
+  S.score = 0; $('score').textContent = S.score;
+  S.round = 1; $('round').textContent = S.round;
+  S.hz = 50; $('hz').value = 50; $('hzval').textContent = 50;
+  initBranches(); bakeTargets(); resetOpens(); update();
+});
+$('hint').addEventListener('click', ()=>{
+  const {Qs}=compute();
+  let worstI=0, worstErr=-1;
+  S.branches.forEach((b,i)=>{
+    const e=Math.abs(Qs[i]-b.targetQ)/(b.targetQ||1);
+    if(e>worstErr){ worstErr=e; worstI=i; }
+  });
+  const b=S.branches[worstI];
+  const dir = (Qs[worstI] < b.targetQ) ? +1 : -1;
+  b.open = clamp(b.open + dir*0.03, 0.0, 1.0);
+  S.helpDebt += 2;
+  msg(`Vihje: säädä haaraa ${b.name} hieman ${dir>0?'auki':'kiinni'} (−2p).`);
+  update();
+});
+$('aihint').addEventListener('click', aiAdvice);
+$('fault').addEventListener('click', ()=>{
+  const i=Math.floor(Math.random()*S.branches.length);
+  const b=S.branches[i];
+  b.faultFactor = 0.6 + Math.random()*0.2;
+  msg(`Häiriö: haara ${b.name} kuristui (Kvs × ${b.faultFactor.toFixed(2)}). Kompensoi säädöillä!`);
+  update();
+});
+$('pro').addEventListener('change', (e)=>{ $('probox').open = e.target.checked; });
+$('hz').addEventListener('input', (e)=>{ S.hz = Number(e.target.value); $('hzval').textContent=S.hz; update(); });
+window.addEventListener('keydown', (e)=>{ if(e.key==='n'||e.key==='N') $('new').click(); });
+
+// INIT
+(function init(){
+  $('best').textContent=S.best; $('round').textContent=S.round;
+  $('hz').value=S.hz; $('hzval').textContent=S.hz;
+  buildSchematic();
+  initBranches(); bakeTargets(); resetOpens(); update();
+})();
+</script>
 </body>
 </html>
