@@ -7,31 +7,22 @@
     <link rel="icon" href="logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  html,body,#root { height: 100%; }
+  html,body,#root { height:100%; }
 
-  /* Taustakuva + tumma overlay, jotta teksti näkyy */
-  .bg-hero {
+  /* Taustakuva + tumma overlay luettavuuden takia */
+  .bg-hero{
     background-image:
-      linear-gradient(135deg, rgba(2, 6, 23, 0.90), rgba(15, 23, 42, 0.85)),
-      url('bg.jpg');        /* jos tiedostonimi/kansio eri, muuta tähän */
+      linear-gradient(135deg, rgba(2,6,23,.90), rgba(15,23,42,.85)),
+      url('bg.jpg');          /* tiedosto repon juuresta */
     background-size: cover;
     background-position: center 20%;
     background-repeat: no-repeat;
-    background-attachment: fixed; /* poista mobiililla jos nykii */
+    background-attachment: fixed;  /* jos nykii mobiilissa, poista tämä */
   }
-
-  .glass {
-    backdrop-filter: blur(6px);
-    background: rgba(17, 24, 39, 0.35);
-    border: 1px solid rgba(255,255,255,0.10);
-  }
-
-  /* (valinnainen) kevyt varjo valkoiselle tekstille */
-  .text-glow { text-shadow: 0 1px 2px rgba(0,0,0,.45); }
 </style>
     
    </head>
-  <body class="bg-gray-50">
+  <body class="bg-hero">
     <nav class="bg-white/80 backdrop-blur border-b">
       <div class="max-w-6xl mx-auto px-4 py-2 text-sm text-gray-600 flex items-center gap-3">
         <a href="index.html" class="hover:underline">← Etusivu</a>
