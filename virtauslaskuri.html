@@ -1,483 +1,775 @@
-<!doctype html>
-<html lang="fi">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Virtauslaskuri · Villen koodailut</title>
-    <link rel="icon" href="logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body class="bg-gray-50">
-    <nav class="bg-white/80 backdrop-blur border-b">
-      <div class="max-w-6xl mx-auto px-4 py-2 text-sm text-gray-600 flex items-center gap-3">
-        <a href="index.html" class="hover:underline">← Etusivu</a>
-        <span class="text-gray-300">|</span>
-        <span>Virtauslaskuri</span>
+import React, { useMemo, useState, useEffect } from "react";
+
+// Polku logolle
+const LOGO_SRC = "logo.png";
+
+/**
+ * Virtauslaskuri (React + Tailwind)
+ * - Perusnäkymä: DN-valinta (ID≈DN), haluttu nopeus, putken pituus + tärkeimmät tulokset
+ * - "Tarkemmat tiedot": sähkö, materiaalit, fluidi (preset + lämpötila + mahdollinen yliajo),
+ *   pienhäviöt, diagnostiikka (Re, f)
+ * - DN-pudotusvalinta
+ * - Darcy–Weisbach + Swamee–Jain; tehot & vuotuinen energia/kustannus
+ * - Näytetään ensisijaisesti massavirta (kg/s), ja ohjain on massavirran liuku.
+ * - Näytetään ohjaimen yhteydessä myös m³/h ja L/min.
+ * - UUTTA: Lukitus per ohjain (D, v, ṁ) kahden lukon logiikalla.
+ */
+
+// --- Asetukset / materiaalit ---
+const materials = [
+  { key: "pehd", label: "PE/HDPE (sileä)", eps_mm: 0.0015 },
+  { key: "pvc", label: "PVC/PEX", eps_mm: 0.0015 },
+  { key: "kupari", label: "Kupari", eps_mm: 0.0015 },
+  { key: "teräs", label: "Hiiliteräs (kaupallinen)", eps_mm: 0.045 },
+  { key: "rst", label: "Ruostumaton teräs", eps_mm: 0.015 },
+  { key: "valurauta", label: "Valurauta", eps_mm: 0.26 },
+  { key: "betoni", label: "Betoni", eps_mm: 0.3 },
+];
+
+// --- Fluidipresetit (likiarvoja) ---
+const fluids = [
+  {
+    key: "water",
+    label: "Vesi",
+    temps: [
+      { t: 5, rho: 1000.0, nu: 1.52e-6 },
+      { t: 10, rho: 999.7, nu: 1.307e-6 },
+      { t: 20, rho: 998.0, nu: 1.004e-6 },
+      { t: 40, rho: 992.0, nu: 0.658e-6 },
+      { t: 60, rho: 983.0, nu: 0.476e-6 },
+    ],
+  },
+  {
+    key: "sea",
+    label: "Merivesi",
+    temps: [
+      { t: 5, rho: 1027.0, nu: 1.5e-6 },
+      { t: 20, rho: 1025.0, nu: 1.07e-6 },
+      { t: 40, rho: 1020.0, nu: 0.72e-6 },
+    ],
+  },
+  {
+    key: "pg30",
+    label: "Propyleeniglykoli 30%",
+    temps: [
+      { t: 20, rho: 1036.0, nu: 3.8e-6 },
+      { t: 40, rho: 1026.0, nu: 2.0e-6 },
+      { t: 60, rho: 1014.0, nu: 1.2e-6 },
+    ],
+  },
+  {
+    key: "oil32",
+    label: "Hydrauliikkaöljy ISO VG 32",
+    temps: [
+      { t: 20, rho: 870.0, nu: 150e-6 },
+      { t: 40, rho: 860.0, nu: 32e-6 },
+      { t: 60, rho: 850.0, nu: 12e-6 },
+    ],
+  },
+];
+
+// --- Pienhäviökomponentit (likiarvoisia K-kertoimia) ---
+const minorComponents = [
+  { key: "elbow90_std", label: "Mutka 90° (vakio)", K: 0.9 },
+  { key: "elbow90_lr", label: "Mutka 90° (loiva)", K: 0.2 },
+  { key: "elbow45", label: "Mutka 45°", K: 0.4 },
+  { key: "gate_open", label: "Sulkuventtiili (auki)", K: 0.2 },
+  { key: "globe_open", label: "Globe/säätöventtiili (auki)", K: 10 },
+  { key: "check_swing", label: "Takaiskuventtiili (heiluri)", K: 2.0 },
+  { key: "tee_through", label: "T-haara (suora läpi)", K: 0.6 },
+  { key: "tee_branch", label: "T-haara (haara)", K: 1.8 },
+  { key: "sudden_contr", label: "Äkillinen supistus", K: 0.5 },
+  { key: "sudden_exp", label: "Äkillinen laajennus", K: 1.0 },
+];
+
+function initialMinorQtys() {
+  return Object.fromEntries(minorComponents.map((c) => [c.key, 0]));
+}
+
+// --- DN-lista (ID≈DN) ---
+const dnList = [10, 15, 20, 25, 32, 40, 50, 65, 80, 100, 125, 150, 200, 250, 300];
+
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+
+// Apurit pinta-alaan
+const areaFromDmm = (dmm: number) => {
+  const D = dmm / 1000; // m
+  return (Math.PI * D * D) / 4; // m²
+};
+const dmmFromArea = (A: number) => Math.sqrt((4 * A) / Math.PI) * 1000;
+
+// Lukitusnappi
+function LockButton({ locked, onToggle, label }: { locked: boolean; onToggle: () => void; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={locked}
+        title={locked ? "Poista lukitus" : "Lukitse tämä muuttuja"}
+        className={`h-8 w-8 grid place-items-center rounded-lg border text-sm ${
+          locked ? "bg-gray-900 text-white border-gray-900" : "bg-white border-gray-300 hover:bg-gray-50"
+        }`}
+      >
+        {locked ? "🔒" : "🔓"}
+      </button>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+// --- Yhdistetty numero+liuku -kenttä ---
+function SliderWithNumber(
+  props: {
+    label: React.ReactNode;
+    value: number;
+    onChange: (v: number) => void;
+    step?: number;
+    min?: number;
+    max?: number;
+    unit?: string;
+    extra?: React.ReactNode;
+  }
+) {
+  const { label, value, onChange, step = 1, min = 0, max = 100, unit = "", extra } = props;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-end justify-between">
+        <span className="text-sm text-gray-600">{label}</span>
+        <div className="flex items-center gap-2 w-56">
+          <input
+            type="number"
+            step={step}
+            min={min}
+            max={max}
+            value={Number.isFinite(value) ? value : ""}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!Number.isNaN(v)) onChange(v);
+            }}
+            onBlur={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!Number.isNaN(v)) onChange(clamp(v, min, max));
+            }}
+            className="w-full rounded-xl border p-1.5 text-right"
+          />
+          <span className="text-gray-500 text-sm w-16 text-right">{unit}</span>
+        </div>
       </div>
-    </nav>
+      <input
+        type="range"
+        step={step}
+        min={min}
+        max={max}
+        value={Number.isFinite(value) ? value : min}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full"
+      />
+      {extra}
+    </div>
+  );
+}
 
-    <div id="root"></div>
+// --- Pelkkä numerokenttä ---
+function NumberField(
+  props: {
+    label: string;
+    value: number;
+    onChange: (v: number) => void;
+    step?: number;
+    min?: number;
+    max?: number;
+    unit?: string;
+    hint?: string;
+    disabled?: boolean;
+  }
+) {
+  const { label, value, onChange, step = 1, min = 0, max = Number.POSITIVE_INFINITY, unit = "", hint = "", disabled = false } = props;
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-sm text-gray-600">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          step={step}
+          min={min}
+          max={max}
+          value={Number.isFinite(value) ? value : ""}
+          onChange={(e) => {
+            if (disabled) return;
+            const v = parseFloat(e.target.value);
+            if (!Number.isNaN(v)) onChange(v);
+          }}
+          onBlur={(e) => {
+            if (disabled) return;
+            const v = parseFloat(e.target.value);
+            if (!Number.isNaN(v)) onChange(clamp(v, min, max));
+          }}
+          disabled={disabled}
+          className={`w-full rounded-xl border p-2 focus:outline-none focus:ring text-right ${disabled ? "bg-gray-100 text-gray-500" : ""}`}
+        />
+        <span className="text-gray-500 w-14 text-right">{unit}</span>
+      </div>
+      {hint && <span className="text-xs text-gray-400">{hint}</span>}
+    </label>
+  );
+}
 
-    <!-- React & Babel -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+function ResultRow({ label, value, unit, digits = 2 }: { label: string; value: number; unit: string; digits?: number }) {
+  const fmt = (n: number) => (Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: digits }) : "-");
+  return (
+    <div className="flex items-baseline justify-between border-b py-1">
+      <span className="text-gray-600">{label}</span>
+      <span className="font-semibold">
+        {fmt(value)} <span className="text-gray-500 font-normal">{unit}</span>
+      </span>
+    </div>
+  );
+}
 
-    <!-- Sovellus -->
-    <script type="text/babel">
-      const { useState, useMemo, useEffect } = React;
-      const LOGO_SRC = "logo.png";
+// --- Presetit (localStorage) ---
+const LS_KEY = "virtauslaskuri_presets_v2";
 
-      // Materiaalit
-      const materials = [
-        { key: "pehd", label: "PE/HDPE (sileä)", eps_mm: 0.0015 },
-        { key: "pvc", label: "PVC/PEX", eps_mm: 0.0015 },
-        { key: "kupari", label: "Kupari", eps_mm: 0.0015 },
-        { key: "teräs", label: "Hiiliteräs (kaupallinen)", eps_mm: 0.045 },
-        { key: "rst", label: "Ruostumaton teräs", eps_mm: 0.015 },
-        { key: "valurauta", label: "Valurauta", eps_mm: 0.26 },
-        { key: "betoni", label: "Betoni", eps_mm: 0.3 },
-      ];
+type Preset = {
+  id: string;
+  name: string;
+  data: {
+    diameterMM: number;
+    velocity: number;
+    massFlow: number; // kg/s
+    length: number;
+    fluidKey: string;
+    fluidTemp: number;
+    overrideFluid: boolean;
+    rho: number;
+    nu: number;
+    materialKey: string;
+    epsMM: number;
+    minorQtys: Record<string, number>;
+    customK: number;
+    customQty: number;
+    eff: number;
+    hours: number;
+    energyPrice: number;
+  };
+};
 
-      // Nesteet (+5 °C lisättynä)
-      const fluids = [
-        { key: "water", label: "Vesi", temps: [
-          { t: 5,  rho: 1000.0, nu: 1.52e-6 },
-          { t: 10, rho: 999.7, nu: 1.307e-6 },
-          { t: 20, rho: 998.0, nu: 1.004e-6 },
-          { t: 40, rho: 992.0, nu: 0.658e-6 },
-          { t: 60, rho: 983.0, nu: 0.476e-6 },
-        ]},
-        { key: "sea", label: "Merivesi", temps: [
-          { t: 5,  rho: 1027.0, nu: 1.5e-6 },
-          { t: 20, rho: 1025.0, nu: 1.07e-6 },
-          { t: 40, rho: 1020.0, nu: 0.72e-6 },
-        ]},
-        { key: "pg30", label: "Propyleeniglykoli 30%", temps: [
-          { t: 20, rho: 1036.0, nu: 3.8e-6 },
-          { t: 40, rho: 1026.0, nu: 2.0e-6 },
-          { t: 60, rho: 1014.0, nu: 1.2e-6 },
-        ]},
-        { key: "oil32", label: "Hydrauliikkaöljy ISO VG 32", temps: [
-          { t: 20, rho: 870.0, nu: 150e-6 },
-          { t: 40, rho: 860.0, nu: 32e-6 },
-          { t: 60, rho: 850.0, nu: 12e-6 },
-        ]},
-      ];
+export default function FlowCalculator() {
+  // --- Perusparametrit (DN100, 1.5 m/s, 100 m, vesi 20°C) ---
+  const [diameterMM, _setDiameterMM] = useState(100);
+  const [velocity, _setVelocity] = useState(1.5); // m/s
+  const [length, setLength] = useState(100); // m
 
-      // Pienhäviöt (K)
-      const minorComponents = [
-        { key: "elbow90_std", label: "Mutka 90° (vakio)", K: 0.9 },
-        { key: "elbow90_lr",  label: "Mutka 90° (loiva)", K: 0.2 },
-        { key: "elbow45",     label: "Mutka 45°", K: 0.4 },
-        { key: "gate_open",   label: "Sulkuventtiili (auki)", K: 0.2 },
-        { key: "globe_open",  label: "Globe/säätöventtiili (auki)", K: 10 },
-        { key: "check_swing", label: "Takaiskuventtiili (heiluri)", K: 2.0 },
-        { key: "tee_through", label: "T-haara (suora läpi)", K: 0.6 },
-        { key: "tee_branch",  label: "T-haara (haara)", K: 1.8 },
-        { key: "sudden_contr",label: "Äkillinen supistus", K: 0.5 },
-        { key: "sudden_exp",  label: "Äkillinen laajennus", K: 1.0 },
-      ];
+  // Fluidi (oletus vesi 20°C)
+  const [fluidKey, setFluidKey] = useState("water");
+  const [fluidTemp, setFluidTemp] = useState<number>(20);
+  const [rho, setRho] = useState(998);
+  const [nu, setNu] = useState(1.004e-6);
+  const [overrideFluid, setOverrideFluid] = useState(false);
 
-      const dnList = [10,15,20,25,32,40,50,65,80,100,125,150,200,250,300];
-      const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
+  // Lukittava ohjain: massavirta (kg/s)
+  const initialMass = useMemo(() => rho * areaFromDmm(100) * 1.5, []);
+  const [massFlow, _setMassFlow] = useState<number>(initialMass);
 
-      const areaFromDmm = (dmm)=>{ const D=dmm/1000; return Math.PI*D*D/4; };
-      const dmmFromArea  = (A)=>Math.sqrt(4*A/Math.PI)*1000;
+  // Lukitukset (max 2 kerrallaan)
+  const [lockD, setLockD] = useState(false);
+  const [lockV, setLockV] = useState(false);
+  const [lockM, setLockM] = useState(false);
 
-      function LockButton({locked,onToggle,label}){
-        return (
-          <span className="inline-flex items-center gap-2">
-            <button type="button" onClick={onToggle} aria-pressed={locked}
-              className={`h-6 w-6 grid place-items-center rounded border text-xs ${locked?'bg-gray-900 text-white border-gray-900':'bg-white border-gray-300 hover:bg-gray-50'}`}>
-              {locked ? "🔒" : "🔓"}
-            </button>
-            <span>{label}</span>
-          </span>
-        );
+  // Näytön tila
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Karheus
+  const [materialKey, setMaterialKey] = useState("pehd");
+  const selectedMat = useMemo(() => materials.find((m) => m.key === materialKey)!, [materialKey]);
+  const [epsMM, setEpsMM] = useState(selectedMat.eps_mm);
+
+  // Pienhäviöt
+  const [minorQtys, setMinorQtys] = useState<Record<string, number>>(() => initialMinorQtys());
+  const [customK, setCustomK] = useState<number>(0);
+  const [customQty, setCustomQty] = useState<number>(0);
+
+  // Sähkö & käyttö
+  const [eff, setEff] = useState(0.7);
+  const [hours, setHours] = useState(4000);
+  const [energyPrice, setEnergyPrice] = useState(0.12);
+
+  // Presetit
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [presetName, setPresetName] = useState("");
+
+  // Päivitä karheus materiaalivalinnan mukana
+  useEffect(() => { setEpsMM(selectedMat.eps_mm); }, [materialKey]);
+
+  // Lataa presetit
+  useEffect(() => { try { const raw = localStorage.getItem(LS_KEY); if (raw) setPresets(JSON.parse(raw)); } catch {} }, []);
+  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(presets)); } catch {} }, [presets]);
+
+  // Päivitä fluidiominaisuudet (jos ei override)
+  useEffect(() => {
+    if (overrideFluid) return;
+    const f = fluids.find((x) => x.key === fluidKey);
+    if (!f) return;
+    const temps = f.temps.map((x) => x.t);
+    const closestT = temps.reduce((p, c) => (Math.abs(c - fluidTemp) < Math.abs(p - fluidTemp) ? c : p), temps[0]);
+    const rec = f.temps.find((x) => x.t === closestT)!;
+    setFluidTemp(closestT);
+    setRho(rec.rho);
+    setNu(rec.nu);
+    // Jos massavirta lukittu, pidetään se ja säädetään v tai D.
+    applyConstraints('D', diameterMM, lockD, lockV, lockM, rec.rho);
+  }, [fluidKey, fluidTemp, overrideFluid]);
+
+  // ΣK laskenta
+  const sumK = useMemo(
+    () => minorComponents.reduce((acc, c) => acc + c.K * (minorQtys[c.key] || 0), 0) + (customK || 0) * (customQty || 0),
+    [minorQtys, customK, customQty]
+  );
+
+  // --- Lukitukset ---
+  function setLocks(which: 'D'|'V'|'M') {
+    let d = lockD, v = lockV, m = lockM;
+    if (which === 'D') d = !d; else if (which === 'V') v = !v; else m = !m;
+    const count = [d, v, m].filter(Boolean).length;
+    if (count > 2) { d = which === 'D'; v = which === 'V'; m = which === 'M'; }
+    setLockD(d); setLockV(v); setLockM(m);
+    applyConstraints('D', diameterMM, d, v, m);
+  }
+
+  function applyConstraints(
+    source: 'D'|'V'|'M', value: number,
+    ld: boolean = lockD, lv: boolean = lockV, lm: boolean = lockM,
+    rhoArg?: number
+  ) {
+    const rhoUse = typeof rhoArg === 'number' ? rhoArg : rho;
+    let d = diameterMM, v = velocity, m = massFlow;
+    if (source === 'D') d = value;
+    if (source === 'V') v = value;
+    if (source === 'M') m = value;
+
+    const A = areaFromDmm(d);
+    const lockedCount = [ld, lv, lm].filter(Boolean).length;
+
+    if (lockedCount >= 2) {
+      if (ld && lv) {
+        m = rhoUse * v * A;
+      } else if (ld && lm) {
+        v = m / (rhoUse * A);
+      } else if (lv && lm) {
+        const Aneed = m / (rhoUse * v);
+        d = dmmFromArea(Aneed);
       }
+    } else if (lm) { // vain massavirta lukittu
+      if (source === 'D') {
+        v = m / (rhoUse * areaFromDmm(d));
+      } else if (source === 'V') {
+        const Aneed = m / (rhoUse * v); d = dmmFromArea(Aneed);
+      } else { // M muuttui
+        v = m / (rhoUse * areaFromDmm(d));
+      }
+    } else if (lv) { // vain v lukittu
+      if (source === 'D') {
+        m = rhoUse * v * areaFromDmm(d);
+      } else if (source === 'M') {
+        const Aneed = m / (rhoUse * v); d = dmmFromArea(Aneed);
+      }
+    } else if (ld) { // vain D lukittu
+      if (source === 'V') {
+        m = rhoUse * v * areaFromDmm(d);
+      } else if (source === 'M') {
+        v = m / (rhoUse * areaFromDmm(d));
+      }
+    } else {
+      // ei lukkoja: d & v määrää m; M-säädintä käytettäessä säädetään v
+      if (source === 'M') {
+        v = m / (rhoUse * areaFromDmm(d));
+      } else {
+        m = rhoUse * v * areaFromDmm(d);
+      }
+    }
 
-      function SliderWithNumber({label,value,onChange,step=1,min=0,max=100,unit="",extra=null}){
-        return (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-end justify-between">
-              <span className="text-sm text-gray-600">{label}</span>
-              <div className="flex items-center gap-2 w-56">
-                <input type="number" step={step} min={min} max={max}
-                  value={Number.isFinite(value)?value:""}
-                  onChange={e=>{const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(v);}}
-                  onBlur={e=>{const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(clamp(v,min,max));}}
-                  className="w-full rounded-xl border p-1.5 text-right" />
-                <span className="text-gray-500 text-sm w-16 text-right">{unit}</span>
+    // Rajaa ja pyöristä
+    d = clamp(d, 5, 1000);
+    v = clamp(v, 0, 10);
+    m = clamp(m, 0, 2000); // 2000 kg/s yläraja varmuudeksi
+
+    _setDiameterMM(Number(d.toFixed(3)));
+    _setVelocity(Number(v.toFixed(4)));
+    _setMassFlow(Number(m.toFixed(3)));
+  }
+
+  // --- Laskenta ---
+  const results = useMemo(() => {
+    const D = diameterMM / 1000; // m
+    const A = (Math.PI * D * D) / 4; // m²
+    const v = velocity;
+    const Q = v * A; // m³/s
+    const mdot = rho * Q; // kg/s
+    const Q_lpm = Q * 1000 * 60; // L/min
+    const Q_m3h = Q * 3600; // m³/h
+
+    const Re = (v * D) / nu;
+    const eps = epsMM / 1000; // m
+
+    let f: number;
+    if (Re < 2300 && Re > 0) f = 64 / Re; else if (Re >= 2300) {
+      const term = eps / (3.7 * D) + 5.74 / Math.pow(Re, 0.9);
+      f = 0.25 / Math.pow(Math.log10(term), 2);
+    } else f = 0;
+
+    const g = 9.80665;
+
+    const hf_fric = f * (length / D) * (v * v) / (2 * g); // m
+    const hf_minor = sumK * (v * v) / (2 * g); // m
+    const hf_total = hf_fric + hf_minor; // m
+
+    const dp_total = rho * g * hf_total; // Pa
+    const dp_bar_total = dp_total / 1e5; // bar
+
+    // Friction-only per 100 m (pyydetty bar/100m)
+    const hf_fric_100 = f * ((100) / D) * (v * v) / (2 * g); // m per 100 m
+    const dp_bar_fric_100 = (rho * g * hf_fric_100) / 1e5; // bar/100 m
+
+    const P_hyd = dp_total * Q; // W
+    const P_in = P_hyd / Math.max(0.01, eff); // W
+
+    const E_year_kWh = (P_in * hours) / 1000; // kWh/a
+    const cost_year = E_year_kWh * energyPrice; // € / a
+
+    return { D, A, Q, mdot, Q_lpm, Q_m3h, Re, f, hf_fric, hf_minor, hf_total, dp_total, dp_bar_total, dp_bar_fric_100, P_hyd, P_in, E_year_kWh, cost_year, sumK };
+  }, [diameterMM, velocity, length, rho, nu, epsMM, eff, hours, energyPrice, sumK]);
+
+  // Presetit
+  const makeCurrentPresetData = (): Preset["data"] => ({
+    diameterMM, velocity, massFlow, length, fluidKey, fluidTemp, overrideFluid, rho, nu, materialKey, epsMM, minorQtys, customK, customQty, eff, hours, energyPrice,
+  });
+
+  const savePreset = () => {
+    if (!presetName.trim()) return;
+    const id = Math.random().toString(36).slice(2);
+    const p: Preset = { id, name: presetName.trim(), data: makeCurrentPresetData() };
+    setPresets((list) => [p, ...list]);
+    setPresetName("");
+  };
+
+  const loadPreset = (p: Preset) => {
+    const d = p.data as any;
+    _setDiameterMM(d.diameterMM);
+    _setVelocity(d.velocity);
+    // Back-compat: jos vanhassa presetissä flowM3h on talletettuna
+    const mFromOld = typeof d.flowM3h === 'number' ? (d.rho || rho) * (d.flowM3h / 3600) : undefined;
+    _setMassFlow(typeof d.massFlow === 'number' ? d.massFlow : (mFromOld ?? rho * areaFromDmm(d.diameterMM) * d.velocity));
+    setLength(d.length);
+    setFluidKey(d.fluidKey);
+    setFluidTemp(d.fluidTemp);
+    setOverrideFluid(d.overrideFluid);
+    setRho(d.rho);
+    setNu(d.nu);
+    setMaterialKey(d.materialKey);
+    setEpsMM(d.epsMM);
+    setMinorQtys(d.minorQtys || initialMinorQtys());
+    setCustomK(typeof d.customK === 'number' ? d.customK : 0);
+    setCustomQty(typeof d.customQty === 'number' ? d.customQty : 0);
+    setEff(d.eff);
+    setHours(d.hours);
+    setEnergyPrice(d.energyPrice);
+  };
+
+  const deletePreset = (id: string) => setPresets((list) => list.filter((x) => x.id !== id));
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-4 sm:p-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <img src={LOGO_SRC} alt="Villen koodailut" className="h-8 w-auto" />
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Villen koodailut</div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Virtauslaskuri</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdvanced((s) => !s)}
+              className="px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50 text-sm"
+              aria-expanded={showAdvanced}
+              aria-controls="advanced-panel"
+            >
+              {showAdvanced ? "Piilota tarkemmat tiedot" : "Tarkemmat tiedot"}
+            </button>
+          </div>
+        </header>
+
+        {/* --- Perusnäkymä --- */}
+        <section className="bg-white p-4 sm:p-6 rounded-2xl shadow">
+          <h2 className="font-semibold mb-4">Perusasetukset</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Vasen kolumni: ohjaimet */}
+            <div className="space-y-4">
+              {/* DN-pudotusvalinta */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">DN-pikavalinta</span>
+                  <span className="text-xs text-gray-400">ID≈DN mm (arvio)</span>
+                </div>
+                <select
+                  className="rounded-xl border p-2 w-full"
+                  value={diameterMM}
+                  onChange={(e) => applyConstraints('D', parseFloat(e.target.value))}
+                >
+                  {dnList.map((dn) => (
+                    <option key={dn} value={dn}>DN{dn}</option>
+                  ))}
+                </select>
+              </div>
+
+              <SliderWithNumber
+                label={<LockButton locked={lockD} onToggle={() => setLocks('D')} label="Sisähalkaisija" />}
+                value={diameterMM}
+                onChange={(v) => applyConstraints('D', v)}
+                step={1}
+                min={5}
+                max={1000}
+                unit="mm"
+              />
+
+              <SliderWithNumber
+                label={<LockButton locked={lockV} onToggle={() => setLocks('V')} label="Virtausnopeus" />}
+                value={velocity}
+                onChange={(v) => applyConstraints('V', v)}
+                step={0.01}
+                min={0}
+                max={10}
+                unit="m/s"
+              />
+
+              <SliderWithNumber
+                label={<LockButton locked={lockM} onToggle={() => setLocks('M')} label="Massavirta" />}
+                value={massFlow}
+                onChange={(v) => applyConstraints('M', v)}
+                step={0.01}
+                min={0}
+                max={2000}
+                unit="kg/s"
+                extra={
+                  <div className="text-xs text-gray-500 mt-1">
+                    ≈ {((massFlow / Math.max(1e-9, rho)) * 3600).toLocaleString(undefined,{maximumFractionDigits:2})} m³/h •
+                    {((massFlow / Math.max(1e-9, rho)) * 60000).toLocaleString(undefined,{maximumFractionDigits:0})} L/min
+                  </div>
+                }
+              />
+
+              <SliderWithNumber
+                label={"Putken pituus"}
+                value={length}
+                onChange={setLength}
+                step={1}
+                min={0}
+                max={5000}
+                unit="m"
+              />
+            </div>
+
+            {/* Oikea alue: tulokset */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Virtaama */}
+              <div className="space-y-2">
+                <h3 className="text-sm uppercase tracking-wide text-gray-500">Virtaama</h3>
+                <ResultRow label="Massavirta ṁ" value={results.mdot} unit="kg/s" digits={3} />
+                <ResultRow label="Q" value={results.Q_lpm} unit="L/min" />
+                <ResultRow label="Q" value={results.Q_m3h} unit="m³/h" />
+              </div>
+              {/* Häviöt & energia (yhdistetty) */}
+              <div className="space-y-2">
+                <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt & energia</h3>
+                <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
+                <ResultRow label="Painehäviö / 100 m (putkikitka)" value={results.dp_bar_fric_100} unit="bar/100 m" digits={2} />
+                <ResultRow label="Hydraulinen teho" value={results.P_hyd / 1000} unit="kW" />
+                <ResultRow label="Sähköteho" value={results.P_in / 1000} unit="kW" />
+                <ResultRow label="Vuotuinen energia" value={results.E_year_kWh} unit="kWh/a" />
+                <ResultRow label="Vuotuinen kustannus" value={results.cost_year} unit="€ / a" digits={0} />
               </div>
             </div>
-            <input type="range" step={step} min={min} max={max}
-              value={Number.isFinite(value)?value:min}
-              onChange={e=>onChange(parseFloat(e.target.value))}
-              className="w-full" />
-            {extra}
           </div>
-        );
-      }
+        </section>
 
-      function NumberField({label,value,onChange,step=1,min=0,max=Number.POSITIVE_INFINITY,unit="",hint="",disabled=false}){
-        return (
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">{label}</span>
-            <div className="flex items-center gap-2">
-              <input type="number" step={step} min={min} max={max}
-                value={Number.isFinite(value)?value:""}
-                onChange={e=>{ if(disabled) return; const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(v); }}
-                onBlur={e=>{ if(disabled) return; const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(clamp(v,min,max)); }}
-                disabled={disabled}
-                className={`w-full rounded-xl border p-2 focus:outline-none focus:ring text-right ${disabled?'bg-gray-100 text-gray-500':''}`} />
-              <span className="text-gray-500 w-14 text-right">{unit}</span>
-            </div>
-            {hint && <span className="text-xs text-gray-400">{hint}</span>}
-          </label>
-        );
-      }
+        {/* --- Tarkemmat tiedot -paneeli --- */}
+        {showAdvanced && (
+          <section id="advanced-panel" className="bg-white p-4 sm:p-6 rounded-2xl shadow space-y-6">
+            <h2 className="font-semibold">Tarkemmat tiedot</h2>
 
-      function ResultRow({label,value,unit,digits=2}){
-        const fmt = n => (Number.isFinite(n)? n.toLocaleString(undefined,{maximumFractionDigits:digits}) : "-");
-        return (
-          <div className="flex items-baseline justify-between border-b py-1">
-            <span className="text-gray-600">{label}</span>
-            <span className="font-semibold">
-              {fmt(value)} <span className="text-gray-500 font-normal">{unit}</span>
-            </span>
-          </div>
-        );
-      }
-
-      function App(){
-        // Oletus: DN100, 1.5 m/s, L=100 m, vesi 20°C
-        const [diameterMM, _setDiameterMM] = useState(100);
-        const [velocity,   _setVelocity]   = useState(1.5);
-        const [length, setLength] = useState(100);
-
-        const [showAdvanced,setShowAdvanced]=useState(false);
-
-        const [fluidKey,setFluidKey]=useState("water");
-        const [fluidTemp,setFluidTemp]=useState(20);
-        const [rho,setRho]=useState(998);
-        const [nu,setNu]=useState(1.004e-6);
-        const [overrideFluid,setOverrideFluid]=useState(false);
-
-        const [materialKey,setMaterialKey]=useState("pehd");
-        const selectedMat = useMemo(()=>materials.find(m=>m.key===materialKey),[materialKey]);
-        const [epsMM,setEpsMM]=useState(selectedMat.eps_mm);
-
-        const [minorQtys,setMinorQtys]=useState(()=>Object.fromEntries(minorComponents.map(c=>[c.key,0])));
-        const [customK,setCustomK]=useState(0);
-        const [customQty,setCustomQty]=useState(0);
-
-        const [eff,setEff]=useState(0.7);
-        const [hours,setHours]=useState(4000);
-        const [energyPrice,setEnergyPrice]=useState(0.12);
-
-        // Massavirta ja lukitukset (D, v, ṁ – max 2 lukkoa)
-        const [massFlow,_setMassFlow]=useState(998*areaFromDmm(100)*1.5); // kg/s
-        const [lockD,setLockD]=useState(false);
-        const [lockV,setLockV]=useState(false);
-        const [lockM,setLockM]=useState(false);
-
-        useEffect(()=>setEpsMM(selectedMat.eps_mm),[materialKey]);
-
-        useEffect(()=>{
-          if(overrideFluid) return;
-          const f=fluids.find(x=>x.key===fluidKey); if(!f) return;
-          const temps=f.temps.map(x=>x.t);
-          const closest=temps.reduce((p,c)=>Math.abs(c-fluidTemp)<Math.abs(p-fluidTemp)?c:p,temps[0]);
-          const rec=f.temps.find(x=>x.t===closest);
-          setFluidTemp(closest); setRho(rec.rho); setNu(rec.nu);
-          // jos massavirta lukittuna, säilytä ṁ ja johda v tai D uudelleen
-          applyConstraints('D', diameterMM, lockD, lockV, lockM, rec.rho);
-        },[fluidKey,fluidTemp,overrideFluid]);
-
-        const sumK = useMemo(
-          ()=> minorComponents.reduce((acc,c)=>acc + c.K*(minorQtys[c.key]||0),0) + (customK||0)*(customQty||0),
-          [minorQtys,customK,customQty]
-        );
-
-        function setLocks(which){
-          let d=lockD,v=lockV,m=lockM;
-          if(which==='D') d=!d; else if(which==='V') v=!v; else m=!m;
-          const count=[d,v,m].filter(Boolean).length;
-          if(count>2){ d=(which==='D'); v=(which==='V'); m=(which==='M'); }
-          setLockD(d); setLockV(v); setLockM(m);
-          applyConstraints('D',diameterMM,d,v,m);
-        }
-
-        function applyConstraints(source, value, ld=lockD, lv=lockV, lm=lockM, rhoArg){
-          const rhoUse = (typeof rhoArg==='number') ? rhoArg : rho;
-          let d=diameterMM, v=velocity, m=massFlow;
-          if(source==='D') d=value;
-          if(source==='V') v=value;
-          if(source==='M') m=value;
-
-          const A=areaFromDmm(d);
-          const lockedCount=[ld,lv,lm].filter(Boolean).length;
-
-          if(lockedCount>=2){
-            if(ld && lv){ m = rhoUse*v*A; }
-            else if(ld && lm){ v = m/(rhoUse*A); }
-            else if(lv && lm){ const Aneed = m/(rhoUse*v); d = dmmFromArea(Aneed); }
-          } else if(lm){ // vain ṁ lukittu
-            if(source==='D'){ v = m/(rhoUse*areaFromDmm(d)); }
-            else if(source==='V'){ const Aneed = m/(rhoUse*v); d = dmmFromArea(Aneed); }
-            else { v = m/(rhoUse*areaFromDmm(d)); }
-          } else if(lv){ // vain v lukittu
-            if(source==='D'){ m = rhoUse*v*areaFromDmm(d); }
-            else if(source==='M'){ const Aneed = m/(rhoUse*v); d = dmmFromArea(Aneed); }
-          } else if(ld){ // vain D lukittu
-            if(source==='V'){ m = rhoUse*v*areaFromDmm(d); }
-            else if(source==='M'){ v = m/(rhoUse*areaFromDmm(d)); }
-          } else { // ei lukkoja
-            if(source==='M'){ v = m/(rhoUse*areaFromDmm(d)); }
-            else { m = rhoUse*v*areaFromDmm(d); }
-          }
-
-          d = clamp(d,5,1000);
-          v = clamp(v,0,10);
-          m = clamp(m,0,2000);
-
-          _setDiameterMM(Number(d.toFixed(3)));
-          _setVelocity(Number(v.toFixed(4)));
-          _setMassFlow(Number(m.toFixed(3)));
-        }
-
-        // Tulokset
-        const results = useMemo(()=>{
-          const D = diameterMM/1000;
-          const A = Math.PI*D*D/4;
-          const v = velocity;
-          const Q = v*A;                 // m³/s
-          const mdot = rho*Q;            // kg/s
-          const Q_lpm = Q*1000*60;       // L/min
-          const Q_m3h = Q*3600;          // m³/h
-
-          const Re = (v*D)/nu;
-          const eps = epsMM/1000;
-          let f=0;
-          if(Re>0 && Re<2300) f=64/Re; else if(Re>=2300){ const term=eps/(3.7*D)+5.74/Math.pow(Re,0.9); f=0.25/Math.pow(Math.log10(term),2); }
-
-          const g=9.80665;
-          const hf_fric  = f*(length/D)*(v*v)/(2*g);
-          const hf_minor = sumK*(v*v)/(2*g);
-          const hf_total = hf_fric + hf_minor;
-
-          const dp_total     = rho*g*hf_total;
-          const dp_bar_total = dp_total/1e5;
-
-          // bar / 100 m (pituushäviö, ilman pienhäviöitä)
-          const hf_fric_100 = f*(100/D)*(v*v)/(2*g);
-          const dp_bar_fric_100 = (rho*g*hf_fric_100)/1e5;
-
-          const P_hyd = dp_total*Q;
-          const P_in  = P_hyd/Math.max(0.01,eff);
-          const E_year_kWh = (P_in*hours)/1000;
-          const cost_year  = E_year_kWh*energyPrice;
-
-          return { mdot, Q_lpm, Q_m3h, Re, f, hf_fric, hf_minor, hf_total, dp_bar_total, dp_bar_fric_100, P_hyd, P_in, E_year_kWh, cost_year };
-        },[diameterMM,velocity,length,rho,nu,epsMM,eff,hours,energyPrice,sumK]);
-
-        return (
-          <div className="min-h-screen text-gray-900 p-4 sm:p-8">
-            <div className="mx-auto max-w-6xl space-y-6">
-
-              <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <img src={LOGO_SRC} alt="Jukkola Systems Oy" className="h-8 w-auto" onError={e=>e.currentTarget.style.display='none'} />
-                  <div>
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">Jukkola Systems Oy</div>
-                    <h1 className="text-2xl sm:text-3xl font-bold">Virtauslaskuri</h1>
-                  </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Fluidi & materiaalit */}
+              <div className="space-y-4">
+                {/* Fluidin valinta */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-600">Neste</span>
+                  <select className="rounded-xl border p-2" value={fluidKey} onChange={(e) => setFluidKey(e.target.value)}>
+                    {fluids.map((f) => (
+                      <option key={f.key} value={f.key}>{f.label}</option>
+                    ))}
+                  </select>
                 </div>
+                {/* Lämpötila valinta */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-600">Lämpötila (°C)</span>
+                  <select
+                    className="rounded-xl border p-2"
+                    value={fluidTemp}
+                    onChange={(e) => setFluidTemp(parseFloat(e.target.value))}
+                  >
+                    {fluids.find((f) => f.key === fluidKey)!.temps.map((t) => (
+                      <option key={t.t} value={t.t}>{t.t} °C</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex items-center gap-2">
-                  <button onClick={()=>setShowAdvanced(s=>!s)}
-                          className="px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50 text-sm"
-                          aria-expanded={showAdvanced} aria-controls="advanced-panel">
-                    {showAdvanced ? "Piilota tarkemmat tiedot" : "Tarkemmat tiedot"}
-                  </button>
+                  <input id="overrideFluid" type="checkbox" checked={overrideFluid} onChange={(e) => setOverrideFluid(e.target.checked)} />
+                  <label htmlFor="overrideFluid" className="text-sm text-gray-700">Yliaja nesteen ominaisuudet käsin</label>
                 </div>
-              </header>
 
-              <section className="bg-white p-4 sm:p-6 rounded-2xl shadow">
-                <h2 className="font-semibold mb-4">Perusasetukset</h2>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">DN-pikavalinta</span>
-                        <span className="text-xs text-gray-400">ID≈DN mm (arvio)</span>
-                      </div>
-                      <select className="rounded-xl border p-2 w-full" value={diameterMM}
-                              onChange={e=>applyConstraints('D', parseFloat(e.target.value))}>
-                        {dnList.map(dn => <option key={dn} value={dn}>DN{dn}</option>)}
-                      </select>
-                    </div>
-
-                    <SliderWithNumber
-                      label={<LockButton locked={lockD} onToggle={()=>setLocks('D')} label="Sisähalkaisija" />}
-                      value={diameterMM}
-                      onChange={v=>applyConstraints('D',v)}
-                      step={1} min={5} max={1000} unit="mm"
-                    />
-
-                    <SliderWithNumber
-                      label={<LockButton locked={lockV} onToggle={()=>setLocks('V')} label="Virtausnopeus" />}
-                      value={velocity}
-                      onChange={v=>applyConstraints('V',v)}
-                      step={0.01} min={0} max={10} unit="m/s"
-                    />
-
-                    <SliderWithNumber
-                      label={<LockButton locked={lockM} onToggle={()=>setLocks('M')} label="Massavirta" />}
-                      value={massFlow}
-                      onChange={v=>applyConstraints('M',v)}
-                      step={0.01} min={0} max={2000} unit="kg/s"
-                      extra={
-                        <div className="text-xs text-gray-500 mt-1">
-                          ≈ {((massFlow/Math.max(1e-9,rho))*3600).toLocaleString(undefined,{maximumFractionDigits:2})} m³/h •
-                          {((massFlow/Math.max(1e-9,rho))*60000).toLocaleString(undefined,{maximumFractionDigits:0})} L/min
-                        </div>
-                      }
-                    />
-
-                    <SliderWithNumber label="Putken pituus" value={length} onChange={setLength}
-                                      step={1} min={0} max={5000} unit="m" />
-                  </div>
-
-                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Virtaama</h3>
-                      <ResultRow label="Massavirta ṁ" value={results.mdot} unit="kg/s" digits={3} />
-                      <ResultRow label="Q" value={results.Q_lpm} unit="L/min" />
-                      <ResultRow label="Q" value={results.Q_m3h} unit="m³/h" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt & energia</h3>
-                      <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
-                      <ResultRow label="Painehäviö / 100 m (putkikitka)" value={results.dp_bar_fric_100} unit="bar/100 m" digits={2} />
-                      <ResultRow label="Hydrauliikkateho" value={results.P_hyd/1000} unit="kW" />
-                      <ResultRow label="Sähköteho" value={results.P_in/1000} unit="kW" />
-                      <ResultRow label="Vuotuinen energia" value={results.E_year_kWh} unit="kWh/a" />
-                      <ResultRow label="Vuotuinen kustannus" value={results.cost_year} unit="€ / a" digits={0} />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <NumberField label="Tiheys ρ" value={rho} onChange={(v)=>{ setRho(v); applyConstraints('D', diameterMM, lockD, lockV, lockM, v); }} step={1} min={100} max={2000} unit="kg/m³" disabled={!overrideFluid} />
+                  <NumberField label="Kin. viskositeetti ν" value={nu} onChange={setNu} step={1e-7} min={1e-7} max={1e-3} unit="m²/s" disabled={!overrideFluid} />
                 </div>
-              </section>
 
-              {showAdvanced && (
-                <section id="advanced-panel" className="bg-white p-4 sm:p-6 rounded-2xl shadow space-y-6">
-                  <h2 className="font-semibold">Tarkemmat tiedot</h2>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-600">Putkimateriaali</span>
+                  <select className="rounded-xl border p-2" value={materialKey} onChange={(e) => setMaterialKey(e.target.value)}>
+                    {materials.map((m) => (
+                      <option key={m.key} value={m.key}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <NumberField label="Karheus ε" value={epsMM} onChange={setEpsMM} step={0.001} min={0} max={1} unit="mm" />
+              </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-600">Neste</span>
-                        <select className="rounded-xl border p-2" value={fluidKey} onChange={e=>setFluidKey(e.target.value)}>
-                          {fluids.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
-                        </select>
-                      </div>
+              {/* Sähkö & käyttö + Pienhäviöt */}
+              <div className="space-y-4">
+                <NumberField label="Kokonais-hyötysuhde η" value={eff} onChange={setEff} step={0.01} min={0.01} max={1} unit="-" hint="Pumppu × moottori, esim. 0.7" />
+                <NumberField label="Käyttötunnit/a" value={hours} onChange={setHours} step={1} min={0} max={8760} unit="h" />
+                <NumberField label="Sähkön hinta" value={energyPrice} onChange={setEnergyPrice} step={0.001} min={0} max={10} unit="€/kWh" />
+                <div className="text-xs text-gray-500">Sähköteho ja vuotuinen energia lasketaan kokonaishäviöistä ja η:stä.</div>
 
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-600">Lämpötila (°C)</span>
-                        <select className="rounded-xl border p-2" value={fluidTemp}
-                                onChange={e=>setFluidTemp(parseFloat(e.target.value))}>
-                          {fluids.find(f=>f.key===fluidKey).temps.map(t => <option key={t.t} value={t.t}>{t.t} °C</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input id="overrideFluid" type="checkbox" checked={overrideFluid} onChange={e=>setOverrideFluid(e.target.checked)} />
-                        <label htmlFor="overrideFluid" className="text-sm text-gray-700">Yliaja nesteen ominaisuudet käsin</label>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <NumberField label="Tiheys ρ" value={rho} onChange={v=>{ setRho(v); applyConstraints('D',diameterMM,lockD,lockV,lockM,v); }} step={1} min={100} max={2000} unit="kg/m³" disabled={!overrideFluid} />
-                        <NumberField label="Kin. viskositeetti ν" value={nu} onChange={setNu} step={1e-7} min={1e-7} max={1e-3} unit="m²/s" disabled={!overrideFluid} />
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-600">Putkimateriaali</span>
-                        <select className="rounded-xl border p-2" value={materialKey} onChange={e=>setMaterialKey(e.target.value)}>
-                          {materials.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
-                        </select>
-                      </div>
-
-                      <NumberField label="Karheus ε" value={epsMM} onChange={setEpsMM} step={0.001} min={0} max={1} unit="mm" />
-                    </div>
-
-                    <div className="space-y-4">
-                      <NumberField label="Kokonais-hyötysuhde η" value={eff} onChange={setEff} step={0.01} min={0.01} max={1} unit="-" hint="Pumppu × moottori, esim. 0.7" />
-                      <NumberField label="Käyttötunnit/a" value={hours} onChange={setHours} step={1} min={0} max={8760} unit="h" />
-                      <NumberField label="Sähkön hinta" value={energyPrice} onChange={setEnergyPrice} step={0.001} min={0} max={10} unit="€/kWh" />
-                      <div className="text-xs text-gray-500">Sähköteho ja vuotuinen energia lasketaan kokonaishäviöistä ja η:stä.</div>
-
-                      <div className="space-y-3">
-                        <h3 className="font-medium">Pienhäviöt (komponentit)</h3>
-                        <div className="space-y-2">
-                          {minorComponents.map(c => (
-                            <div key={c.key} className="flex items-center gap-2">
-                              <div className="flex-1">
-                                <div className="text-sm">{c.label}</div>
-                                <div className="text-xs text-gray-500">K≈{c.K}</div>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <button type="button" onClick={()=>setMinorQtys(q=>({...q,[c.key]: Math.max(0, Math.round((q[c.key]||0)-1))}))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">−</button>
-                                <input type="number" min={0} step={1} className="w-20 rounded-xl border p-2 text-right"
-                                  value={minorQtys[c.key]??0}
-                                  onChange={e=>{ const n=Math.max(0, Math.round(parseFloat(e.target.value||"0"))); setMinorQtys(q=>({...q,[c.key]: n})); }} />
-                                <button type="button" onClick={()=>setMinorQtys(q=>({...q,[c.key]: Math.max(0, (q[c.key]||0)+1)}))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">+</button>
-                              </div>
-                            </div>
-                          ))}
+                {/* Pienhäviöt: kiinteä lista */}
+                <div className="space-y-3">
+                  <h3 className="font-medium">Pienhäviöt (komponentit)</h3>
+                  <div className="space-y-2">
+                    {minorComponents.map((c) => (
+                      <div key={c.key} className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <div className="text-sm">{c.label}</div>
+                          <div className="text-xs text-gray-500">K≈{c.K}</div>
                         </div>
-
-                        <div className="pt-3 border-t space-y-2">
-                          <div className="text-sm font-medium">Oma komponentti</div>
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <label className="flex items-center gap-2">
-                              <span className="text-sm text-gray-600">K</span>
-                              <input type="number" min={0} step={0.01} className="w-24 rounded-xl border p-2 text-right"
-                                value={customK} onChange={e=>setCustomK(Math.max(0, parseFloat(e.target.value||"0")))}/>
-                            </label>
-                            <div className="flex items-center gap-1">
-                              <button type="button" onClick={()=>setCustomQty(n=>Math.max(0, n-1))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">−</button>
-                              <input type="number" min={0} step={1} className="w-20 rounded-xl border p-2 text-right"
-                                value={customQty} onChange={e=>setCustomQty(Math.max(0, Math.round(parseFloat(e.target.value||"0"))))}/>
-                              <button type="button" onClick={()=>setCustomQty(n=>Math.max(0, n+1))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">+</button>
-                            </div>
-                            <div className="text-xs text-gray-500">K·n = {(customK*customQty).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => setMinorQtys((q) => ({ ...q, [c.key]: Math.max(0, Math.round((q[c.key] || 0) - 1)) }))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">−</button>
+                          <input type="number" min={0} step={1} className="w-20 rounded-xl border p-2 text-right" value={minorQtys[c.key] ?? 0} onChange={(e) => { const n = Math.max(0, Math.round(parseFloat(e.target.value || "0"))); setMinorQtys((q) => ({ ...q, [c.key]: n })); }} />
+                          <button type="button" onClick={() => setMinorQtys((q) => ({ ...q, [c.key]: Math.max(0, (q[c.key] || 0) + 1) }))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">+</button>
                         </div>
-
-                        <div className="text-sm text-gray-700">ΣK = {(minorComponents.reduce((a,c)=>a + c.K*(minorQtys[c.key]||0),0) + (customK||0)*(customQty||0)).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
                       </div>
-                    </div>
+                    ))}
+                  </div>
 
-                    <div className="space-y-2">
-                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Diagnostiikka</h3>
-                      <ResultRow label="Reynolds" value={results.Re} unit="-" digits={0} />
-                      <ResultRow label="Kitkakerroin f" value={results.f} unit="-" digits={4} />
-                      <ResultRow label="Pituushäviö h_f" value={results.hf_fric} unit="m" digits={2} />
-                      <ResultRow label="Pienhäviöt h_m" value={results.hf_minor} unit="m" digits={2} />
-                      <ResultRow label="Yhteensä h_tot" value={results.hf_total} unit="m" digits={2} />
-                      <ResultRow label="Δp (bar)" value={results.dp_bar_total} unit="bar" digits={2} />
+                  {/* Oma komponentti */}
+                  <div className="pt-3 border-t space-y-2">
+                    <div className="text-sm font-medium">Oma komponentti</div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <label className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">K</span>
+                        <input type="number" min={0} step={0.01} className="w-24 rounded-xl border p-2 text-right" value={customK} onChange={(e) => setCustomK(Math.max(0, parseFloat(e.target.value || "0")))} />
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => setCustomQty((n) => Math.max(0, n - 1))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">−</button>
+                        <input type="number" min={0} step={1} className="w-20 rounded-xl border p-2 text-right" value={customQty} onChange={(e) => setCustomQty(Math.max(0, Math.round(parseFloat(e.target.value || "0"))))} />
+                        <button type="button" onClick={() => setCustomQty((n) => Math.max(0, n + 1))} className="px-2 py-2 rounded-xl border hover:bg-gray-50">+</button>
+                      </div>
+                      <div className="text-xs text-gray-500">K·n = {(customK * customQty).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
                     </div>
                   </div>
-                </section>
-              )}
 
-              <footer className="text-center text-xs text-gray-400">© {new Date().getFullYear()} Jukkola Systems Oy • Virtauslaskuri</footer>
+                  <div className="text-sm text-gray-700">ΣK = {sumK.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                </div>
+              </div>
+
+              {/* Diagnostiikka */}
+              <div className="space-y-2">
+                <h3 className="text-sm uppercase tracking-wide text-gray-500">Diagnostiikka</h3>
+                <ResultRow label="Reynolds" value={results.Re} unit="-" digits={0} />
+                <ResultRow label="Kitkakerroin f" value={results.f} unit="-" digits={4} />
+                <ResultRow label="Pituushäviö h_f" value={results.hf_fric} unit="m" digits={2} />
+                <ResultRow label="Pienhäviöt h_m" value={results.hf_minor} unit="m" digits={2} />
+                <ResultRow label="Yhteensä h_tot" value={results.hf_total} unit="m" digits={2} />
+                <ResultRow label="Δp (bar)" value={results.dp_bar_total} unit="bar" digits={2} />
+              </div>
             </div>
-          </div>
-        );
-      }
+          </section>
+        )}
 
-      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    </script>
-  </body>
-</html>
+        {/* Presetit */}
+        <section className="bg-white p-4 sm:p-6 rounded-2xl shadow">
+          <h2 className="font-semibold mb-4">Tallenna & lataa presetit</h2>
+          <div className="flex flex-col md:flex-row gap-3 md:items-end">
+            <label className="flex-1">
+              <span className="text-sm text-gray-600">Presetin nimi</span>
+              <input value={presetName} onChange={(e) => setPresetName(e.target.value)} className="w-full rounded-xl border p-2" placeholder="Esim. Kunnan pumppaamo A" />
+            </label>
+            <button onClick={savePreset} className="px-3 py-2 rounded-2xl bg-gray-900 text-white text-sm hover:opacity-90">Tallenna tämä asetus</button>
+          </div>
+
+          {presets.length === 0 ? (
+            <p className="text-sm text-gray-500 mt-3">Ei tallennettuja presettejä vielä.</p>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {presets.map((p) => (
+                <div key={p.id} className="border rounded-2xl p-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-xs text-gray-500">DN≈{p.data.diameterMM} • v {p.data.velocity} m/s • L {p.data.length} m</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => loadPreset(p)} className="px-2 py-1 rounded-xl border text-sm hover:bg-gray-50">Lataa</button>
+                    <button onClick={() => deletePreset(p.id)} className="px-2 py-1 rounded-xl border text-sm hover:bg-gray-50">Poista</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <footer className="text-center text-xs text-gray-400">© {new Date().getFullYear()} Villen koodailut • Virtauslaskuri • React & Tailwind</footer>
+      </div>
+    </div>
+  );
+}
+
+// --- Smoke-testit (vain konsoliin) ---
+(function runSmokeTests() {
+  try {
+    // Testi 1: perusparametrit (ei pienhäviöitä, PE, vesi 20°C)
+    const diameterMM = 19, velocity = 0.3, length = 200, rho = 998, nu = 1.004e-6, epsMM = 0.0015, sumK = 0;
+    const D = diameterMM / 1000; const A = (Math.PI * D * D) / 4; const Q = velocity * A; const mdot = rho * Q;
+    const Re = (velocity * D) / nu; const eps = epsMM / 1000; const term = eps / (3.7 * D) + 5.74 / Math.pow(Re, 0.9);
+    const f = 0.25 / Math.pow(Math.log10(term), 2); const g = 9.80665;
+    const hf_fric = f * (length / D) * (velocity * velocity) / (2 * g); const dp_bar = (rho * g * hf_fric) / 1e5;
+    const approx = (a: number, b: number, tol = 0.02) => Math.abs(a - b) <= tol;
+    console.assert(approx(dp_bar, 0.173, 0.02), `dp_bar ${dp_bar.toFixed(3)} ei ~0.173`);
+    console.assert(approx(Q * 60000, 5.10, 0.2), `Q(L/min) ${(Q * 60000).toFixed(2)} ei ~5.10`);
+    console.assert(approx(mdot, 0.085, 0.02), `ṁ ${mdot.toFixed(3)} kg/s ei ~0.085`);
+
+    // Testi 2: bar/100 m (putkikitka)
+    const hf_fric_100 = f * (100 / D) * (velocity * velocity) / (2 * g);
+    const dp_bar_100 = (rho * g * hf_fric_100) / 1e5;
+    console.assert(dp_bar_100 > 0, "dp_bar_100 ei positiivinen");
+
+    // Testi 3: lukitukset — jos ṁ ja D lukittuna, v = m/(ρA)
+    const dmmTest = 100; const vTest = 1.5; const rhoTest = 998; const mTest = rhoTest * areaFromDmm(dmmTest) * vTest;
+    const vFromLocks = mTest / (rhoTest * areaFromDmm(dmmTest));
+    console.assert(Math.abs(vFromLocks - vTest) < 1e-9, "Lukituskaava (ṁ&D→v) ei täsmää");
+
+    console.log("Smoke tests OK");
+  } catch (e) {
+    console.warn("Smoke tests failed", e);
+  }
+})();
