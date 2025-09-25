@@ -227,14 +227,14 @@ function setLevel(lv){
 
   // Hard-tilat (ei rajoitinta, raju paineisku)
   if(lv>=3){ G.useLimiter=false; G.gamma=1.4; $('distText').textContent='aalto'; }
-  if(lv===3){ G.C=3.4; G.kSurge=1.25; G.P_limit=1.18; G.rSoft=0.08; G.tLimit=20; }
-  if(lv===4){ G.C=3.1; G.kSurge=1.40; G.P_limit=1.16; G.rSoft=0.07; G.tLimit=19; }
-  if(lv===5){ G.C=2.9; G.kSurge=1.55; G.P_limit=1.14; G.rSoft=0.06; G.tLimit=18; G.jitter=0.015; $('distText').textContent='aalto + häiriö'; }
-  if(lv===6){ G.C=2.7; G.kSurge=1.70; G.P_limit=1.12; G.rSoft=0.055; G.tLimit=17; G.jitter=0.02; $('distText').textContent='aalto + “nykäys”'; }
-  if(lv===7){ G.C=2.6; G.kSurge=1.85; G.P_limit=1.10; G.rSoft=0.05; G.tLimit=16; G.demandAmp=0.12; $('distText').textContent='isompi aalto'; }
-  if(lv===8){ G.C=2.5; G.kSurge=2.00; G.P_limit=1.08; G.rSoft=0.05; G.tLimit=15; G.demandAmp=0.14; G.jitter=0.03; $('distText').textContent='isompi aalto + häly'; }
-  if(lv===9){ G.C=2.4; G.kSurge=2.10; G.P_limit=1.06; G.rSoft=0.045; G.tLimit=14; G.demandAmp=0.16; G.jitter=0.035; $('distText').textContent='kova aalto + häly'; }
-  if(lv===10){ G.C=2.3; G.kSurge=2.25; G.P_limit=1.05; G.rSoft=0.040; G.tLimit=13; G.demandAmp=0.18; G.jitter=0.04; $('distText').textContent='mestaritaso'; }
+  if(lv===3){ G.C=3.4; G.kSurge=1.25; G.P_limit=1.15; G.rSoft=0.065; G.tLimit=20; }
+  if(lv===4){ G.C=3.1; G.kSurge=1.40; G.P_limit=1.13; G.rSoft=0.06; G.tLimit=19; }
+  if(lv===5){ G.C=2.9; G.kSurge=1.55; G.P_limit=1.11; G.rSoft=0.055; G.tLimit=18; G.jitter=0.015; $('distText').textContent='aalto + häiriö'; }
+  if(lv===6){ G.C=2.7; G.kSurge=1.70; G.P_limit=1.09; G.rSoft=0.05; G.tLimit=17; G.jitter=0.02; $('distText').textContent='aalto + “nykäys”'; }
+  if(lv===7){ G.C=2.6; G.kSurge=1.85; G.P_limit=1.07; G.rSoft=0.045; G.tLimit=16; G.demandAmp=0.12; $('distText').textContent='isompi aalto'; }
+  if(lv===8){ G.C=2.5; G.kSurge=2.00; G.P_limit=1.05; G.rSoft=0.04; G.tLimit=15; G.demandAmp=0.14; G.jitter=0.03; $('distText').textContent='isompi aalto + häly'; }
+  if(lv===9){ G.C=2.4; G.kSurge=2.10; G.P_limit=1.04; G.rSoft=0.035; G.tLimit=14; G.demandAmp=0.16; G.jitter=0.035; $('distText').textContent='kova aalto + häly'; }
+  if(lv===10){ G.C=2.3; G.kSurge=2.25; G.P_limit=1.02; G.rSoft=0.030; G.tLimit=13; G.demandAmp=0.18; G.jitter=0.04; $('distText').textContent='mestaritaso'; }
 
   resetRound();
 }
