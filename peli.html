@@ -28,24 +28,16 @@
   header .sub{opacity:.7; font-weight:600}
   footer{justify-content:center; font-size:13px; color:#cfdcff}
 
-  /* LAYOUT */
-  .game{
-    display:grid; gap:14px;
-    grid-template-columns: 1.4fr 1fr; /* mittari iso */
-  }
-  @media (max-width:980px){
-    .game{grid-template-columns:1fr}
-  }
+  .game{ display:grid; gap:14px; grid-template-columns: 1.4fr 1fr; }
+  @media (max-width:980px){ .game{grid-template-columns:1fr} }
   .panel{
     background:linear-gradient(180deg,var(--panel),#0b1327 60%,#0a1122);
     border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow);
     padding:14px;
   }
 
-  /* LEFT: mittarit */
   .meterWrap{display:grid; grid-template-columns: 1fr 1fr; gap:14px}
   @media (max-width:980px){ .meterWrap{grid-template-columns:1fr} }
-
   .meterCard{
     display:grid; gap:10px; padding:12px; border:1px solid rgba(255,255,255,.06); border-radius:14px;
     background:linear-gradient(180deg,#0e1631,#0c152c)
@@ -71,11 +63,7 @@
     box-shadow:0 0 0 3px rgba(255,209,102,.18), 0 0 12px rgba(255,209,102,.6);
   }
   .gauge.flash{animation:gflash .6s ease}
-  @keyframes gflash{
-    0%{box-shadow:0 0 0 0 rgba(255,98,125,.0)}
-    40%{box-shadow:0 0 0 8px rgba(255,98,125,.35)}
-    100%{box-shadow:0 0 0 0 rgba(255,98,125,.0)}
-  }
+  @keyframes gflash{ 0%{box-shadow:0 0 0 0 rgba(255,98,125,.0)} 40%{box-shadow:0 0 0 8px rgba(255,98,125,.35)} 100%{box-shadow:0 0 0 0 rgba(255,98,125,.0)} }
   .gTitle{display:flex; align-items:baseline; gap:8px; font-weight:800}
   .gTitle small{color:var(--muted); font-weight:600}
 
@@ -84,7 +72,6 @@
   .bar>div{height:100%; width:0%; background:linear-gradient(90deg,#4fd6ff,#ffab57)}
   .hint{color:#cfe1ff; opacity:.75; font-size:14px}
 
-  /* RIGHT: ohjaus + stats */
   .rightCol{display:grid; gap:14px}
   .sliderCard{display:grid; grid-template-columns: 100px 1fr; gap:14px; align-items:center}
   @media (max-width:520px){ .sliderCard{grid-template-columns: 84px 1fr} }
@@ -130,7 +117,6 @@
   </header>
 
   <div class="game panel">
-    <!-- LEFT: Mittarit -->
     <div class="meterWrap">
       <div class="meterCard">
         <div class="gTitle">Linjapaine <small>(eff.)</small></div>
@@ -173,7 +159,6 @@
       </div>
     </div>
 
-    <!-- RIGHT: Ohjaus -->
     <div class="rightCol">
       <div class="sliderCard pill">
         <div class="slider" id="slider">
@@ -225,10 +210,10 @@ const G = {
   running:true, finished:false,
   score:0, totalScore:0, title:'—',
 
-  /* ===== Slew-limiter (uusi) ===== */
+  /* ===== Slew-limiter ===== */
   targetV: 0,       // kahvalla asetettu tavoite
-  slewUp: 0.18,     // max nosto-nopeus (osuutta/s), esim. 0.18 = 18 %/s
-  slewDown: 0.50    // max lasku-nopeus (saa laskea nopeammin)
+  slewUp: 0.50,     // 50 % / s ylöspäin
+  slewDown: 0.80    // 80 % / s alaspäin
 };
 
 /* ===== Level definitions ===== */
@@ -250,7 +235,7 @@ function setLevel(lv){
   if(lv===9){ G.C=3.1; G.kSurge=1.30; G.P_limit=1.13; G.tLimit=19; G.demandAmp=0.12; G.jitter=0.03; $('distText').textContent='kova aalto + häly'; }
   if(lv===10){ G.C=3.0; G.kSurge=1.40; G.P_limit=1.12; G.tLimit=18; G.demandAmp=0.14; G.jitter=0.04; $('distText').textContent='mestaritaso'; }
 
-  // Hidasta dynamiikkaa globaalisti
+  // Hidasta dynamiikkaa globaalisti (pidetään maltillisena)
   G.C *= 1.5;
   G.Kv *= 0.80;
 
@@ -258,7 +243,7 @@ function setLevel(lv){
 }
 function resetRound(){
   G.v=0; G.vPrev=0; G.dvdt=0;
-  G.targetV=0;                // myös tavoite nollaan
+  G.targetV=0;
   G.P=0; G.P_eff=0; G.qDemand=0.55;
   G.t=0; G.exceeded=false; G.exceedCount=0; G.sinceExceed=0; G.excessArea=0;
   G.score=0; G.finished=false; G.running=true;
@@ -278,20 +263,19 @@ function resetRound(){
   updateUI(true);
 }
 function placeLimitLine(){
-  // gauge is 0..1.6 bar visuaalisesti
   const maxP=1.6;
   const frac = clamp(G.P_limit/maxP, 0, 1);
   $('limit').style.top = ( (1-frac)*100 ) + '%';
 }
 
-/* ===== Input: vertical drag slider (asettaa targetV) ===== */
+/* ===== Input: drag asettaa targetV ===== */
 const slider=$('slider'), knob=$('knob');
 let dragging=false;
 function setVFromY(clientY){
   const r = slider.getBoundingClientRect();
   const y = clamp(clientY, r.top+10, r.bottom-10);
   const frac = 1 - ( (y - (r.top+10)) / (r.height-20) ); // 0..1
-  G.targetV = clamp(frac, 0, 1); // vain tavoite muuttuu
+  G.targetV = clamp(frac, 0, 1);
 }
 slider.addEventListener('pointerdown', (e)=>{ dragging=true; slider.setPointerCapture(e.pointerId); setVFromY(e.clientY); });
 slider.addEventListener('pointermove', (e)=>{ if(dragging){ setVFromY(e.clientY); } });
@@ -300,48 +284,49 @@ slider.addEventListener('pointercancel',(e)=>{ dragging=false; });
 
 /* ===== Physics & loop ===== */
 function step(){
-  const dt = G.dt; // fixed step
+  const dt = G.dt;
   if(G.running){
-    // Demand profile
+    // Kysyntä
     const t = G.t;
     const noise = G.jitter ? (G.jitter*(Math.random()-0.5)) : 0;
     const wave = G.demandAmp*Math.sin(2*Math.PI*G.demandHz*t + 1.1);
-    // occasional spike (levels 5+)
     let spike = 0;
     if(G.level>=5 && Math.random()<0.02) spike += 0.06 + Math.random()*0.05;
     G.qDemand = clamp(0.55 + wave + noise + spike, 0.3, 0.95);
 
-    /* Venttiili seuraa kahvaa rajoitetulla nopeudella (slew-limiter) */
+    /* Slew-limiter: nopeasti kun turvallista, rauhallisemmin rajan lähellä */
     {
       const diff = G.targetV - G.v;
-      const stepMax = (diff > 0 ? G.slewUp : G.slewDown) * dt;
+      const danger = clamp(G.P_eff / Math.max(1e-6, G.P_limit), 0, 1); // 0..1
+      const upSpeed = G.slewUp * (1.8 - 0.8 * danger); // 0.9x..1.8x * 0.5 = 0.5..0.9
+      const stepMax = (diff > 0 ? upSpeed : G.slewDown) * dt;
       if (Math.abs(diff) <= stepMax) G.v = G.targetV;
       else G.v += Math.sign(diff) * stepMax;
     }
 
-    // dv/dt todellisesta venttiilistä
+    // dv/dt
     G.dvdt = (G.v - G.vPrev) / dt;
 
-    // Backflow “nykäys” on fast open (level 6+)
+    // Takaisku-nykäys (lv6+)
     if(G.level>=6 && G.dvdt > 0.40 && G.spikeTimer<=0){
-      G.spikeTimer = 0.10; // 100 ms
+      G.spikeTimer = 0.10;
       G.spikeAmp = 0.12 + Math.random()*0.08;
     }
     if(G.spikeTimer>0){ G.spikeTimer -= dt; if(G.spikeTimer<0) G.spikeTimer=0; }
 
-    // Tank model (hitaampi alku: v^1.25)
-    const q_in = G.Kv * Math.pow(G.v, 1.25);
+    // Säiliömalli (reippaampi pienillä avauksilla: v^1.12)
+    const q_in = G.Kv * Math.pow(G.v, 1.12);
     const dPdt = (q_in - G.qDemand)/G.C - G.kf*G.P;
     G.P += dPdt * dt;
     G.P = clamp(G.P, 0, 1.8);
 
-    // Surge model
+    // Surge-malli
     const surge = Math.max(0, Math.abs(G.dvdt) - G.rSoft);
     const P_surge = G.kSurge * Math.pow(surge, G.gamma);
     const P_bump  = (G.spikeTimer>0 ? G.spikeAmp*(G.spikeTimer/0.10) : 0);
     G.P_eff = clamp(G.P + P_surge + P_bump, 0, 1.8);
 
-    // Exceed handling
+    // Rajanylitys
     if(G.P_eff > G.P_limit){
       G.exceeded = true;
       G.sinceExceed = 0;
@@ -353,7 +338,7 @@ function step(){
       G.sinceExceed += dt;
     }
 
-    // Win condition & time
+    // Aika & voitto
     const win = (G.v >= 0.95 && G.sinceExceed >= 1.5 && G.t < G.tLimit);
     G.t += dt;
     if(win){ finish(true); }
@@ -375,14 +360,12 @@ function finish(success){
   if(G.finished) return;
   G.finished = true; G.running=false;
 
-  // Pisteet
   const timeScore = Math.max(0, Math.round(100 * (G.tLimit - G.t) / G.tLimit));
   const penalty   = Math.round(250 * G.excessArea);
   const smoothBonus = (G.exceedCount===0 ? 80 : 0);
   G.score = Math.max(0, timeScore - penalty + smoothBonus);
   G.totalScore += G.score;
 
-  // Titteli
   let title='Letku-leko 🛠️';
   if(success && G.exceedCount===0 && G.t < 0.6*G.tLimit) title='Silkkikäsi 🧤';
   else if(success && G.exceedCount===0) title='Paine-sommelier 🍷';
@@ -405,21 +388,20 @@ $('next').onclick  = ()=>{
   setLevel(n);
 };
 
-/* ===== UI update (näyttää todellisen v:n) ===== */
+/* ===== UI update ===== */
 function updateUI(force=false){
-  // Gauge fill (visual scale 0..1.6)
   const maxP = 1.6;
   const frac = clamp(G.P_eff / maxP, 0, 1);
   $('fill').style.height = (frac*100)+'%';
   $('pText').textContent = G.P_eff.toFixed(2);
   $('time').textContent = (G.t).toFixed(1)+' / '+G.tLimit.toFixed(0)+' s';
 
-  // Nuppi ja prosentit seuraavat todellista venttiiliä
+  // Näytä todellinen venttiilin asento
   document.getElementById('knob').style.top = (100 - G.v*100) + '%';
   document.getElementById('vText').textContent = Math.round(G.v*100)+'%';
   document.getElementById('openPct').textContent = Math.round(G.v*100)+'%';
 
-  // Speed bar (normalize to rSoft..rSoft*4)
+  // Avausnopeuden palkki
   const s = Math.max(0, Math.abs(G.dvdt) - G.rSoft);
   const sFrac = clamp(s/(G.rSoft*3.2), 0, 1);
   $('spd').style.width = (sFrac*100)+'%';
