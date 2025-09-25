@@ -1,626 +1,415 @@
 <!doctype html>
 <html lang="fi">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PSSHT! Vuotojahti 🦊 – Villen koodailut</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Paineisku-Stopperi 🚫💥 – Villen koodailut</title>
 <style>
   :root{
-    --bg:#0b1020;--panel:#0f172e;--muted:#a8bfd6;--accent:#39d353;--accent2:#5ea0ff;--danger:#ff4d6d;
-    --radius:18px;--shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    --bg:#0b1020; --panel:#0f172e; --ink:#eaf2ff; --muted:#a6bdd6;
+    --accent:#39d353; --warn:#ffd166; --danger:#ff627d;
+    --radius:18px; --shadow:0 12px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0;background:
-      radial-gradient(1400px 700px at 15% -10%, rgba(94,160,255,.10), transparent 60%),
-      radial-gradient(1200px 600px at 110% 10%, rgba(57,211,83,.08), transparent 60%),
-      linear-gradient(#0b1020,#0b1020);
-    color:#e8f0ff;font:16px/1.5 ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
-    display:flex;align-items:center;justify-content:center;padding:14px;
+    margin:0; background:radial-gradient(1200px 600px at 15% -10%, rgba(94,160,255,.10), transparent 60%), #0b1020;
+    color:var(--ink); font:16px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+    display:flex; align-items:center; justify-content:center; padding:14px;
+    user-select:none; -webkit-tap-highlight-color: transparent;
   }
-  .wrap{width:min(1400px,100%);display:grid;gap:14px}
-  header{
-    background:linear-gradient(180deg,#111a33,#0f1730 50%,#0c142a);
-    border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px
+  .wrap{width:min(1200px,100%); display:grid; gap:14px}
+  header, footer{
+    background:linear-gradient(180deg,#111a33,#0f1730 55%,#0c142a);
+    border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px;
   }
-  .brand{display:flex;align-items:center;gap:10px;font-weight:800}
-  .hdr-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .btn{
-    border:1px solid rgba(255,255,255,.10);background:#0c152b;color:#e9f2ff;padding:10px 14px;border-radius:12px;
-    cursor:pointer;font-weight:800;letter-spacing:.2px;box-shadow:var(--shadow);font-size:16px
+  header .brand{font-weight:900; letter-spacing:.2px}
+  header .sub{opacity:.7; font-weight:600}
+  footer{justify-content:center; font-size:13px; color:#cfdcff}
+
+  /* LAYOUT */
+  .game{
+    display:grid; gap:14px;
+    grid-template-columns: 1.4fr 1fr; /* mittari iso */
   }
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-  .btn:hover{border-color:rgba(255,255,255,.18);transform:translateY(-1px)}
-  .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547)}
-  .grid{display:grid;gap:14px;grid-template-columns:0.8fr 2.5fr 0.8fr}
-  @media (max-width:1100px){.grid{grid-template-columns:1fr}}
+  @media (max-width:980px){
+    .game{grid-template-columns:1fr}
+  }
   .panel{
     background:linear-gradient(180deg,var(--panel),#0b1327 60%,#0a1122);
-    border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px
+    border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:14px;
   }
-  .title{margin:0 0 10px 0;color:#9fb3c8;font-size:15px;letter-spacing:.3px}
-  .control-group{display:grid;gap:10px}
-  .biggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .pill{border:1px solid rgba(255,255,255,.10);background:#0b142a;border-radius:12px;padding:8px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between}
-  .sublist{display:flex;flex-wrap:wrap;gap:8px}
-  .subbtn{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:#102040;cursor:pointer}
-  .subbtn.on{background:#15325e;border-color:#3f6bd1}
-  .bigbtn{font-size:18px;padding:12px 14px}
 
-  /* SKEEMA – BIG & HORIZONTAL */
-  svg{width:100%;height:auto;background:linear-gradient(180deg,#0e1630,#0b1226);border:1px solid rgba(255,255,255,.06);border-radius:14px}
-  .pipe{fill:none;stroke:#7aa2ff88;stroke-linecap:round;stroke-linejoin:round}
-  .node{fill:#0b1226;stroke:#8fb4ff66}
-  .meter{fill:#0c162e;stroke:#ffffff22}
-  .txt{fill:#cfe3ff;font-size:14px}
-  .label{fill:#cfe3ff;font-size:16px;font-weight:800}
-  .hud{fill:#0b1428;stroke:#ffffff22}
-  .hudtext{fill:#d7e6ff;font-size:14px}
-  .hudname{fill:#ffffff;font-size:16px;font-weight:900}
+  /* LEFT: mittarit */
+  .meterWrap{display:grid; grid-template-columns: 1fr 1fr; gap:14px}
+  @media (max-width:980px){ .meterWrap{grid-template-columns:1fr} }
 
-  /* STATS */
-  .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-  .card{background:linear-gradient(180deg,#0c162e,#0b1428);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px}
-  .big{font-weight:800;font-size:18px}
-  .bar{height:10px;background:#0a1120;border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
-  .bar>div{height:100%;background:linear-gradient(90deg,var(--accent),#7dffb0);width:0;transition:width .25s}
-  .log{max-height:260px;overflow:auto;background:#0b1428;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:8px;font-size:13px;color:#cfe3ff}
-  footer{opacity:.85;color:#c9d8ff;text-align:center;font-size:13px}
+  .meterCard{
+    display:grid; gap:10px; padding:12px; border:1px solid rgba(255,255,255,.06); border-radius:14px;
+    background:linear-gradient(180deg,#0e1631,#0c152c)
+  }
 
-  /* MODALS + COACH */
-  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:9999}
-  .modal{width:min(720px,92%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#0f172e,#0b1327 60%,#0a1122);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px}
+  .gauge{
+    height:420px; position:relative; border-radius:14px; overflow:hidden;
+    background:linear-gradient(180deg,#0a1124,#0b152e);
+    border:1px solid rgba(255,255,255,.09);
+  }
+  .gauge .grid{
+    position:absolute; inset:0; background-image:
+      linear-gradient(to top, rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 100% 38px; opacity:.25;
+  }
+  .gauge .fill{
+    position:absolute; left:0; bottom:0; width:100%; height:0%;
+    background:linear-gradient(180deg, #2655ff, #4fd6ff);
+    transition:height .08s linear;
+  }
+  .gauge .limit{
+    position:absolute; left:0; right:0; height:2px; background:var(--warn);
+    box-shadow:0 0 0 3px rgba(255,209,102,.18), 0 0 12px rgba(255,209,102,.6);
+  }
+  .gauge.flash{animation:gflash .6s ease}
+  @keyframes gflash{
+    0%{box-shadow:0 0 0 0 rgba(255,98,125,.0)}
+    40%{box-shadow:0 0 0 8px rgba(255,98,125,.35)}
+    100%{box-shadow:0 0 0 0 rgba(255,98,125,.0)}
+  }
+  .gTitle{display:flex; align-items:baseline; gap:8px; font-weight:800}
+  .gTitle small{color:var(--muted); font-weight:600}
 
-  .coach{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;pointer-events:none;z-index:99999}
-  .coach .bubble{position:absolute;max-width:340px;background:#0c162e;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;color:#cfe3ff;pointer-events:auto}
-  .coach .arrow{position:absolute;width:24px;height:24px}
-  .coach .arrow::before{content:"";position:absolute;inset:0;border:12px solid transparent;border-top-color:#0c162e;transform:translate(-50%,-50%)}
-  .coach .barrier{position:fixed;inset:0;background:rgba(0,0,0,.35)}
-  .coach .btnrow{display:flex;gap:8px;margin-top:8px}
-  .coach .ring{position:absolute;width:90px;height:90px;border-radius:999px;border:2px solid #ffd166;box-shadow:0 0 0 6px rgba(255,209,102,.15), 0 0 18px rgba(255,209,102,.6);transform:translate(-50%,-50%);animation:pulse 1.2s ease-out infinite;pointer-events:none}
-  @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.9);opacity:.9}70%{transform:translate(-50%,-50%) scale(1.1);opacity:.45}100%{transform:translate(-50%,-50%) scale(1.0);opacity:.3}}
-  .coach .checklist{list-style:none;margin:8px 0 0 0;padding:0}
-  .coach .checklist li{display:flex;gap:8px;align-items:center;color:#b8c8e6}
-  .coach .checklist li::before{content:"○";color:#ffd166}
-  .coach .checklist li.done{color:#9cffc1;font-weight:700}
-  .coach .checklist li.done::before{content:"✓";color:#39d353}
+  .speedBox{display:grid; gap:8px}
+  .bar{height:12px; background:#0a1230; border:1px solid rgba(255,255,255,.08); border-radius:999px; overflow:hidden}
+  .bar>div{height:100%; width:0%; background:linear-gradient(90deg,#4fd6ff,#ffab57)}
+  .hint{color:#cfe1ff; opacity:.75; font-size:14px}
+
+  /* RIGHT: ohjaus + stats */
+  .rightCol{display:grid; gap:14px}
+  .sliderCard{display:grid; grid-template-columns: 100px 1fr; gap:14px; align-items:center}
+  @media (max-width:520px){ .sliderCard{grid-template-columns: 84px 1fr} }
+  .slider{
+    position:relative; width:84px; height:420px; border-radius:14px;
+    background:linear-gradient(180deg,#0a1124,#0b152e); border:1px solid rgba(255,255,255,.08);
+    touch-action:none; cursor:pointer;
+  }
+  .slider .track{position:absolute; left:50%; top:10px; bottom:10px; width:8px; transform:translateX(-50%); background:#17305f; border-radius:999px}
+  .slider .knob{
+    position:absolute; left:50%; transform:translate(-50%,-50%);
+    width:68px; height:24px; border-radius:12px; background:linear-gradient(180deg,#1d3d7a,#17356a);
+    border:1px solid rgba(255,255,255,.14); box-shadow:0 6px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .sliderLabel{font-weight:800}
+  .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:8px}
+  .pill{
+    padding:8px 10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:#0c162e;
+    display:flex; justify-content:space-between; align-items:center; gap:10px
+  }
+  .big{font-size:18px; font-weight:900}
+  .score{font-size:20px; font-weight:900}
+  .btnRow{display:flex; gap:8px; flex-wrap:wrap}
+  .btn{
+    border:1px solid rgba(255,255,255,.10); background:#0c152b; color:#e9f2ff; padding:10px 14px; border-radius:12px;
+    cursor:pointer; font-weight:800; box-shadow:var(--shadow); font-size:16px
+  }
+  .btn:disabled{opacity:.6; cursor:not-allowed}
+  .btn.primary{background:linear-gradient(180deg,#1b2f55,#122547)}
+  .titleline{display:flex; justify-content:space-between; align-items:center}
+  .titleline .lvl{opacity:.85; font-weight:800}
+  .titleline .status{font-weight:800}
+  .titleline .status.ok{color:#8ff0a6}
+  .titleline .status.fail{color:#ff8599}
+  .titleline .status.warn{color:#ffd166}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">PSSHT! Vuotojahti 🦊 <span style="opacity:.6;font-weight:600">— Pneumavuoto-etsivä (1–10)</span></div>
-    <div class="hdr-right">
-      <button id="helpBtn" class="btn">❓ Ohjeet</button>
-      <label class="pill" style="gap:10px"><span>Äänet</span><input id="mute" type="checkbox"/></label>
-      <a class="btn" href="./index.html">⬅ Etusivu</a>
-    </div>
+    <div class="brand">Paineisku-Stopperi 🚫💥 <span class="sub">– avaa nopeasti ilman piikkiä</span></div>
+    <div class="sub">© <strong>Villen koodailut</strong></div>
   </header>
 
-  <div class="grid">
-    <!-- LEFT -->
-    <section class="panel">
-      <h3 class="title">Säädöt</h3>
-      <div class="control-group">
-        <div class="pill">
-          <div>Valittu haara: <strong id="selBranch">A</strong> – avautuma <strong id="selOpen">60%</strong></div>
-          <div>Kierros: <strong id="round">1</strong>/10</div>
+  <div class="game panel">
+    <!-- LEFT: Mittarit -->
+    <div class="meterWrap">
+      <div class="meterCard">
+        <div class="gTitle">Linjapaine <small>(eff.)</small></div>
+        <div id="gauge" class="gauge">
+          <div class="grid"></div>
+          <div id="limit" class="limit" style="top:40%"></div>
+          <div id="fill" class="fill" style="height:0%"></div>
         </div>
-
-        <div class="biggrid">
-          <button class="btn bigbtn" id="minus10">−10%</button>
-          <button class="btn bigbtn" id="minus5">−5%</button>
-          <button class="btn bigbtn" id="plus5">+5%</button>
-          <button class="btn bigbtn" id="plus10">+10%</button>
+        <div class="grid2">
+          <div class="pill">P_eff: <span id="pText" class="big">0.00</span></div>
+          <div class="pill">P-raja: <span id="plText" class="big">—</span></div>
         </div>
-
-        <div class="pill" style="justify-content:flex-start">Alahaarat (ON/OFF): <span id="subList" class="sublist"></span></div>
-
-        <div class="biggrid">
-          <button class="btn" id="hintBtn">💡 Vihje (−10p)</button>
-          <button class="btn primary" id="guessBtn">🕵️ Arvaa</button>
-          <button class="btn" id="resetBtn">⟲ Uudelleenkalibrointi</button>
-          <button class="btn" id="nextBtn" disabled>⏭ Seuraava kierros</button>
-        </div>
-
-        <div id="quickHelp" class="pill" style="line-height:1.6">
-          <strong>Pikaohje:</strong> säädä venttiilejä 5 % askelin ja tarkkaile Q<sub>tot</sub> & P<sub>haar</sub>. Vihje = −10p. 
-          Energiasakko c<sub>E</sub>=0.02. Myöhemmillä tasoilla drift & stuck valve. Eristä vuoto alahaaroilla (ON/OFF) ja tee arvaus.
+        <div class="speedBox">
+          <div> Avausnopeus </div>
+          <div class="bar"><div id="spd"></div></div>
+          <div class="hint">Vinkki: tasainen liike voittaa. Keltainen viiva = paineiskun raja.</div>
         </div>
       </div>
-    </section>
 
-    <!-- CENTER: BIG HORIZONTAL SCHEMATIC -->
-    <section class="panel">
-      <h3 class="title">Tehdashalli – skeema (vaaka)</h3>
-      <svg id="schem" viewBox="0 0 1600 720" role="img" aria-label="Pumppu vasemmalla, vaakasuora runko, isot haarat A–F"></svg>
-      <div class="pill" style="margin-top:8px">Klikkaa haaraa tai HUD-laatikkoa valitaksesi. Putken paksuus ~ virtaus. Mittarit näyttävät haarapaineen.</div>
-      <div id="log" class="log" style="margin-top:8px"></div>
-    </section>
-
-    <!-- RIGHT -->
-    <aside class="panel">
-      <h3 class="title">Mittarit & pisteet</h3>
-      <div class="statgrid">
-        <div class="card"><div>Q<sub>tot</sub></div><div id="qtot" class="big">—</div><div class="bar"><div id="qbar"></div></div></div>
-        <div class="card"><div>P<sub>header</sub></div><div id="phead" class="big">—</div><div class="bar"><div id="pbar"></div></div></div>
-        <div class="card"><div>Aika</div><div id="time" class="big">—</div><div class="bar"><div id="tbar"></div></div></div>
-        <div class="card"><div>Pisteet</div><div id="score" class="big">0</div><div class="pill">Energia: <span id="energy">0.0</span></div></div>
+      <div class="meterCard">
+        <div class="titleline">
+          <div class="lvl">Taso <span id="lvl">1</span>/10</div>
+          <div id="status" class="status warn">Käynnissä…</div>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+          <div class="pill">Aika: <span id="time" class="big">—</span></div>
+          <div class="pill">Avaus: <span id="openPct" class="big">0%</span></div>
+        </div>
+        <div class="pill" style="margin-top:8px; display:block">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <div>Pisteet (tämä taso)</div><div id="score" class="score">0</div>
+          </div>
+          <div style="opacity:.7; font-size:13px">Kokonaispisteet: <span id="totScore">0</span></div>
+        </div>
+        <div class="pill" style="margin-top:8px">Titteli: <span id="title" class="big">—</span></div>
+        <div class="btnRow" style="margin-top:8px">
+          <button id="retry" class="btn">⟲ Uudestaan</button>
+          <button id="next" class="btn primary" disabled>⏭ Seuraava taso</button>
+        </div>
       </div>
-
-      <h3 class="title" style="margin-top:10px">Haarapaineet</h3>
-      <div id="pressList" class="card" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
-
-      <h3 class="title" style="margin-top:10px">Tilanne</h3>
-      <div class="card">
-        <div>Vuotoja jäljellä: <strong id="leaksLeft">—</strong></div>
-        <div>Stuck valve? <strong id="stuckInfo">ei</strong></div>
-        <div>Supply drift: <strong id="driftInfo">0%</strong></div>
-      </div>
-    </aside>
-  </div>
-
-  <footer>© <span id="year"></span> PSSHT! Vuotojahti 🦊 – <strong>Villen koodailut</strong></footer>
-</div>
-
-<!-- HELP MODAL -->
-<div id="helpModal" class="overlay">
-  <div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-weight:800">PSSHT! Vuotojahti 🦊 – Ohjeet</div>
-      <button id="helpClose" class="btn">✕</button>
     </div>
-    <div style="color:#b8c8e6;line-height:1.6">
-      <p><strong>Tavoite:</strong> paikanna <em>vuodon sijainti</em> (haara/alahara) ja <em>koko</em> (pieni/keskisuuri/suuri) mahdollisimman vähillä toimilla ja pienellä energialla.</p>
-      <ol>
-        <li>Säädä valittua haaraa <strong>±5 %</strong> (±10 % nappi) ja tarkkaile <strong>Q<sub>tot</sub></strong> & haarapaineita.</li>
-        <li>Eristä alahaaroja <strong>ON/OFF</strong> -napeilla (jos haarassa on alahaaroja).</li>
-        <li>Kun olet varma, paina <strong>Arvaa</strong> → valitse <em>haara</em>, (tarv.) <em>alahara</em> ja <em>koko</em>.</li>
-      </ol>
-      <ul>
-        <li>Perus +100p, oikea koko +30/+45/+60p, väärä −40p. Vihje −10p. Venttiilisäätö −1p/toimi.</li>
-        <li>Aikaraja tasokohtainen; ylittyessä −20p. Energia-sakko: −⌊<strong>0.02</strong>·∫Q<sub>tot</sub>·P<sub>h</sub>dt⌋ p.</li>
-        <li>Tasoissa 7–10: <em>supply drift</em> (±3–5 %) ja joskus <em>stuck valve</em> (min 10–20 % auki).</li>
-      </ul>
-      <div style="margin-top:10px;opacity:.8">Onnea metsästykseen – tavoittele titteliä <strong>Nollavuoto-ninja 🥷⚡</strong>!</div>
+
+    <!-- RIGHT: Ohjaus -->
+    <div class="rightCol">
+      <div class="sliderCard pill">
+        <div class="slider" id="slider">
+          <div class="track"></div>
+          <div id="knob" class="knob" style="top:100%"></div>
+        </div>
+        <div style="display:grid; gap:8px">
+          <div class="sliderLabel">Venttiilin asento: <span id="vText" class="big">0%</span></div>
+          <div class="hint">Vedä kahvaa ylös → avaa venttiili. Tavoite: 100% ilman rajan ylitystä.</div>
+          <div class="grid2">
+            <div class="pill">Häiriö: <span id="distText">pieni aalto</span></div>
+            <div class="pill">Raja-aika: <span id="tLimitText">25 s</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pill">Pikalause: “Avaa hiljaa – avausnopeus kasvattaa paineiskua.”</div>
     </div>
   </div>
-</div>
 
-<!-- GUESS MODAL -->
-<div id="guessModal" class="overlay">
-  <div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-weight:800">🕵️ Arvaa vuoto</div>
-      <button id="guessClose" class="btn">✕</button>
-    </div>
-    <div style="display:grid;gap:10px">
-      <div class="pill" style="justify-content:flex-start;gap:10px">Haara:
-        <select id="guessBranch"></select>
-      </div>
-      <div class="pill" style="justify-content:flex-start;gap:10px">Alahaara (jos on):
-        <select id="guessSub"></select>
-      </div>
-      <div class="pill" style="justify-content:flex-start;gap:10px">Koko:
-        <select id="guessSize">
-          <option value="small">pieni</option>
-          <option value="medium" selected>keskisuuri</option>
-          <option value="large">suuri</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button id="guessSubmit" class="btn primary">Vahvista arvaus</button>
-        <button id="guessAnother" class="btn">Lisää toinen arvaus</button>
-      </div>
-      <div id="guessInfo" class="pill">Vihje: jos haaralla on 2 alahaaraa (A1/A2), päättele kumpi eristymällä.</div>
-    </div>
-  </div>
-</div>
-
-<!-- COACH (opastettu kierros) -->
-<div id="coach" class="coach">
-  <div class="barrier"></div>
-  <div id="coachArrow" class="arrow"></div>
-  <div id="coachRing" class="ring" style="display:none"></div>
-  <div id="coachBubble" class="bubble">
-    <div id="coachText">Tervetuloa! Tehdään nopea opastus.</div>
-    <ul id="coachList" class="checklist">
-      <li id="c1">Valitse B-haara</li>
-      <li id="c2">Sulje B 5 % (−5 %)</li>
-      <li id="c3">Avaa B 5 % takaisin (+5 %)</li>
-      <li id="c4">Tee arvaus: B (ylähaara) + “keskisuuri”</li>
-    </ul>
-    <div class="btnrow">
-      <button id="coachSkip" class="btn">Ohita</button>
-      <button id="coachNext" class="btn primary">Seuraava</button>
-    </div>
-  </div>
+  <footer>© <span id="year"></span> <strong>Villen koodailut</strong></footer>
 </div>
 
 <script>
-/* ===== Helpers ===== */
-const $id = (id)=>document.getElementById(id);
-const $q  = (sel)=>document.querySelector(sel);
-const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
-$id('year').textContent = new Date().getFullYear();
+/* ===== Utils ===== */
+const $ = (id)=>document.getElementById(id);
+$('year').textContent = new Date().getFullYear();
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 
-/* ===== Sound ===== */
-let AC; let muted=false;
-function initAudio(){ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); } }
-function playPssht(){ if(muted) return; initAudio(); const dur=0.12; const n=AC.createBuffer(1, AC.sampleRate*dur, AC.sampleRate); const d=n.getChannelData(0); for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.7)); } const src=AC.createBufferSource(); src.buffer=n; const g=AC.createGain(); g.gain.setValueAtTime(0.25, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+dur); src.connect(g).connect(AC.destination); src.start(); }
-function playBubble(){ if(muted) return; initAudio(); const o=AC.createOscillator(); const g=AC.createGain(); o.type='sine'; o.frequency.setValueAtTime(500,AC.currentTime); o.frequency.exponentialRampToValueAtTime(1200,AC.currentTime+0.08); g.gain.setValueAtTime(0.2,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.2); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+0.21); }
-$id('mute').addEventListener('change',e=>{ muted=e.target.checked; });
+/* ===== Simple audio (beep on piikki) ===== */
+let AC; function audio(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); return AC; }
+function beep(freq=520, dur=0.12, vol=0.25){
+  try{
+    const ctx=audio(); const o=ctx.createOscillator(); const g=ctx.createGain();
+    o.type='square'; o.frequency.value=freq; g.gain.value=vol; o.connect(g).connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
 
 /* ===== Game State ===== */
-const BRN=['A','B','C','D','E','F'];
 const G = {
-  level:1, score:0, timeLeft:90, timeMax:90, dt:0.2,
-  Ps:3.0, alpha:0.08, n:1.6, cE:0.02,
-  driftAmp:0, driftHz:0, branches:[], leaks:[],
-  selected:0, energy:0, qtot:0, phead:0, leaksFound:0, finished:false,
-  tutorial:true, tutorialStep:0
+  level:1, maxLevel:10,
+  v:0, vPrev:0, dvdt:0,
+  P:0, P_eff:0, P_limit:1.2,
+  Kv:1.2, C:4.0, kf:0.12, kSurge:0.9, rSoft:0.12, gamma:1.4,
+  t:0, tLimit:25, dt:0.02,
+  qDemand:0.55, demandAmp:0.06, demandHz:0.05, jitter:0.0,
+  spikeTimer:0, spikeAmp:0,
+  exceeded:false, exceedCount:0, sinceExceed:0, excessArea:0,
+  running:true, finished:false,
+  score:0, totalScore:0, title:'—'
 };
 
-/* ===== Physics ===== */
-function branchFlowForP(phead, br){
-  const open = Math.max(br.open, br.stuckMin);
-  const K = br.Kvs * Math.pow(clamp(open,0,1), G.n);
-  const denom = 1 + K*K*br.r;
-  const q = K * Math.sqrt(Math.max(0, phead) / Math.max(1e-9, denom));
-  const p_i = Math.max(0, phead - br.r*q*q);
-  let qLeak = 0;
-  for(const L of G.leaks){
-    if(L.found) continue;
-    if(L.b === br.idx){
-      if(L.sub==null){ qLeak += L.K * Math.sqrt(p_i); }
-      else { const on = br.subs[L.sub] && br.subs[L.sub].on; if(on) qLeak += L.K * Math.sqrt(p_i); }
+/* ===== Level definitions ===== */
+function setLevel(lv){
+  G.level = lv;
+  // defaults
+  G.Kv=1.2; G.C=4.0; G.kf=0.12; G.kSurge=0.9; G.rSoft=0.12; G.gamma=1.4;
+  G.P_limit=1.20; G.tLimit=25; G.demandAmp=0.06; G.demandHz=0.05; G.jitter=0.0;
+  G.spikeTimer=0; G.spikeAmp=0;
+
+  if(lv===1){ G.C=5.5; G.kSurge=0.60; G.P_limit=1.30; G.demandAmp=0.04; $('distText').textContent='hyvin pieni aalto'; }
+  if(lv===2){ G.C=5.0; G.kSurge=0.70; G.P_limit=1.28; G.demandAmp=0.06; $('distText').textContent='pieni aalto'; }
+  if(lv===3){ G.C=3.6; G.kSurge=0.80; G.P_limit=1.25; G.tLimit=24; $('distText').textContent='pieni aalto'; }
+  if(lv===4){ G.C=3.6; G.kSurge=1.00; G.P_limit=1.20; G.rSoft=0.10; G.tLimit=24; $('distText').textContent='pieni aalto'; }
+  if(lv===5){ G.C=3.6; G.kSurge=1.05; G.P_limit=1.20; G.tLimit=23; G.jitter=0.015; $('distText').textContent='aalto + satunnaispiikkejä'; }
+  if(lv===6){ G.C=3.4; G.kSurge=1.10; G.P_limit=1.20; G.tLimit=22; G.jitter=0.02; $('distText').textContent='aalto + “takaisku”-nykäys'; }
+  if(lv===7){ G.C=3.2; G.kSurge=1.20; G.P_limit=1.15; G.tLimit=20; G.demandAmp=0.10; $('distText').textContent='isompi aalto'; }
+  if(lv===8){ G.C=3.2; G.kSurge=1.20; G.P_limit=1.15; G.tLimit=20; G.demandAmp=0.11; G.jitter=0.02; $('distText').textContent='isompi aalto + häly'; }
+  if(lv===9){ G.C=3.1; G.kSurge=1.30; G.P_limit=1.13; G.tLimit=19; G.demandAmp=0.12; G.jitter=0.03; $('distText').textContent='kova aalto + häly'; }
+  if(lv===10){ G.C=3.0; G.kSurge=1.40; G.P_limit=1.12; G.tLimit=18; G.demandAmp=0.14; G.jitter=0.04; $('distText').textContent='mestaritaso'; }
+
+  resetRound();
+}
+function resetRound(){
+  G.v=0; G.vPrev=0; G.dvdt=0;
+  G.P=0; G.P_eff=0; G.qDemand=0.55;
+  G.t=0; G.exceeded=false; G.exceedCount=0; G.sinceExceed=0; G.excessArea=0;
+  G.score=0; G.finished=false; G.running=true;
+  $('lvl').textContent=G.level;
+  $('status').textContent='Käynnissä…'; $('status').className='status warn';
+  $('title').textContent='—';
+  $('next').disabled=true;
+  $('tLimitText').textContent = G.tLimit.toFixed(0)+' s';
+  $('plText').textContent = G.P_limit.toFixed(2);
+  placeLimitLine();
+  updateUI(true);
+}
+function placeLimitLine(){
+  // gauge is 0..1.6 bar visuaalisesti
+  const maxP=1.6;
+  const frac = clamp(G.P_limit/maxP, 0, 1);
+  const g = $('gauge');
+  const h = g.getBoundingClientRect().height || 420;
+  $('limit').style.top = ( (1-frac)*100 ) + '%';
+}
+
+/* ===== Input: vertical drag slider ===== */
+const slider=$('slider'), knob=$('knob');
+let dragging=false;
+function setVFromY(clientY){
+  const r = slider.getBoundingClientRect();
+  const y = clamp(clientY, r.top+10, r.bottom-10);
+  const frac = 1 - ( (y - (r.top+10)) / (r.height-20) ); // 0..1
+  G.v = clamp(frac, 0, 1);
+  knob.style.top = (100 - G.v*100) + '%';
+  $('vText').textContent = Math.round(G.v*100)+'%';
+  $('openPct').textContent = Math.round(G.v*100)+'%';
+}
+slider.addEventListener('pointerdown', (e)=>{ dragging=true; slider.setPointerCapture(e.pointerId); setVFromY(e.clientY); });
+slider.addEventListener('pointermove', (e)=>{ if(dragging){ setVFromY(e.clientY); } });
+slider.addEventListener('pointerup',   (e)=>{ dragging=false; try{ slider.releasePointerCapture(e.pointerId);}catch(_){} });
+slider.addEventListener('pointercancel',(e)=>{ dragging=false; });
+
+/* ===== Physics & loop ===== */
+let lastTime = performance.now();
+function step(){
+  const now = performance.now();
+  const dt = G.dt; // fixed step
+  if(G.running){
+    // Demand profile
+    const t = G.t;
+    const noise = G.jitter ? (G.jitter*(Math.random()-0.5)) : 0;
+    const wave = G.demandAmp*Math.sin(2*Math.PI*G.demandHz*t + 1.1);
+    // occasional spike (levels 5+)
+    let spike = 0;
+    if(G.level>=5 && Math.random()<0.02) spike += 0.06 + Math.random()*0.05;
+    G.qDemand = clamp(0.55 + wave + noise + spike, 0.3, 0.95);
+
+    // dv/dt
+    G.dvdt = (G.v - G.vPrev) / dt;
+
+    // Backflow “nykäys” on fast open (level 6+): add short spike to eff pressure
+    if(G.level>=6 && G.dvdt > 0.40 && G.spikeTimer<=0){
+      G.spikeTimer = 0.10; // 100 ms
+      G.spikeAmp = 0.12 + Math.random()*0.08;
     }
-  }
-  return {qDemand:q, p_i, qLeak};
-}
-function networkGivenP(phead){
-  let qtot=0; const branchP=[], branchQ=[];
-  G.branches.forEach(br=>{ const {qDemand,p_i,qLeak} = branchFlowForP(phead, br); branchP.push(p_i); branchQ.push(qDemand+qLeak); qtot += (qDemand+qLeak); });
-  return {qtot, branchP, branchQ};
-}
-let perfNow = performance.now();
-function solveNetwork(){
-  const t = perfNow/1000;
-  const PsDrift = G.Ps * (1 + G.driftAmp*Math.sin(2*Math.PI*G.driftHz*t)) + (G.driftAmp? (G.Ps*0.005*(Math.random()-0.5)):0);
-  let lo=0, hi=Math.max(0.1, PsDrift), mid=0;
-  for(let it=0; it<40; it++){
-    mid = 0.5*(lo+hi);
-    const {qtot} = networkGivenP(mid);
-    const f = mid - (PsDrift - G.alpha*qtot*qtot);
-    if(Math.abs(f)<1e-4) break;
-    const {qtot:ql} = networkGivenP(lo);
-    const flo = lo - (PsDrift - G.alpha*ql*ql);
-    if(Math.sign(flo)===Math.sign(f)) lo=mid; else hi=mid;
-  }
-  const {qtot, branchP, branchQ} = networkGivenP(mid);
-  G.qtot=qtot; G.phead=mid;
-  G.branches.forEach((b,i)=>{ b.meterP=branchP[i]; b.flow=branchQ[i]; });
-}
+    if(G.spikeTimer>0){ G.spikeTimer -= dt; if(G.spikeTimer<0) G.spikeTimer=0; }
 
-/* ===== Level generator ===== */
-function rand(a,b){ return a + Math.random()*(b-a); }
-function levelConfig(level){
-  const cfg = { time:90 + Math.max(0,level-1)*6, driftAmp:0, driftHz:0.03+level*0.002, leaks:1, sizes:['medium'], stuckMin:0, subsPer:[0,0,0,0,0,0], forceLeak:null };
-  const subsVariants = [[0,0,0,0,0,0],[1,0,0,0,0,0],[1,1,0,0,0,0],[1,1,1,0,0,0],[2,1,1,0,0,0],[2,1,1,1,0,0],[2,2,1,1,0,0],[2,2,2,1,1,0],[2,2,2,2,1,1],[2,2,2,2,2,2]];
-  cfg.subsPer = subsVariants[Math.min(9, level-1)];
-  if(level===1){ cfg.leaks=1; cfg.sizes=['medium']; cfg.forceLeak={b:1,sub:null,size:'medium'}; }
-  if(level===2){ cfg.leaks=1; cfg.sizes=['small','medium']; }
-  if(level===3){ cfg.leaks=1; cfg.sizes=['small']; }
-  if(level===4){ cfg.leaks=1; cfg.sizes=['small','large']; }
-  if(level===5){ cfg.leaks=2; cfg.sizes=['small','medium']; cfg.driftAmp=0.01; }
-  if(level===6){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.02; }
-  if(level===7){ cfg.leaks=2; cfg.sizes=['small','medium']; cfg.driftAmp=0.03; cfg.stuckMin=0.10; }
-  if(level===8){ cfg.leaks=2; cfg.sizes=['small','small']; cfg.driftAmp=0.04; cfg.stuckMin=0.15; }
-  if(level===9){ cfg.leaks=3; cfg.sizes=['small','medium','medium']; cfg.driftAmp=0.05; cfg.stuckMin=0.15; }
-  if(level===10){ cfg.leaks=3; cfg.sizes=['small','medium','large']; cfg.driftAmp=0.05; cfg.stuckMin=0.20; }
-  return cfg;
-}
-function sizeToK(size){ if(size==='small') return rand(0.10,0.16); if(size==='medium') return rand(0.18,0.26); return rand(0.30,0.40); }
+    // Tank model
+    const q_in = G.Kv * G.v;
+    const dPdt = (q_in - G.qDemand)/G.C - G.kf*G.P;
+    G.P += dPdt * dt;
+    G.P = clamp(G.P, 0, 1.8);
 
-function setupLevel(){
-  const L = levelConfig(G.level);
-  G.timeMax=L.time; G.timeLeft=L.time; G.driftAmp=L.driftAmp; G.driftHz=L.driftHz;
-  G.energy=0; G.leaksFound=0; G.finished=false;
+    // Surge model
+    const surge = Math.max(0, Math.abs(G.dvdt) - G.rSoft);
+    const P_surge = G.kSurge * Math.pow(surge, G.gamma);
+    const P_bump  = (G.spikeTimer>0 ? G.spikeAmp*(G.spikeTimer/0.10) : 0);
+    G.P_eff = clamp(G.P + P_surge + P_bump, 0, 1.8);
 
-  G.branches = [];
-  for(let i=0;i<6;i++){
-    const subs=[]; for(let s=0;s<(L.subsPer[i]||0); s++) subs.push({name:BRN[i]+(s+1), on:true, Kvs:rand(0.4,0.8)});
-    G.branches.push({ idx:i, name:BRN[i], open:rand(0.55,0.8), Kvs:rand(0.9,1.2), r:rand(0.4,0.8), stuckMin:(Math.random()<0.25)?L.stuckMin:0, subs, meterP:0, flow:0 });
-  }
-  if(G.level===1){ G.branches[1].subs=[]; G.branches[1].stuckMin=0; }
-
-  G.selected=0;
-
-  G.leaks=[];
-  if(L.forceLeak){ G.leaks.push({b:L.forceLeak.b, sub:L.forceLeak.sub, size:L.forceLeak.size, K:sizeToK(L.forceLeak.size), found:false}); }
-  else{
-    for(let k=0;k<L.leaks;k++){ const bi=Math.floor(Math.random()*6); const subOpt=(Math.random()<0.55 && G.branches[bi].subs.length)? Math.floor(Math.random()*G.branches[bi].subs.length):null; const sz=L.sizes[k]||'small'; G.leaks.push({b:bi, sub:subOpt, size:sz, K:sizeToK(sz), found:false}); }
-  }
-
-  solveNetwork();
-  renderSchematicHorizontal(); // uusi vaaka-layout
-  renderControls();
-  log(`Uusi kierros ${G.level}/10. Vuotoja: ${G.leaks.length}.`);
-  if(G.level===1){ startTutorial(); } else { hideCoach(); G.tutorial=false; }
-  updateSide();
-}
-
-/* ===== UI & Actions ===== */
-function log(t){ const el=$id('log'); el.innerHTML=`<div>• ${t}</div>`+el.innerHTML; }
-function timeCost(sec){ G.timeLeft=Math.max(0, G.timeLeft-sec); }
-function scoreChange(dp){ G.score=Math.max(0,(G.score||0)+dp); $id('score').textContent=Math.round(G.score); }
-
-function renderControls(){
-  $id('round').textContent=G.level;
-  $id('selBranch').textContent=G.branches[G.selected].name;
-  $id('selOpen').textContent=Math.round(G.branches[G.selected].open*100)+'%';
-
-  const cont=$id('subList'); cont.innerHTML='';
-  const b=G.branches[G.selected];
-  if(b.subs.length===0){ cont.textContent='(ei alahaaroja)'; }
-  else b.subs.forEach((s,idx)=>{
-    const btn=document.createElement('button');
-    btn.className='subbtn '+(s.on?'on':''); btn.textContent=s.name+(s.on?' ON':' OFF');
-    btn.onclick=()=>{ s.on=!s.on; playPssht(); timeCost(1.0); scoreChange(-1); log(`${s.name} → ${s.on?'ON':'OFF'}`); updateAll(); };
-    cont.appendChild(btn);
-  });
-}
-
-function selectBranch(i){ G.selected=i; renderControls(); highlightSelected(); }
-
-$id('minus5').onclick =()=>adjOpen(-0.05);
-$id('plus5').onclick  =()=>adjOpen(+0.05);
-$id('minus10').onclick=()=>adjOpen(-0.10);
-$id('plus10').onclick =()=>adjOpen(+0.10);
-function adjOpen(delta){
-  const b=G.branches[G.selected]; const before=b.open;
-  b.open=clamp(b.open+delta,0,1); if(b.stuckMin>0 && b.open<b.stuckMin) b.open=b.stuckMin;
-  if(Math.abs(b.open-before)<1e-6){ log(`Haaran ${b.name} venttiili ei enää liiku (stuck?)`); return; }
-  playPssht(); timeCost(1.0); scoreChange(-1);
-  log(`${b.name}: avautuma ${Math.round(before*100)}% → ${Math.round(b.open*100)}%`);
-  renderControls(); updateAll();
-  if(G.tutorial && G.selected===1){
-    if(G.tutorialStep===2 && (before-b.open)>=0.049){ markDone(2); nextCoach(); }
-    if(G.tutorialStep===3 && (b.open-before)>=0.049){ markDone(3); nextCoach(); }
-  }
-}
-
-$id('hintBtn').onclick=()=>{
-  const baseQ=G.qtot; let bestI=0, bestDelta=-1;
-  for(let i=0;i<G.branches.length;i++){
-    const tmp=G.branches[i].open, stuck=G.branches[i].stuckMin||0;
-    G.branches[i].open=Math.max(stuck,clamp(tmp-0.05,0,1)); solveNetwork(); const d=baseQ-G.qtot;
-    if(d>bestDelta){bestDelta=d; bestI=i;} G.branches[i].open=tmp;
-  }
-  solveNetwork(); updateAll(); scoreChange(-10); timeCost(1.5);
-  log(`Vihje: suurin vaikutus ${G.branches[bestI].name}.`); flashHint(bestI,null);
-};
-
-$id('resetBtn').onclick=()=>{ log('Uudelleenkalibrointi: mittarit nollattu hetkeksi.'); playPssht(); };
-$id('nextBtn').onclick=()=>{ if(G.level>=10){ log('Peli läpi! Aloitetaan alusta.'); G.level=1; G.score=0; } else G.level++; setupLevel(); $id('nextBtn').disabled=true; };
-
-$id('guessBtn').onclick=()=>openGuess();
-$id('guessClose').onclick=()=>$id('guessModal').style.display='none';
-$id('guessAnother').onclick=()=>{ $id('guessInfo').textContent='Voit tehdä toisen arvauksen samalla kierroksella (jos vuotoja on useampi).'; };
-$id('guessSubmit').onclick=submitGuess;
-
-function openGuess(){
-  const sel=$id('guessBranch'); sel.innerHTML=''; BRN.forEach((n,i)=>{ const o=document.createElement('option'); o.value=String(i); o.textContent=n; sel.appendChild(o); });
-  sel.value=String(G.selected); fillSubGuess(G.selected);
-  $id('guessSize').value='medium'; $id('guessModal').style.display='flex';
-  placeCoachOn($id('guessSubmit'),'Paina “Vahvista arvaus” valittuasi B + keskisuuri.','top',true);
-}
-function fillSubGuess(bi){
-  const subSel=$id('guessSub'); subSel.innerHTML='';
-  const b=G.branches[bi]; const none=document.createElement('option'); none.value='-1'; none.textContent='(ylähaara)'; subSel.appendChild(none);
-  b.subs.forEach((s,idx)=>{ const o=document.createElement('option'); o.value=String(idx); o.textContent=s.name; subSel.appendChild(o); });
-}
-$id('guessBranch').addEventListener('change', (e)=>{ fillSubGuess(Number(e.target.value)); });
-
-function submitGuess(){
-  const bi=Number($id('guessBranch').value); const si=Number($id('guessSub').value); const size=$id('guessSize').value;
-  const pretty=`${G.branches[bi].name}${si>=0?('→'+(G.branches[bi].subs[si].name)):''} (${size})`;
-  let ok=false, idx=-1;
-  for(let i=0;i<G.leaks.length;i++){
-    const L=G.leaks[i]; if(L.found) continue;
-    const subMatch=((si<0 && L.sub==null) || (si>=0 && L.sub===si));
-    if(L.b===bi && subMatch && L.size===size){ ok=true; idx=i; break; }
-  }
-  if(ok){
-    G.leaks[idx].found=true; G.leaksFound++; playBubble();
-    const bonus=(size==='small'?30:(size==='medium'?45:60)); scoreChange(100+bonus);
-    log(`✅ Oikein: ${pretty}. +${100+bonus}p`); if(G.tutorial && G.level===1){ markDone(4); endTutorialSuccess(); }
-    if(G.leaksFound>=G.leaks.length){ finishRound(true); $id('guessModal').style.display='none'; return; }
-    else $id('guessInfo').textContent=`Hyvä! Vuoto löydetty (${G.leaksFound}/${G.leaks.length}).`;
-  } else { scoreChange(-40); log(`❌ Väärä arvaus: ${pretty} (−40p)`); }
-}
-
-/* ===== Round end ===== */
-function finishRound(success){
-  if(G.finished) return; G.finished=true;
-  const ePenalty=Math.floor(G.cE*G.energy); scoreChange(-ePenalty);
-  const tBonus=success?Math.round(20*(G.timeLeft/G.timeMax)):0; scoreChange(tBonus);
-  const ePerSec=(G.energy/Math.max(1,(G.timeMax-G.timeLeft)));
-  let title='Kompressorin kauhu 🐊'; if(ePerSec<0.15) title='Nollavuoto-ninja 🥷⚡'; else if(ePerSec<0.25) title='Vuotokettu 🦊'; else if(ePerSec<0.35) title='Ilmamurhaaja 🔧';
-  log(`${success?'🎉 Kierros onnistui':'⏱ Aika loppui'} — Titteli: <strong>${title}</strong> | Energiasakko −${ePenalty}p | Aikabonus +${tBonus}p`);
-  $id('nextBtn').disabled=false;
-}
-
-/* ===== Horizontal schematic with HUDs ===== */
-function renderSchematicHorizontal(){
-  const svg=$id('schem'); svg.innerHTML='';
-  const g = (tag, attrs)=>{ const el=document.createElementNS('http://www.w3.org/2000/svg', tag); for(const k in attrs){ el.setAttribute(k, attrs[k]); } return el; };
-  const root=g('g',{});
-
-  // Pump left
-  root.appendChild(g('circle',{cx:120,cy:360,r:28,class:'node'}));
-  root.appendChild(g('polygon',{points:'112,350 130,360 112,370',fill:'#5ea0ff'}));
-  root.appendChild(g('rect',{x:40,y:306,width:150,height:36,rx:8,class:'meter'}));
-  const pt=g('text',{x:48,y:328,class:'txt'}); pt.textContent='Pumppu • P_s'; root.appendChild(pt);
-
-  // Horizontal header
-  root.appendChild(g('path',{d:'M148 360 L 280 360', class:'pipe','stroke-width':14}));
-  root.appendChild(g('circle',{cx:280,cy:360,r:7,class:'node'}));
-
-  // Branches
-  const x0=360, xstep=190, yMid=360, yDown=600, yUp=190;
-  for(let i=0;i<6;i++){
-    const x=x0+i*xstep;
-
-    // Angle up then down (pieni "kaula", saa tilaa HUDille)
-    const path=g('path',{id:`bline${i}`, d:`M 280 360 L ${x-50} 360 L ${x-50} ${yUp} L ${x} ${yUp} L ${x} ${yDown}`, class:'pipe','stroke-width':12});
-    path.style.cursor='pointer'; path.addEventListener('click',()=>selectBranch(i));
-    root.appendChild(path);
-
-    // Branch end & meter
-    root.appendChild(g('circle',{cx:x,cy:yDown,r:9,class:'node'}));
-    // Sub-branches (little taps)
-    const subs=G.branches[i].subs;
-    for(let s=0;s<subs.length;s++){
-      const sy=yDown-100 - s*46;
-      root.appendChild(g('circle',{cx:x, cy:sy, r:6, class:'node'}));
-      const sp=g('path',{id:`subline${i}_${s}`, d:`M ${x} ${sy} L ${x+48} ${sy}`, class:'pipe','stroke-width':subs[s].on?8:3, stroke:subs[s].on?'#66ffc2aa':'#6ea8ff55'});
-      sp.style.cursor='pointer';
-      sp.addEventListener('click',()=>{ selectBranch(i); subs[s].on=!subs[s].on; playPssht(); timeCost(1.0); scoreChange(-1); log(`${subs[s].name} → ${subs[s].on?'ON':'OFF'}`); updateAll(); });
-      root.appendChild(sp);
-      const st=g('text',{x:x+56,y:sy+4,class:'txt'}); st.textContent=subs[s].name; root.appendChild(st);
+    // Exceed handling
+    if(G.P_eff > G.P_limit){
+      G.exceeded = true;
+      G.sinceExceed = 0;
+      G.exceedCount++;
+      G.excessArea += (G.P_eff - G.P_limit)*dt;
+      flashGauge();
+      beep(520 + Math.random()*60, .09, .2);
+    } else {
+      G.sinceExceed += dt;
     }
 
-    // HUD box near branch (top, large)
-    const hudW=175, hudH=88, hx=x-80, hy=yUp-110;
-    const hud=g('g',{id:`bhud${i}`}); // group clickable
-    const rect=g('rect',{x:hx,y:hy,width:hudW,height:hudH,rx:12,class:'hud'}); hud.appendChild(rect);
-    const nm=g('text',{x:hx+10,y:hy+20,class:'hudname'}); nm.textContent=BRN[i]; hud.appendChild(nm);
-    const tP=g('text',{id:`hudP${i}`,x:hx+10,y:hy+42,class:'hudtext'}); tP.textContent='P=—'; hud.appendChild(tP);
-    const tO=g('text',{id:`hudO${i}`,x:hx+10,y:hy+60,class:'hudtext'}); tO.textContent='open=—%'; hud.appendChild(tO);
-    const tQ=g('text',{id:`hudQ${i}`,x:hx+10,y:hy+78,class:'hudtext'}); tQ.textContent='Q=—'; hud.appendChild(tQ);
-    hud.style.cursor='pointer';
-    hud.addEventListener('click',()=>selectBranch(i));
-    root.appendChild(hud);
+    // Win condition
+    const win = (G.v >= 0.95 && G.sinceExceed >= 1.5 && G.t < G.tLimit);
+    // Time
+    G.t += dt;
 
-    // Label at branch base
-    const lbl=g('text',{x:x-10,y:yDown+30,class:'label'}); lbl.textContent=BRN[i]; root.appendChild(lbl);
+    if(win){ finish(true); }
+    if(G.t >= G.tLimit){ finish(false); }
+    G.vPrev = G.v;
   }
+  updateUI();
+  requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
 
-  svg.appendChild(root);
-  highlightSelected();
-  updateSchematicVisuals();
+function flashGauge(){
+  const g=$('gauge'); g.classList.remove('flash'); void g.offsetWidth; g.classList.add('flash');
 }
 
-function highlightSelected(){
-  for(let i=0;i<6;i++){
-    const el=$id('bline'+i); if(!el) continue;
-    el.setAttribute('stroke', i===G.selected ? '#9ad1ff' : '#7aa2ff88');
-  }
+/* ===== Finish & scoring ===== */
+function finish(success){
+  if(G.finished) return;
+  G.finished = true; G.running=false;
+
+  // Pisteet
+  const timeScore = Math.max(0, Math.round(100 * (G.tLimit - G.t) / G.tLimit));
+  const penalty   = Math.round(250 * G.excessArea);
+  const smoothBonus = (G.exceedCount===0 ? 80 : 0);
+  G.score = Math.max(0, timeScore - penalty + smoothBonus);
+  G.totalScore += G.score;
+
+  // Titteli
+  let title='Letku-leko 🛠️';
+  if(success && G.exceedCount===0 && G.t < 0.6*G.tLimit) title='Silkkikäsi 🧤';
+  else if(success && G.exceedCount===0) title='Paine-sommelier 🍷';
+  else if(success) title='Raju räppäri 🚨';
+  G.title = title;
+
+  $('title').textContent = title;
+  $('score').textContent = G.score;
+  $('totScore').textContent = G.totalScore;
+
+  $('status').textContent = success ? 'Taso suoritettu!' : 'Aika loppui';
+  $('status').className = 'status ' + (success?'ok':'fail');
+
+  $('next').disabled = !success;
 }
 
-function updateSchematicVisuals(){
-  let maxQ=0; G.branches.forEach(b=>{ if(b.flow>maxQ) maxQ=b.flow; });
-  for(let i=0;i<6;i++){
-    const b=G.branches[i];
-    const w = clamp(10 + 34*(b.flow/Math.max(0.001,maxQ)), 10, 44);
-    const el=$id('bline'+i); if(el) el.setAttribute('stroke-width', w.toFixed(1));
-
-    // HUD updates
-    $id(`hudP${i}`).textContent = `P=${b.meterP.toFixed(2)}`;
-    $id(`hudO${i}`).textContent = `open=${Math.round(b.open*100)}%${b.stuckMin>0?` (min ${Math.round(b.stuckMin*100)}%)`:''}`;
-    $id(`hudQ${i}`).textContent = `Q=${b.flow.toFixed(3)}`;
-
-    // subs thickness/colors
-    b.subs.forEach((s,idx)=>{
-      const sl=$id(`subline${i}_${idx}`); if(sl){ sl.setAttribute('stroke-width', s.on?8:3); sl.setAttribute('stroke', s.on?'#66ffc2aa':'#6ea8ff55'); }
-    });
-  }
-}
-
-/* ===== Side ===== */
-function updateSide(){
-  $id('qtot').textContent=G.qtot.toFixed(3);
-  $id('phead').textContent=G.phead.toFixed(3);
-  $id('qbar').style.width = clamp( (G.qtot/ (6*1.8))*100, 0, 100)+'%';
-  $id('pbar').style.width = clamp( (G.phead/ (G.Ps*1.2))*100, 0, 100)+'%';
-  $id('energy').textContent = G.energy.toFixed(1);
-  $id('time').textContent = Math.ceil(G.timeLeft)+' s';
-  $id('tbar').style.width = clamp( (G.timeLeft/G.timeMax)*100, 0, 100)+'%';
-
-  const pl=$id('pressList'); pl.innerHTML='';
-  G.branches.forEach((b,i)=>{
-    const d=document.createElement('div'); d.className='pill'; d.style.cursor='pointer';
-    d.onclick=()=>selectBranch(i);
-    d.innerHTML = `<strong>${b.name}</strong>&nbsp; P=${b.meterP.toFixed(2)} • open=${Math.round(b.open*100)}%${b.stuckMin>0?' (min '+Math.round(b.stuckMin*100)+'%)':''}`;
-    pl.appendChild(d);
-  });
-
-  $id('leaksLeft').textContent = (G.leaks.length - G.leaksFound);
-  $id('stuckInfo').textContent = (G.level>=7 ? 'mahdollinen' : 'ei');
-  $id('driftInfo').textContent = (G.driftAmp*100).toFixed(0)+'%';
-  $id('selBranch').textContent = G.branches[G.selected].name;
-  $id('selOpen').textContent = Math.round(G.branches[G.selected].open*100)+'%';
-}
-
-/* ===== Hint flash ===== */
-function flashHint(bi, si){
-  const el=$id('bline'+bi);
-  if(el){ const old=el.getAttribute('stroke'); el.setAttribute('stroke','#ffd166'); setTimeout(()=>{ el.setAttribute('stroke',old); },900); }
-}
-
-/* ===== Help modal ===== */
-$id('helpBtn').onclick=()=>{ $id('helpModal').style.display='flex'; };
-$id('helpClose').onclick=()=>{ $id('helpModal').style.display='none'; };
-$id('helpModal').addEventListener('click',(e)=>{ if(e.target.id==='helpModal') e.currentTarget.style.display='none'; });
-
-/* ===== Loop ===== */
-function updateAll(){ solveNetwork(); updateSchematicVisuals(); updateSide(); }
-setInterval(()=>{ perfNow=performance.now(); if(!G.finished){ G.energy+=G.qtot*G.phead*G.dt; G.timeLeft-=G.dt; if(G.timeLeft<=0){ G.timeLeft=0; finishRound(false);} } updateSide(); }, G.dt*1000);
-
-/* ===== Tutorial (coach with ring + checklist) ===== */
-const coach={
-  el:$id('coach'), arrow:$id('coachArrow'), ring:$id('coachRing'), bubble:$id('coachBubble'),
-  text:$id('coachText'), list:[$id('c1'),$id('c2'),$id('c3'),$id('c4')],
-  nextBtn:$id('coachNext'), skipBtn:$id('coachSkip'), step:0
+$('retry').onclick = ()=> resetRound();
+$('next').onclick  = ()=>{
+  const n = (G.level>=G.maxLevel) ? 1 : (G.level+1);
+  setLevel(n);
 };
-function showCoach(){ coach.el.style.display='flex'; }
-function hideCoach(){ coach.el.style.display='none'; coach.ring.style.display='none'; }
-function placeRingOn(target){ if(!target) return; const r=target.getBoundingClientRect(); const size=Math.max(60,Math.min(140,Math.min(r.width,r.height)*0.9)); coach.ring.style.width=size+'px'; coach.ring.style.height=size+'px'; coach.ring.style.left=(r.left+r.width/2)+'px'; coach.ring.style.top=(r.top+r.height/2)+'px'; coach.ring.style.display='block'; }
-function placeCoachOn(target,msg,where='bottom',withRing=false){
-  if(!target) return;
-  const r=target.getBoundingClientRect(), B=coach.bubble, A=coach.arrow; coach.text.textContent=msg;
-  const pad=10; let top,left,aTop,aLeft;
-  if(where==='top'){ top=r.top-110; left=r.left+r.width/2-160; aTop=r.top; aLeft=r.left+r.width/2; A.style.transform='translate(-50%,-50%)'; }
-  else { top=r.bottom+pad; left=r.left+r.width/2-160; aTop=r.bottom; aLeft=r.left+r.width/2; A.style.transform='translate(-50%,-50%) rotate(180deg)'; }
-  B.style.top=Math.max(10,top)+'px'; B.style.left=Math.max(10,left)+'px'; A.style.top=aTop+'px'; A.style.left=aLeft+'px';
-  if(withRing) placeRingOn(target); else coach.ring.style.display='none'; showCoach();
+
+/* ===== UI update ===== */
+function updateUI(force=false){
+  // Gauge fill (visual scale 0..1.6)
+  const maxP = 1.6;
+  const frac = clamp(G.P_eff / maxP, 0, 1);
+  $('fill').style.height = (frac*100)+'%';
+  $('pText').textContent = G.P_eff.toFixed(2);
+  $('time').textContent = (G.t).toFixed(1)+' / '+G.tLimit.toFixed(0)+' s';
+  $('openPct').textContent = Math.round(G.v*100)+'%';
+  $('vText').textContent = Math.round(G.v*100)+'%';
+
+  // Speed bar (normalize to rSoft..rSoft*4)
+  const s = Math.max(0, Math.abs(G.dvdt) - G.rSoft);
+  const sFrac = clamp(s/(G.rSoft*3.2), 0, 1);
+  $('spd').style.width = (sFrac*100)+'%';
+  $('score').textContent = G.score;
+  $('totScore').textContent = G.totalScore;
 }
-function markDone(i){ const el=coach.list[i-1]; if(el && !el.classList.contains('done')) el.classList.add('done'); }
-function startTutorial(){ G.tutorial=true; G.tutorialStep=0; stepCoach(0); }
-function stepCoach(n){
-  coach.step=n; G.tutorialStep=n; const bB=$id('bline1');
-  if(n===0){ placeCoachOn(bB,'Tervetuloa! Opitaan perusjutut yhdellä kierroksella. Voit myös ohittaa.','top',false); }
-  if(n===1){ placeCoachOn(bB,'1) Valitse B-haara klikkaamalla putkea.','top',true); }
-  if(n===2){ placeCoachOn($id('minus5'),'2) Sulje B 5 % painamalla −5 %.','top',true); }
-  if(n===3){ placeCoachOn($id('plus5'),'3) Avaa B takaisin 5 % painamalla +5 %.','top',true); }
-  if(n===4){ placeCoachOn($id('guessBtn'),'4) Tee arvaus: B (ylähaara) + koko “keskisuuri”.','top',true); }
-  if(n>=5){ hideCoach(); }
-}
-function nextCoach(){ stepCoach(coach.step+1); }
-function endTutorialSuccess(){ hideCoach(); G.tutorial=false; }
-coach.nextBtn.addEventListener('click',()=>nextCoach());
-coach.skipBtn.addEventListener('click',()=>{ hideCoach(); G.tutorial=false; });
-window.addEventListener('resize', ()=>{ if(G.tutorial){ stepCoach(coach.step); } });
 
 /* ===== Init ===== */
-setupLevel();
-updateAll();
-
-/* Keyboard */
-window.addEventListener('keydown',(e)=>{ if(e.key==='ArrowLeft') adjOpen(-0.05); if(e.key==='ArrowRight') adjOpen(+0.05); });
+setLevel(1);
 </script>
 </body>
 </html>
