@@ -245,8 +245,7 @@ function setLevel(lv){
   if(lv===9){ G.C=3.1; G.kSurge=1.30; G.P_limit=1.13; G.tLimit=19; G.demandAmp=0.12; G.jitter=0.03; $('distText').textContent='kova aalto + häly'; }
   if(lv===10){ G.C=3.0; G.kSurge=1.40; G.P_limit=1.12; G.tLimit=18; G.demandAmp=0.14; G.jitter=0.04; $('distText').textContent='mestaritaso'; }
 
-
-// Hidasta dynamiikkaa globaalisti
+  // Hidasta dynamiikkaa globaalisti
   G.C *= 1.5;
   G.Kv *= 0.80;
 
@@ -258,15 +257,12 @@ function resetRound(){
   G.t=0; G.exceeded=false; G.exceedCount=0; G.sinceExceed=0; G.excessArea=0;
   G.score=0; G.finished=false; G.running=true;
 
- // Resetoi liukusäätimen ulkoasu alas (0 %)
- document.getElementById('knob').style.top = '100%';
-document.getElementById('vText').textContent = '0%';
-document.getElementById('openPct').textContent = '0%';
-$('lvl').textContent=G.level;
-
-
-  
+  // Resetoi liukusäätimen ulkoasu alas (0 %)
+  document.getElementById('knob').style.top = '100%';
+  document.getElementById('vText').textContent = '0%';
+  document.getElementById('openPct').textContent = '0%';
   $('lvl').textContent=G.level;
+
   $('status').textContent='Käynnissä…'; $('status').className='status warn';
   $('title').textContent='—';
   $('next').disabled=true;
@@ -279,8 +275,7 @@ function placeLimitLine(){
   // gauge is 0..1.6 bar visuaalisesti
   const maxP=1.6;
   const frac = clamp(G.P_limit/maxP, 0, 1);
-  const g = $('gauge');
-  const h = g.getBoundingClientRect().height || 420;
+  // position limit line from top
   $('limit').style.top = ( (1-frac)*100 ) + '%';
 }
 
@@ -302,9 +297,7 @@ slider.addEventListener('pointerup',   (e)=>{ dragging=false; try{ slider.releas
 slider.addEventListener('pointercancel',(e)=>{ dragging=false; });
 
 /* ===== Physics & loop ===== */
-let lastTime = performance.now();
 function step(){
-  const now = performance.now();
   const dt = G.dt; // fixed step
   if(G.running){
     // Demand profile
@@ -327,7 +320,7 @@ function step(){
     if(G.spikeTimer>0){ G.spikeTimer -= dt; if(G.spikeTimer<0) G.spikeTimer=0; }
 
     // Tank model
-    316:   const q_in = G.Kv * Math.pow(G.v, 1.25); // hitaampi alku: v^1.25 < v (0..1)
+    const q_in = G.Kv * Math.pow(G.v, 1.25); // hitaampi alku: v^1.25 < v (0..1)
     const dPdt = (q_in - G.qDemand)/G.C - G.kf*G.P;
     G.P += dPdt * dt;
     G.P = clamp(G.P, 0, 1.8);
