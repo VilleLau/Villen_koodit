@@ -63,7 +63,7 @@
     box-shadow:0 0 0 3px rgba(255,209,102,.18), 0 0 12px rgba(255,209,102,.6);
   }
   .gauge.flash{animation:gflash .6s ease}
-  @keyframes gflash{ 0%{box-shadow:0 0 0 0 rgba(255,98,125,.0)} 40%{box-shadow:0 0 0 8px rgba(255,209,102,.35)} 100%{box-shadow:0 0 0 0 rgba(255,98,125,.0)} }
+  @keyframes gflash{ 0%{box-shadow:0 0 0 0 rgba(255,98,125,.0)} 40%{box-shadow:0 0 0 8px rgba(255,209,102,.35)} 100%{box-shadow:0 0 0 0 rgba(255,209,102,.0)} }
   .gTitle{display:flex; align-items:baseline; gap:8px; font-weight:800}
   .gTitle small{color:var(--muted); font-weight:600}
 
@@ -239,6 +239,7 @@
 const $ = (id)=>document.getElementById(id);
 $('year').textContent = new Date().getFullYear();
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const aExp = (dt,tau)=> 1 - Math.exp(-dt/Math.max(1e-6,tau));
 
 /* ===== Audio ===== */
 let AC; function audio(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); return AC; }
@@ -253,7 +254,8 @@ function beep(freq=520, dur=0.12, vol=0.25){
 const G = {
   level:1, maxLevel:10,
   v:0, vPrev:0, targetV:0, dvdt:0,
-  P:0, P_eff:0, P_limit:1.2,
+  P:0, P_eff:0,                // P_eff on nyt low-passattu (inhimillisempi)
+  P_limit:1.2,
   Kv:1.2, C:4.0, kf:0.12, kSurge:0.9, rSoft:0.12, gamma:1.4,
   t:0, tLimit:25, dt:0.02,
   qDemand:0.55, demandAmp:0.06, demandHz:0.05, jitter:0.0,
@@ -261,8 +263,10 @@ const G = {
   exceeded:false, exceedCount:0, sinceExceed:0, excessArea:0,
   running:true, finished:false,
   score:0, totalScore:0, title:'—',
-  // Avustus (slew) vain tasoilla 1–2 (voit muuttaa)
-  useLimiter:true, slewUp:0.6, slewDown:1.2
+  // Avustus vain tasolla 1 (nopea, mutta pehmeä)
+  useLimiter:true, slewUp:1.10, slewDown:1.80,
+  // Aikavakiot (säädetään tasoittain)
+  tauEff:0.16,   // P_eff low-pass (100–160 ms)
 };
 
 /* ===== Loppuruutu + jakaminen ===== */
@@ -288,49 +292,42 @@ async function shareResult(){
   const text = `Paineisku-Stopperi – ${title}, pisteet: ${score} (10/10) – Villen koodailut`;
   const url = location.href;
   try{
-    if(navigator.share){
-      await navigator.share({title:'Paineisku-Stopperi', text, url});
-      showToast('Jaettu');
-    }else if(navigator.clipboard && window.isSecureContext){
-      await navigator.clipboard.writeText(`${text}\n${url}`);
-      showToast('Kopioitu leikepöydälle');
-    }else{
-      // Fallback: valitse näkymätön input
-      const ta=document.createElement('textarea');
-      ta.value=`${text}\n${url}`; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-      showToast('Kopioitu leikepöydälle');
-    }
+    if(navigator.share){ await navigator.share({title:'Paineisku-Stopperi', text, url}); showToast('Jaettu'); }
+    else if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(`${text}\n${url}`); showToast('Kopioitu'); }
+    else{ const ta=document.createElement('textarea'); ta.value=`${text}\n${url}`; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('Kopioitu'); }
   }catch(e){ showToast('Jakaminen epäonnistui'); }
 }
 $('newGameBtn').addEventListener('click', ()=>{ hideFinal(); G.totalScore = 0; setLevel(1); });
 $('closeFinalBtn').addEventListener('click', ()=> hideFinal());
 $('shareBtn').addEventListener('click', ()=> shareResult());
 
-/* ===== Level config (helppo säätää tästä) ===== */
+/* ===== Level config ===== */
 function setLevel(lv){
   G.level = lv;
 
-  // --- Perusarvot (voit muuttaa halutessasi) ---
+  // Perus (voit vielä säätää omilla arvoillasi)
   G.Kv=1.2; G.C=4.0; G.kf=0.12; G.kSurge=0.9; G.rSoft=0.12; G.gamma=1.4;
-  G.P_limit=1.24; G.tLimit=22; G.demandAmp=0.07; G.demandHz=0.06; G.jitter=0.0;
+  G.P_limit=1.22; G.tLimit=22; G.demandAmp=0.07; G.demandHz=0.06; G.jitter=0.0;
   G.spikeTimer=0; G.spikeAmp=0;
 
-  // Avustus (slew-limiter) vain opetustasoilla
-  G.useLimiter = (lv<=2);
-  if(G.useLimiter){ G.slewUp=0.6; G.slewDown=1.2; }
+  // Avustus vain Taso 1 – ja nopeana, jotta VOI epäonnistua
+  G.useLimiter = (lv===1);
+  if(G.useLimiter){ G.slewUp=1.10; G.slewDown=1.80; } // ~1 s täydestä kiinni/auki
 
-  // --- Tasoittain (tiukat) ---
-  if(lv===1){ G.C=5.0; G.kSurge=0.75; G.P_limit=1.28; G.tLimit=24; G.demandAmp=0.05; $('distText').textContent='hyvin pieni aalto'; }
-  if(lv===2){ G.C=4.4; G.kSurge=0.90; G.P_limit=1.24; G.tLimit=22; G.demandAmp=0.07; $('distText').textContent='pieni aalto'; }
-  if(lv===3){ G.C=3.4; G.kSurge=1.25; G.P_limit=1.18; G.rSoft=0.08; G.tLimit=20; $('distText').textContent='aalto'; }
-  if(lv===4){ G.C=3.1; G.kSurge=1.40; G.P_limit=1.16; G.rSoft=0.07; G.tLimit=19; $('distText').textContent='aalto'; }
-  if(lv===5){ G.C=2.9; G.kSurge=1.55; G.P_limit=1.14; G.rSoft=0.06; G.tLimit=18; G.jitter=0.015; $('distText').textContent='aalto + häiriö'; }
-  if(lv===6){ G.C=2.7; G.kSurge=1.70; G.P_limit=1.12; G.rSoft=0.055; G.tLimit=17; G.jitter=0.02; $('distText').textContent='aalto + “nykäys”'; }
-  if(lv===7){ G.C=2.6; G.kSurge=1.85; G.P_limit=1.10; G.rSoft=0.05; G.tLimit=16; G.demandAmp=0.12; $('distText').textContent='isompi aalto'; }
-  if(lv===8){ G.C=2.5; G.kSurge=2.00; G.P_limit=1.08; G.rSoft=0.05; G.tLimit=15; G.demandAmp=0.14; G.jitter=0.03; $('distText').textContent='isompi aalto + häly'; }
-  if(lv===9){ G.C=2.4; G.kSurge=2.10; G.P_limit=1.06; G.rSoft=0.045; G.tLimit=14; G.demandAmp=0.16; G.jitter=0.035; $('distText').textContent='kova aalto + häly'; }
-  if(lv===10){ G.C=2.3; G.kSurge=2.25; G.P_limit=1.05; G.rSoft=0.040; G.tLimit=13; G.demandAmp=0.18; G.jitter=0.04; $('distText').textContent='mestaritaso'; }
+  // Inhimillinen aikavakio P_eff: lv1 hitaampi → lv10 nopeampi
+  G.tauEff = (lv<=2)?0.16 : (lv<=4)?0.14 : (lv<=7)?0.12 : 0.10;
+
+  // Tasoittain (haaste kasvaa)
+  if(lv===1){ G.C=4.6; G.kSurge=1.05; G.P_limit=1.24; G.rSoft=0.09; G.tLimit=22; $('distText').textContent='pieni aalto'; }
+  if(lv===2){ G.C=4.0; G.kSurge=1.20; G.P_limit=1.22; G.rSoft=0.08; G.tLimit=21; $('distText').textContent='pieni aalto'; }
+  if(lv===3){ G.C=3.6; G.kSurge=1.35; G.P_limit=1.19; G.rSoft=0.075; G.tLimit=20; $('distText').textContent='aalto'; }
+  if(lv===4){ G.C=3.3; G.kSurge=1.50; G.P_limit=1.17; G.rSoft=0.07; G.tLimit=19; $('distText').textContent='aalto'; }
+  if(lv===5){ G.C=3.1; G.kSurge=1.65; G.P_limit=1.15; G.rSoft=0.06; G.tLimit=18; G.jitter=0.015; $('distText').textContent='aalto + häiriö'; }
+  if(lv===6){ G.C=2.9; G.kSurge=1.80; G.P_limit=1.13; G.rSoft=0.055; G.tLimit=17; G.jitter=0.02;  $('distText').textContent='aalto + “nykäys”'; }
+  if(lv===7){ G.C=2.7; G.kSurge=1.95; G.P_limit=1.11; G.rSoft=0.050; G.tLimit=16; G.demandAmp=0.12; $('distText').textContent='isompi aalto'; }
+  if(lv===8){ G.C=2.6; G.kSurge=2.10; G.P_limit=1.09; G.rSoft=0.045; G.tLimit=15; G.demandAmp=0.14; G.jitter=0.03; $('distText').textContent='isompi aalto + häly'; }
+  if(lv===9){ G.C=2.5; G.kSurge=2.25; G.P_limit=1.07; G.rSoft=0.040; G.tLimit=14; G.demandAmp=0.16; G.jitter=0.035; $('distText').textContent='kova aalto + häly'; }
+  if(lv===10){G.C=2.4; G.kSurge=2.40; G.P_limit=1.05; G.rSoft=0.038; G.tLimit=13; G.demandAmp=0.18; G.jitter=0.04;  $('distText').textContent='mestaritaso'; }
 
   resetRound();
 }
@@ -349,9 +346,9 @@ function resetRound(){
   $('tLimitText').textContent = G.tLimit.toFixed(0)+' s';
   $('plText').textContent = G.P_limit.toFixed(2);
   $('assistText').textContent = G.useLimiter ? 'Päällä' : 'Pois';
-  document.getElementById('knob').style.top = '100%';
-  document.getElementById('vText').textContent = '0%';
-  document.getElementById('openPct').textContent = '0%';
+  $('knob').style.top = '100%';
+  $('vText').textContent = '0%';
+  $('openPct').textContent = '0%';
 
   placeLimitLine();
   updateUI(true);
@@ -389,7 +386,7 @@ function step(){
     else if(G.level>=5 && Math.random()<0.03) spike += 0.06 + Math.random()*0.05;
     G.qDemand = clamp(0.55 + wave + noise + spike, 0.25, 0.98);
 
-    // Venttiilin liike: tasot 1–2 rajattu, muuten välitön (haaste)
+    // Venttiilin liike: taso 1 rajattu nopeasti, muut tasot välitön (haaste)
     if(G.useLimiter){
       const diff = G.targetV - G.v;
       const stepMax = (diff>0 ? G.slewUp : G.slewDown) * dt;
@@ -409,30 +406,29 @@ function step(){
       G.spikeAmp = ampBase + Math.random()*0.08;
     }
     if(G.spikeTimer>0){ G.spikeTimer -= dt; if(G.spikeTimer<0) G.spikeTimer=0; }
+    const P_bump = (G.spikeTimer>0 ? G.spikeAmp*(G.spikeTimer/0.10) : 0);
 
-    // Säiliömalli (lineaarinen virtaus)
+    // Säiliö + surge (surge ei enää loikkaa yhdellä framella)
     const q_in = G.Kv * G.v;
     const dPdt = (q_in - G.qDemand)/G.C - G.kf*G.P;
-    G.P += dPdt * dt;
-    G.P = clamp(G.P, 0, 1.8);
+    G.P = clamp(G.P + dPdt * dt, 0, 1.8);
 
-    // Surge-malli
     const surge = Math.max(0, Math.abs(G.dvdt) - G.rSoft);
-    const P_surge = G.kSurge * Math.pow(surge, G.gamma);
-    const P_bump  = (G.spikeTimer>0 ? G.spikeAmp*(G.spikeTimer/0.10) : 0);
-    G.P_eff = clamp(G.P + P_surge + P_bump, 0, 1.8);
+    // Low-passaa surge → inhimillinen nousu
+    if(!G._surgeLP) G._surgeLP = 0;
+    G._surgeLP += aExp(dt, 0.12) * (surge - G._surgeLP); // ~120 ms
+    const P_surge = G.kSurge * Math.pow(G._surgeLP, G.gamma);
+
+    // P_eff: myös low-pass (tasokohtainen aikavakio)
+    const rawEff = clamp(G.P + P_surge + P_bump, 0, 1.8);
+    G.P_eff += aExp(dt, G.tauEff) * (rawEff - G.P_eff);
 
     // Rajanylitys
     if(G.P_eff > G.P_limit){
-      G.exceeded = true;
-      G.sinceExceed = 0;
-      G.exceedCount++;
+      G.exceeded = true; G.sinceExceed = 0; G.exceedCount++;
       G.excessArea += (G.P_eff - G.P_limit)*dt;
-      flashGauge();
-      beep(520 + Math.random()*60, .09, .22);
-    } else {
-      G.sinceExceed += dt;
-    }
+      flashGauge(); beep(520 + Math.random()*60, .09, .22);
+    } else { G.sinceExceed += dt; }
 
     // Aika & voitto
     const win = (G.v >= 0.95 && G.sinceExceed >= 1.5 && G.t < G.tLimit);
@@ -456,7 +452,7 @@ function finish(success){
   if(G.finished) return;
   G.finished = true; G.running=false;
 
-  const penaltyFactor = (G.level>=6 ? 380 : 320); // kovempi sakko ylemmillä tasoilla
+  const penaltyFactor = (G.level>=6 ? 380 : 320);
   const timeScore = Math.max(0, Math.round(100 * (G.tLimit - G.t) / G.tLimit));
   const penalty   = Math.round(penaltyFactor * G.excessArea);
   const smoothBonus = (G.exceedCount===0 ? 80 : 0);
@@ -476,13 +472,11 @@ function finish(success){
   $('status').textContent = success ? 'Taso suoritettu!' : 'Aika loppui';
   $('status').className = 'status ' + (success?'ok':'fail');
 
-  // Jos viimeinen taso suoritettu, näytä loppuruutu
+  // Viimeinen taso → loppuruutu
   if(success && G.level >= G.maxLevel){
     $('next').disabled = true;
-    showFinal();
-    return;
+    showFinal(); return;
   }
-
   $('next').disabled = !success;
 }
 
@@ -496,9 +490,9 @@ function updateUI(force=false){
   $('fill').style.height = (frac*100)+'%';
   $('pText').textContent = G.P_eff.toFixed(2);
   $('time').textContent = (G.t).toFixed(1)+' / '+G.tLimit.toFixed(0)+' s';
-  document.getElementById('knob').style.top = (100 - G.v*100) + '%';
-  document.getElementById('vText').textContent = Math.round(G.v*100)+'%';
-  document.getElementById('openPct').textContent = Math.round(G.v*100)+'%';
+  $('knob').style.top = (100 - G.v*100) + '%';
+  $('vText').textContent = Math.round(G.v*100)+'%';
+  $('openPct').textContent = Math.round(G.v*100)+'%';
   const s = Math.max(0, Math.abs(G.dvdt) - G.rSoft);
   const sFrac = clamp(s/(G.rSoft*3.2), 0, 1);
   $('spd').style.width = (sFrac*100)+'%';
