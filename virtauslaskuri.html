@@ -46,7 +46,7 @@
         { key: "pehd", label: "PE/HDPE (sileä)", eps_mm: 0.0015 },
         { key: "pvc", label: "PVC/PEX", eps_mm: 0.0015 },
         { key: "kupari", label: "Kupari", eps_mm: 0.0015 },
-        { key: "teräs", label: "Hiiliteräs (kaupallinen)", eps_mm: 0.045 },
+        { key: "teräs", label: "Hiiliteräs", eps_mm: 0.045 },
         { key: "rst", label: "Ruostumaton teräs", eps_mm: 0.015 },
         { key: "valurauta", label: "Valurauta", eps_mm: 0.26 },
         { key: "betoni", label: "Betoni", eps_mm: 0.3 },
@@ -239,9 +239,9 @@
                       <ResultRow label="Q" value={results.Q_m3h} unit="m³/h" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt & energia</h3>
+                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt ja hukattu energia</h3>
                       <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
-                      <ResultRow label="Hydrauliikkateho" value={results.P_hyd / 1000} unit="kW" />
+                      <ResultRow label="Hydraulinen teho" value={results.P_hyd / 1000} unit="kW" />
                       <ResultRow label="Sähköteho" value={results.P_in / 1000} unit="kW" />
                       <ResultRow label="Vuotuinen energia" value={results.E_year_kWh} unit="kWh/a" />
                       <ResultRow label="Vuotuinen kustannus" value={results.cost_year} unit="€ / a" digits={0} />
