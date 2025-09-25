@@ -11,7 +11,7 @@
   <body class="bg-gray-50">
     <nav class="bg-white border-b">
       <div class="max-w-6xl mx-auto px-4 py-2 text-sm text-gray-600 flex items-center gap-3">
-        <a href="index.html" class="hover:underline">← Etusivu</a>
+        <a href="index.html" className="hover:underline">← Etusivu</a>
         <span class="text-gray-300">|</span>
         <span>Pumpun hyötysuhdelaskuri</span>
       </div>
@@ -48,7 +48,8 @@
           </label>
         );
       }
-      // Renamed to avoid HTML parser warning
+
+      // Nimetty SelectFieldiksi, ettei selain sekoile ennen kuin JSX kääntyy
       function SelectField({label,value,onChange,options,disabled=false,hint=""}){
         return (
           <label className="flex flex-col gap-1">
@@ -61,6 +62,7 @@
           </label>
         );
       }
+
       function ResultRow({label,value,unit,digits=2}){
         const fmt = n => Number.isFinite(n)? n.toLocaleString(undefined,{maximumFractionDigits:digits}) : "-";
         return (
@@ -105,23 +107,35 @@
 
       // ----- App -----
       function App(){
+        // Syötteet
         const [qVal,setQVal]=useState(50), [qUnit,setQUnit]=useState("m3h");
         const [headMode,setHeadMode]=useState("H"), [H,setH]=useState(35), [dP,setDP]=useState(3.43), [dPunit,setDPunit]=useState("bar");
         const [rho,setRho]=useState(998), [temp,setTemp]=useState(""), [g,setG]=useState(9.81);
+
         const [powMode,setPowMode]=useState("elec"), [Pelec,setPelec]=useState(22), [etaVFD,setEtaVFD]=useState(0.98);
         const [motorRated,setMotorRated]=useState(30), [motorMode,setMotorMode]=useState("auto"), [etaMotor,setEtaMotor]=useState(undefined), [PshaftIn,setPshaftIn]=useState(20);
+
         const [hrs,setHrs]=useState(4000), [price,setPrice]=useState(0.12), [targetEta,setTargetEta]=useState(0.80);
         const [showAdvanced,setShowAdvanced]=useState(false), [showPresets,setShowPresets]=useState(false);
+
+        // Lisäasetukset
         const [uncQ,setUncQ]=useState(2), [uncH,setUncH]=useState(2), [uncP,setUncP]=useState(1);
         const [npsha,setNpsha]=useState(""), [npshr,setNpshr]=useState(""), [npshMargin,setNpshMargin]=useState(0.5);
 
-        useEffect(()=>{ const T=parseFloat(temp); if(!Number.isNaN(T)) setRho(parseFloat(waterDensityApprox(T).toFixed(1))); },[temp]);
+        // Päivitä ρ lämpötilasta (vedelle)
+        useEffect(()=>{
+          const T=parseFloat(temp);
+          if(!Number.isNaN(T)) setRho(parseFloat(waterDensityApprox(T).toFixed(1)));
+        },[temp]);
 
+        // Laskenta
         const calc=useMemo(()=>{
           const Qs=flowToM3s(qVal,qUnit);
           let Hval=headMode==="H"?Number(H):dpToHead(dP,dPunit,rho,g);
           if(!Number.isFinite(Qs)||!Number.isFinite(Hval)||Qs<=0||Hval<=0) return {warn:"Tarkista Q ja H/Δp."};
+
           const Phyd_W=rho*g*Qs*Hval, Phyd_kW=Phyd_W/1000;
+
           let Pshaft_kW, Pelec_kW, etaTot;
           if(powMode==="elec"){
             if(!Number.isFinite(Pelec)||Pelec<=0||!Number.isFinite(etaVFD)||etaVFD<=0) return {warn:"Tarkista verkkoteho ja VFD η."};
@@ -131,27 +145,37 @@
             Pshaft_kW=Pelec*etaVFD*etaM; Pelec_kW=Pelec; etaTot=clamp(Phyd_kW/Pelec_kW,0,1);
           }else{
             if(!Number.isFinite(PshaftIn)||PshaftIn<=0) return {warn:"Tarkista akseliteho."};
-            Pshaft_kW=PshaftIn; Pelec_kW=(Number.isFinite(Pelec)&&Pelec>0)?Pelec:undefined; etaTot=Pelec_kW?clamp(Phyd_kW/Pelec_kW,0,1):undefined;
+            Pshaft_kW=PshaftIn; Pelec_kW=(Number.isFinite(Pelec)&&Pelec>0)?Pelec:undefined;
+            etaTot=Pelec_kW?clamp(Phyd_kW/Pelec_kW,0,1):undefined;
           }
-          const etaPump=clamp(Phyd_kW/Pshaft_kW,0,1), Q_m3h=Qs*3600, spec=(Pelec_kW&&Q_m3h>0)?(Pelec_kW/Q_m3h):undefined;
-          const annual_kWh=Pelec_kW?Pelec_kW*hrs:undefined, annual_cost=annual_kWh?annual_kWh*price:undefined;
 
+          const etaPump=clamp(Phyd_kW/Pshaft_kW,0,1);
+          const Q_m3h=Qs*3600;
+          const spec=(Pelec_kW && Q_m3h>0) ? (Pelec_kW/Q_m3h) : undefined;
+          const annual_kWh=Pelec_kW?Pelec_kW*hrs:undefined;
+          const annual_cost=annual_kWh?annual_kWh*price:undefined;
+
+          // Säästöpotentiaali
           let savingsText="–";
           if(Number.isFinite(targetEta)&&targetEta>0){
-            const neededPshaft=Phyd_kW/targetEta, delta_kW=Pshaft_kW-neededPshaft;
+            const neededPshaft=Phyd_kW/targetEta;
+            const delta_kW=Pshaft_kW-neededPshaft;
             if(delta_kW<=0) savingsText="Tavoite saavutettu – ei säästöpotentiaalia tällä kuormalla.";
             else{
               let delta_elec_kW;
               if(powMode==="elec"){
                 const mmode2=(motorMode==="ie2"||motorMode==="ie4")?motorMode:"ie3";
                 const etaM2=(motorMode==="manual"?clamp(etaMotor||0,0,1):motorEffEstimate(motorRated,neededPshaft,mmode2));
-                const chain=etaVFD*etaM2; delta_elec_kW=chain>0?delta_kW/chain:undefined;
+                const chain=etaVFD*etaM2;
+                delta_elec_kW=chain>0?delta_kW/chain:undefined;
               }
-              const save_kWh_y=delta_elec_kW?delta_elec_kW*hrs:undefined, save_eur=save_kWh_y?save_kWh_y*price:undefined;
+              const save_kWh_y=delta_elec_kW?delta_elec_kW*hrs:undefined;
+              const save_eur=save_kWh_y?save_kWh_y*price:undefined;
               savingsText=`Akselisäästöpotentiaali: ${delta_kW.toFixed(2)} kW.`+(delta_elec_kW?` Arvio verkossa: ${delta_elec_kW.toFixed(2)} kW.`:"")+(save_kWh_y?` Vuosisäästö: ${save_kWh_y.toFixed(0)} kWh ≈ ${save_eur.toFixed(0)} €.`:"");
             }
           }
 
+          // Epävarmuus (min–max)
           const uq=Math.abs(uncQ)/100||0, uh=Math.abs(uncH)/100||0, up=Math.abs(uncP)/100||0;
           const Qmin=Qs*(1-uq), Qmax=Qs*(1+uq), Hmin=Hval*(1-uh), Hmax=Hval*(1+uh);
           const Phyd_min=rho*g*Math.max(Qmin,0)*Math.max(Hmin,0)/1000, Phyd_max=rho*g*Math.max(Qmax,0)*Math.max(Hmax,0)/1000;
@@ -161,7 +185,7 @@
           const etaTot_min=Pelec_kW?clamp(Phyd_min/Math.max(Pelec_max,1e-9),0,1):undefined;
           const etaTot_max=Pelec_kW?clamp(Phyd_max/Math.max(Pelec_min,1e-9),0,1):undefined;
 
-          // NPSH
+          // NPSH-viesti
           let npshMsg="Syötä NPSH_a ja NPSH_r tarvittaessa. Ei vaikuta hyötysuhteisiin.", npshOK=null;
           if(npsha!=="" && npshr!==""){
             const a=parseFloat(npsha), r=parseFloat(npshr), m=parseFloat(npshMargin||0);
@@ -184,22 +208,26 @@
           {name:"Δp→H -muunnos", s:{qVal:100,qUnit:"m3h",headMode:"dP",dP:3.2,dPunit:"bar",rho:998,g:9.81,powMode:"elec",Pelec:45,etaVFD:0.985,motorRated:55,motorMode:"ie4",hrs:5000,price:0.11}},
           {name:"Merivesi 20°C", s:{qVal:120,qUnit:"m3h",headMode:"H",H:30,rho:1025,g:9.81,powMode:"elec",Pelec:35,etaVFD:0.98,motorRated:45,motorMode:"ie3",hrs:5000,price:0.14}},
         ];
-        const applyPreset = (p)=>{
-          const s=p||{}; setQVal(s.qVal??qVal); setQUnit(s.qUnit??qUnit); setHeadMode(s.headMode??headMode);
-          setH(s.H??H); setDP(s.dP??dP); setDPunit(s.dPunit??dPunit); setRho(s.rho??rho); setG(s.g??g);
-          setPowMode(s.powMode??powMode); if(s.Pelec!==undefined) setPelec(s.Pelec); setEtaVFD(s.etaVFD??etaVFD);
-          setMotorRated(s.motorRated??motorRated); setMotorMode(s.motorMode??motorMode); if(s.PshaftIn!==undefined) setPshaftIn(s.PshaftIn);
-          setHrs(s.hrs??hrs); setPrice(s.price??price); setTargetEta(s.targetEta??targetEta);
-          setUncQ(s.uncQ??uncQ); setUncH(s.uncH??uncH); setUncP(s.uncP??uncP);
+        const applyPreset=s=>{
+          const p=s||{};
+          setQVal(p.qVal??qVal); setQUnit(p.qUnit??qUnit); setHeadMode(p.headMode??headMode);
+          setH(p.H??H); setDP(p.dP??dP); setDPunit(p.dPunit??dPunit); setRho(p.rho??rho); setG(p.g??g);
+          setPowMode(p.powMode??powMode); if(p.Pelec!==undefined) setPelec(p.Pelec); setEtaVFD(p.etaVFD??etaVFD);
+          setMotorRated(p.motorRated??motorRated); setMotorMode(p.motorMode??motorMode); if(p.PshaftIn!==undefined) setPshaftIn(p.PshaftIn);
+          setHrs(p.hrs??hrs); setPrice(p.price??price); setTargetEta(p.targetEta??targetEta);
+          setUncQ(p.uncQ??uncQ); setUncH(p.uncH??uncH); setUncP(p.uncP??uncP);
           setShowPresets(false);
         };
 
         // Jaa URL
         const saveToURL=()=>{
           const state={qVal,qUnit,headMode,H,dP,dPunit,rho,temp,g,powMode,Pelec,etaVFD,motorRated,motorMode,etaMotor,PshaftIn,hrs,price,targetEta,uncQ,uncH,uncP,npsha,npshr,npshMargin};
-          const enc=encodeURIComponent(btoa(JSON.stringify(state))); location.hash="s="+enc;
+          const enc=encodeURIComponent(btoa(JSON.stringify(state)));
+          location.hash="s="+enc;
           navigator.clipboard?.writeText(location.href).then(()=>alert("Linkki kopioitu leikepöydälle."));
         };
+
+        // Lataa linkistä
         useEffect(()=>{
           if(location.hash.startsWith("#s=")){
             try{
@@ -208,90 +236,72 @@
               setDP(s.dP??dP); setDPunit(s.dPunit??dPunit); setRho(s.rho??rho); setTemp(s.temp??""); setG(s.g??g);
               setPowMode(s.powMode??"elec"); setPelec(s.Pelec??Pelec); setEtaVFD(s.etaVFD??etaVFD);
               setMotorRated(s.motorRated??motorRated); setMotorMode(s.motorMode??motorMode); setEtaMotor(s.etaMotor);
-              setPshaftIn(s.PshaftIn??PshaftIn); setHrs(s.hrs??hrs); setPrice(s.price??price); setTargetEta(s.targetEta??targetEta);
-              setUncQ(s.uncQ??uncQ); setUncH(s.uncH??uncH); setUncP(s.uncP??uncP); setNpsha(s.npsha??""); setNpshr(s.npshr??""); setNpshMargin(s.npshMargin??0.5);
+              setPshaftIn(s.PshaftIn??PshaftIn);
+              setHrs(s.hrs??hrs); setPrice(s.price??price); setTargetEta(s.targetEta??targetEta);
+              setUncQ(s.uncQ??uncQ); setUncH(s.uncH??uncH); setUncP(s.uncP??uncP);
+              setNpsha(s.npsha??""); setNpshr(s.npshr??""); setNpshMargin(s.npshMargin??0.5);
             }catch(e){}
           }
         },[]);
 
-        // Print (escape </script>)
-      const printSummary = () => {
-  const r = calc;
+        // Tulostettava yhteenveto (ei yhtään <script>-tagia templaatissa)
+        const printSummary=()=>{
+          const r=calc;
+          const Ph=(r.Phyd_kW!=null)?r.Phyd_kW.toFixed(2):"–";
+          const Ps=(r.Pshaft_kW!=null)?r.Pshaft_kW.toFixed(2):"–";
+          const ep=(r.etaPump!=null)?(r.etaPump*100).toFixed(1)+" %":"–";
+          const epMM=(r.etaPump_min!=null&&r.etaPump_max!=null)?(r.etaPump_min*100).toFixed(1)+"–"+(r.etaPump_max*100).toFixed(1)+" %":"–";
+          const et=(r.etaTot!=null)?(r.etaTot*100).toFixed(1)+" %":"–";
+          const etMM=(r.etaTot_min!=null&&r.etaTot_max!=null)?(r.etaTot_min*100).toFixed(1)+"–"+(r.etaTot_max*100).toFixed(1)+" %":"–";
+          const specTxt=(r.spec!=null)?r.spec.toFixed(4)+" kWh/m³":"–";
+          const kWhTxt=(r.annual_kWh!=null)?r.annual_kWh.toFixed(0)+" kWh":"–";
+          const eurTxt=(r.annual_cost!=null)?r.annual_cost.toFixed(0)+" €":"–";
+          const Htxt=(headMode==="H"?(H+" m"):(Number.isFinite(r.Hval)?r.Hval.toFixed(3)+" m (Δp:stä)":"–"));
+          const DPtxt=(headMode==="dP"?(dP+" "+dPunit):"–");
 
-  // apumuotoilut
-  const Ph  = (r.Phyd_kW!=null) ? r.Phyd_kW.toFixed(2) : "–";
-  const Ps  = (r.Pshaft_kW!=null) ? r.Pshaft_kW.toFixed(2) : "–";
-  const ep  = (r.etaPump!=null) ? (r.etaPump*100).toFixed(1)+" %" : "–";
-  const epMM = (r.etaPump_min!=null && r.etaPump_max!=null)
-    ? (r.etaPump_min*100).toFixed(1)+"–"+(r.etaPump_max*100).toFixed(1)+" %" : "–";
-  const et  = (r.etaTot!=null) ? (r.etaTot*100).toFixed(1)+" %" : "–";
-  const etMM = (r.etaTot_min!=null && r.etaTot_max!=null)
-    ? (r.etaTot_min*100).toFixed(1)+"–"+(r.etaTot_max*100).toFixed(1)+" %" : "–";
-  const specTxt = (r.spec!=null) ? r.spec.toFixed(4)+" kWh/m³" : "–";
-  const kWhTxt  = (r.annual_kWh!=null) ? r.annual_kWh.toFixed(0)+" kWh" : "–";
-  const eurTxt  = (r.annual_cost!=null) ? r.annual_cost.toFixed(0)+" €" : "–";
-  const Htxt    = (headMode==="H" ? (H+" m") : (Number.isFinite(r.Hval)? r.Hval.toFixed(3)+" m (Δp:stä)" : "–"));
-  const DPtxt   = (headMode==="dP" ? (dP+" "+dPunit) : "–");
+          const html = [
+            '<!doctype html><html><head><meta charset="utf-8"><title>Pumpun hyötysuhde – yhteenveto</title>',
+            '<style>body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:24px;}h1{margin:0 0 8px;}h2{margin:18px 0 8px;}',
+            'table{border-collapse:collapse;width:100%;margin:8px 0 16px;}th,td{border:1px solid #ddd;padding:8px;font-size:14px;}',
+            'th{background:#f3f4f6;text-align:left;}.muted{color:#6b7280;font-size:12px;}@media print{@page{size:auto;margin:12mm;}}',
+            '</style></head><body>',
+            '<h1>Pumpun hyötysuhdelaskelma – yhteenveto</h1>',
+            '<div class="muted">Luotu ', new Date().toLocaleString(), '</div>',
+            '<h2>Syötteet</h2><table><tbody>',
+            '<tr><th>Virtaama Q</th><td>', qVal, ' ', qUnit, '</td><th>H/Δp valinta</th><td>', (headMode==="H"?"H":"Δp"), '</td></tr>',
+            '<tr><th>Nostokorkeus H</th><td>', Htxt, '</td><th>Δp</th><td>', DPtxt, '</td></tr>',
+            '<tr><th>Tiheys ρ</th><td>', rho, ' kg/m³</td><th>Lämpötila</th><td>', (temp!==""?temp:"-"), ' °C</td></tr>',
+            '<tr><th>Tehomittaustapa</th><td>', (powMode==="elec"?"Verkkoteho":"Akseliteho"), '</td><th>P_elec / P_shaft</th><td>',
+              (powMode==="elec"?(Pelec+' kW'):(PshaftIn+' kW')), '</td></tr>',
+            '<tr><th>VFD η</th><td>', etaVFD, '</td><th>Moottorin arvio</th><td>', motorMode, (etaMotor?(' (η='+etaMotor+')'):""), '</td></tr>',
+            '<tr><th>Käyttötunnit</th><td>', hrs, ' h</td><th>Sähkön hinta</th><td>', price, ' €/kWh</td></tr>',
+            '<tr><th>Epävarmuudet</th><td colspan="3">Q ±', uncQ, '% , H/Δp ±', uncH, '% , P ±', uncP, '%</td></tr>',
+            '<tr><th>NPSH</th><td colspan="3">NPSH_a ', (npsha||'-'), ' m, NPSH_r ', (npshr||'-'), ' m, marg. ', (npshMargin||0), ' m</td></tr>',
+            '</tbody></table>',
+            '<h2>Tulokset</h2><table><tbody>',
+            '<tr><th>Hydraulinen teho</th><td>', Ph, ' kW</td><th>Akseliteho</th><td>', Ps, ' kW</td></tr>',
+            '<tr><th>Pumpun hyötysuhde η_pump</th><td>', ep, '</td><th>Vaihteluväli</th><td>', epMM, '</td></tr>',
+            '<tr><th>Kokonaishyötysuhde η_tot</th><td>', et, '</td><th>Vaihteluväli</th><td>', etMM, '</td></tr>',
+            '<tr><th>Ominaisenergiankulutus</th><td>', specTxt, '</td><th>Vuosikulutus</th><td>', kWhTxt, '</td></tr>',
+            '<tr><th>Vuosikustannus</th><td>', eurTxt, '</td><th>Säästöpotentiaali</th><td>', (r.savingsText||'–'), '</td></tr>',
+            '</tbody></table>',
+            '<div class="muted">Kaavat: P_hyd=ρgQH; η_pump=P_hyd/P_shaft; η_tot=P_hyd/P_elec; H=Δp/(ρg).</div>',
+            '</body></html>'
+          ].join('');
 
-  const htmlParts = [];
-  htmlParts.push(
-    '<!doctype html><html><head><meta charset="utf-8">',
-    '<title>Pumpun hyötysuhde – yhteenveto</title>',
-    '<style>',
-    'body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:24px;}',
-    'h1{margin:0 0 8px;} h2{margin:18px 0 8px;}',
-    'table{border-collapse:collapse;width:100%;margin:8px 0 16px;}',
-    'th,td{border:1px solid #ddd;padding:8px;font-size:14px;}',
-    'th{background:#f3f4f6;text-align:left;} .muted{color:#6b7280;font-size:12px;}',
-    '@media print { @page{size:auto;margin:12mm;} }',
-    '</style></head><body>'
-  );
-
-  htmlParts.push(
-    '<h1>Pumpun hyötysuhdelaskelma – yhteenveto</h1>',
-    '<div class="muted">Luotu ', new Date().toLocaleString(), '</div>',
-    '<h2>Syötteet</h2><table><tbody>',
-    '<tr><th>Virtaama Q</th><td>', qVal, ' ', qUnit, '</td>',
-      '<th>H/Δp valinta</th><td>', (headMode==="H"?"H":"Δp"), '</td></tr>',
-    '<tr><th>Nostokorkeus H</th><td>', Htxt, '</td>',
-      '<th>Δp</th><td>', DPtxt, '</td></tr>',
-    '<tr><th>Tiheys ρ</th><td>', rho, ' kg/m³</td>',
-      '<th>Lämpötila</th><td>', (temp!==""?temp:"-"), ' °C</td></tr>',
-    '<tr><th>Tehomittaustapa</th><td>', (powMode==="elec"?"Verkkoteho":"Akseliteho"),
-      '</td><th>P_elec / P_shaft</th><td>', (powMode==="elec"? (Pelec+' kW') : (PshaftIn+' kW')), '</td></tr>',
-    '<tr><th>VFD η</th><td>', etaVFD, '</td><th>Moottorin arvio</th><td>', motorMode, (etaMotor?(' (η='+etaMotor+')'):""), '</td></tr>',
-    '<tr><th>Käyttötunnit</th><td>', hrs, ' h</td><th>Sähkön hinta</th><td>', price, ' €/kWh</td></tr>',
-    '<tr><th>Epävarmuudet</th><td colspan="3">Q ±', uncQ, '% , H/Δp ±', uncH, '% , P ±', uncP, '%</td></tr>',
-    '<tr><th>NPSH</th><td colspan="3">NPSH_a ', (npsha||'-'), ' m, NPSH_r ', (npshr||'-'),
-      ' m, marg. ', (npshMargin||0), ' m</td></tr>',
-    '</tbody></table>'
-  );
-
-  htmlParts.push(
-    '<h2>Tulokset</h2><table><tbody>',
-    '<tr><th>Hydraulinen teho</th><td>', Ph, ' kW</td><th>Akseliteho</th><td>', Ps, ' kW</td></tr>',
-    '<tr><th>Pumpun hyötysuhde η_pump</th><td>', ep, '</td><th>Vaihteluväli</th><td>', epMM, '</td></tr>',
-    '<tr><th>Kokonaishyötysuhde η_tot</th><td>', et, '</td><th>Vaihteluväli</th><td>', etMM, '</td></tr>',
-    '<tr><th>Ominaisenergiankulutus</th><td>', specTxt, '</td><th>Vuosikulutus</th><td>', kWhTxt, '</td></tr>',
-    '<tr><th>Vuosikustannus</th><td>', eurTxt, '</td><th>Säästöpotentiaali</th><td>', (r.savingsText||'–'), '</td></tr>',
-    '</tbody></table>',
-    '<div class="muted">Kaavat: P_hyd=ρgQH; η_pump=P_hyd/P_shaft; η_tot=P_hyd/P_elec; H=Δp/(ρg).</div>',
-    '</body></html>'
-  );
-
-  const w = window.open('', '_blank');
-  w.document.write(htmlParts.join(''));
-  w.document.close();
-  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 200);
-};
-
+          const w=window.open('','_blank');
+          w.document.write(html);
+          w.document.close();
+          setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} },200);
+        };
 
         return (
           <div className="min-h-screen text-gray-900 p-4 sm:p-8">
             <div className="mx-auto max-w-6xl space-y-6">
               <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <img src={LOGO_SRC} alt="Villen koodailut" className="h-8 w-auto" onError={e=>e.currentTarget.style.display='none'} />
+                  <img src={LOGO_SRC} alt="Villen koodailut" className="h-8 w-auto"
+                       onError={e=>e.currentTarget.style.display='none'} />
                   <div>
                     <div className="text-xs text-gray-500 uppercase tracking-wide">Villen koodailut</div>
                     <h1 className="text-2xl sm:text-3xl font-bold">Pumpun hyötysuhdelaskuri</h1>
@@ -357,7 +367,13 @@
                           <NumberField label="Moottorin nimellisteho" value={motorRated} onChange={setMotorRated} step={0.1} min={0.1} unit="kW" />
                           <div className="grid grid-cols-2 gap-4">
                             <SelectField label="Moottorin hyötysuhde – arviointitapa" value={motorMode} onChange={setMotorMode}
-                              options={[{value:"auto",label:"Automaattinen (IE3)"},{value:"ie2",label:"Automaattinen (IE2)"},{value:"ie3",label:"Automaattinen (IE3)"},{value:"ie4",label:"Automaattinen (IE4)"},{value:"manual",label:"Syötän itse"}]} />
+                              options={[
+                                {value:"auto",label:"Automaattinen (IE3)"},
+                                {value:"ie2",label:"Automaattinen (IE2)"},
+                                {value:"ie3",label:"Automaattinen (IE3)"},
+                                {value:"ie4",label:"Automaattinen (IE4)"},
+                                {value:"manual",label:"Syötän itse"}
+                              ]} />
                             <NumberField label="η_moottori (jos syötän itse)" value={etaMotor} onChange={setEtaMotor} step={0.001} min={0.5} max={1} unit="-" disabled={motorMode!=="manual"} />
                           </div>
                           <div className="text-xs text-gray-500">Automaattinen arvio perustuu nimellistehoon ja kuormitusasteeseen.</div>
@@ -434,7 +450,9 @@
                 </section>
               )}
 
-              <footer className="text-center text-xs text-gray-400">© {new Date().getFullYear()} Pumpun hyötysuhde – Villen koodailut</footer>
+              <footer className="text-center text-xs text-gray-400">
+                © {new Date().getFullYear()} Pumpun hyötysuhde – Villen koodailut
+              </footer>
             </div>
           </div>
         );
