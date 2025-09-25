@@ -6,9 +6,7 @@
     <title>Pumpun hyötysuhde · Villen koodailut</title>
     <link rel="icon" href="logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      html,body,#root { height:100%; }
-    </style>
+    <style>html,body,#root{height:100%;}</style>
   </head>
   <body class="bg-gray-50">
     <nav class="bg-white border-b">
@@ -30,40 +28,41 @@
     <script type="text/babel">
       const { useState, useMemo, useEffect } = React;
       const LOGO_SRC = "logo.png";
-      const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+      const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
 
-      // --- UI ---
-      function NumberField({label,value,onChange,step=1,min=0,max=1e12,unit="",hint="",disabled=false}) {
+      // ----- UI -----
+      function NumberField({label,value,onChange,step=1,min=0,max=1e12,unit="",hint="",disabled=false}){
         return (
           <label className="flex flex-col gap-1">
             <span className="text-sm text-gray-600">{label}</span>
             <div className="flex items-center gap-2">
               <input type="number" step={step} min={min} max={max}
-                value={Number.isFinite(value) ? value : ""}
+                value={Number.isFinite(value)?value:""}
                 onChange={e=>{ if(disabled) return; const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(v); }}
                 onBlur={e=>{ if(disabled) return; const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(clamp(v,min,max)); }}
                 disabled={disabled}
-                className={`w-full rounded-xl border p-2 focus:outline-none focus:ring text-right ${disabled ? "bg-gray-100 text-gray-500" : ""}`} />
+                className={`w-full rounded-xl border p-2 focus:outline-none focus:ring text-right ${disabled?"bg-gray-100 text-gray-500":""}`} />
               <span className="text-gray-500 w-16 text-right">{unit}</span>
             </div>
             {hint && <span className="text-xs text-gray-400">{hint}</span>}
           </label>
         );
       }
-      function Select({label,value,onChange,options,disabled=false,hint=""}) {
+      // Renamed to avoid HTML parser warning
+      function SelectField({label,value,onChange,options,disabled=false,hint=""}){
         return (
           <label className="flex flex-col gap-1">
             <span className="text-sm text-gray-600">{label}</span>
             <select className={`rounded-xl border p-2 ${disabled?"bg-gray-100 text-gray-500":""}`}
               value={value} onChange={e=>onChange(e.target.value)} disabled={disabled}>
-              {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             {hint && <span className="text-xs text-gray-400">{hint}</span>}
           </label>
         );
       }
-      function ResultRow({label,value,unit,digits=2}) {
-        const fmt = n => Number.isFinite(n) ? n.toLocaleString(undefined,{maximumFractionDigits:digits}) : "-";
+      function ResultRow({label,value,unit,digits=2}){
+        const fmt = n => Number.isFinite(n)? n.toLocaleString(undefined,{maximumFractionDigits:digits}) : "-";
         return (
           <div className="flex items-baseline justify-between border-b py-1">
             <span className="text-gray-600">{label}</span>
@@ -72,314 +71,189 @@
         );
       }
 
-      // --- Fysiikkaapuja ---
-      function flowToM3s(qVal, unit){
-        const q = Number(qVal);
-        if (!Number.isFinite(q) || q<=0) return NaN;
-        switch(unit){
-          case "m3h": return q/3600;
-          case "ls":  return q/1000;
-          case "m3s": return q;
-          case "gpm": return q*0.003785411784/60;
-          default: return NaN;
-        }
+      // ----- Physics helpers -----
+      function flowToM3s(qVal,unit){
+        const q=Number(qVal); if(!Number.isFinite(q)||q<=0) return NaN;
+        switch(unit){case"m3h":return q/3600; case"ls":return q/1000; case"m3s":return q; case"gpm":return q*0.003785411784/60; default:return NaN;}
       }
-      function dpToHead(dpVal, unit, rho, g){
-        const v = Number(dpVal); if (!Number.isFinite(v)) return NaN;
-        let Pa = v;
-        if (unit==="bar") Pa = v*1e5;
-        else if (unit==="kpa") Pa = v*1e3;
+      function dpToHead(dpVal,unit,rho,g){
+        const v=Number(dpVal); if(!Number.isFinite(v)) return NaN;
+        let Pa=v; if(unit==="bar") Pa=v*1e5; else if(unit==="kpa") Pa=v*1e3;
         return Pa/(rho*g);
       }
       function waterDensityApprox(T){
-        if (Number.isNaN(T)) return null;
-        const pts = [[0,999.84],[20,998.2],[40,992.2],[60,983.2],[80,971.8],[100,958.4]];
-        if (T<=0) return 999.84; if (T>=100) return 958.4;
-        for (let i=0;i<pts.length-1;i++){
-          const [t1,r1]=pts[i],[t2,r2]=pts[i+1];
-          if (T>=t1 && T<=t2){ const f=(T-t1)/(t2-t1); return r1+f*(r2-r1); }
-        }
+        if(Number.isNaN(T)) return null;
+        const pts=[[0,999.84],[20,998.2],[40,992.2],[60,983.2],[80,971.8],[100,958.4]];
+        if(T<=0) return 999.84; if(T>=100) return 958.4;
+        for(let i=0;i<pts.length-1;i++){ const [t1,r1]=pts[i],[t2,r2]=pts[i+1];
+          if(T>=t1 && T<=t2){ const f=(T-t1)/(t2-t1); return r1+f*(r2-r1); } }
         return 998.0;
       }
-      function motorEffEstimate(ratedKW, shaftKW, mode){
-        const rk = Math.max(0.37, Number(ratedKW)||0.37);
-        const load = Math.min(1.2, Math.max(0.2, (Number(shaftKW)||0)/rk || 0.9));
-        const tblKW  = [0.75,1.1,2.2,4,7.5,11,15,22,30,37,55,75,110,160,250,355];
-        const tblIE3 = [0.78,0.82,0.85,0.88,0.90,0.915,0.926,0.939,0.948,0.953,0.957,0.960,0.963,0.966,0.970,0.972];
-        const tblIE2 = tblIE3.map(x=>x-0.01);
-        const tblIE4 = tblIE3.map(x=>x+0.01);
-        const interp = (x,xs,ys)=>{
-          if (x<=xs[0]) return ys[0];
-          if (x>=xs[xs.length-1]) return ys[ys.length-1];
-          for (let i=0;i<xs.length-1;i++){
-            if (x>=xs[i] && x<=xs[i+1]){
-              const f=(x-xs[i])/(xs[i+1]-xs[i]); return ys[i]+f*(ys[i+1]-ys[i]);
-            }
-          }
-          return ys[ys.length-1];
-        };
-        let base = interp(rk, tblKW, mode==="ie2"?tblIE2:(mode==="ie4"?tblIE4:tblIE3));
-        let corr = (load<1)? -(0.025*(1-load)) : -(0.01*(load-1));
-        return Math.max(0.7, Math.min(0.985, base + corr));
+      function motorEffEstimate(ratedKW,shaftKW,mode){
+        const rk=Math.max(0.37,Number(ratedKW)||0.37);
+        const load=Math.min(1.2,Math.max(0.2,(Number(shaftKW)||0)/rk||0.9));
+        const tblKW=[0.75,1.1,2.2,4,7.5,11,15,22,30,37,55,75,110,160,250,355];
+        const tblIE3=[0.78,0.82,0.85,0.88,0.90,0.915,0.926,0.939,0.948,0.953,0.957,0.960,0.963,0.966,0.970,0.972];
+        const tblIE2=tblIE3.map(x=>x-0.01), tblIE4=tblIE3.map(x=>x+0.01);
+        const interp=(x,xs,ys)=>{ if(x<=xs[0])return ys[0]; if(x>=xs[xs.length-1])return ys[ys.length-1];
+          for(let i=0;i<xs.length-1;i++){ if(x>=xs[i]&&x<=xs[i+1]){ const f=(x-xs[i])/(xs[i+1]-xs[i]); return ys[i]+f*(ys[i+1]-ys[i]); } }
+          return ys[ys.length-1]; };
+        let base=interp(rk,tblKW,mode==="ie2"?tblIE2:(mode==="ie4"?tblIE4:tblIE3));
+        let corr=(load<1)?-(0.025*(1-load)):-(0.01*(load-1));
+        return Math.max(0.7,Math.min(0.985,base+corr));
       }
 
-      // --- App ---
+      // ----- App -----
       function App(){
-        // Perus: vesi 20°C
-        const [qVal,setQVal]=useState(50);
-        const [qUnit,setQUnit]=useState("m3h");
-        const [headMode,setHeadMode]=useState("H");
-        const [H,setH]=useState(35);
-        const [dP,setDP]=useState(3.43);
-        const [dPunit,setDPunit]=useState("bar");
-        const [rho,setRho]=useState(998);
-        const [temp,setTemp]=useState("");
-        const [g,setG]=useState(9.81);
+        const [qVal,setQVal]=useState(50), [qUnit,setQUnit]=useState("m3h");
+        const [headMode,setHeadMode]=useState("H"), [H,setH]=useState(35), [dP,setDP]=useState(3.43), [dPunit,setDPunit]=useState("bar");
+        const [rho,setRho]=useState(998), [temp,setTemp]=useState(""), [g,setG]=useState(9.81);
+        const [powMode,setPowMode]=useState("elec"), [Pelec,setPelec]=useState(22), [etaVFD,setEtaVFD]=useState(0.98);
+        const [motorRated,setMotorRated]=useState(30), [motorMode,setMotorMode]=useState("auto"), [etaMotor,setEtaMotor]=useState(undefined), [PshaftIn,setPshaftIn]=useState(20);
+        const [hrs,setHrs]=useState(4000), [price,setPrice]=useState(0.12), [targetEta,setTargetEta]=useState(0.80);
+        const [showAdvanced,setShowAdvanced]=useState(false), [showPresets,setShowPresets]=useState(false);
+        const [uncQ,setUncQ]=useState(2), [uncH,setUncH]=useState(2), [uncP,setUncP]=useState(1);
+        const [npsha,setNpsha]=useState(""), [npshr,setNpshr]=useState(""), [npshMargin,setNpshMargin]=useState(0.5);
 
-        const [powMode,setPowMode]=useState("elec");
-        const [Pelec,setPelec]=useState(22);
-        const [etaVFD,setEtaVFD]=useState(0.98);
-        const [motorRated,setMotorRated]=useState(30);
-        const [motorMode,setMotorMode]=useState("auto");
-        const [etaMotor,setEtaMotor]=useState(undefined);
-        const [PshaftIn,setPshaftIn]=useState(20);
+        useEffect(()=>{ const T=parseFloat(temp); if(!Number.isNaN(T)) setRho(parseFloat(waterDensityApprox(T).toFixed(1))); },[temp]);
 
-        const [hrs,setHrs]=useState(4000);
-        const [price,setPrice]=useState(0.12);
-        const [targetEta,setTargetEta]=useState(0.80);
-
-        const [showAdvanced,setShowAdvanced]=useState(false);
-        const [showPresets,setShowPresets]=useState(false);
-
-        // Lisäasetukset
-        const [uncQ,setUncQ]=useState(2);
-        const [uncH,setUncH]=useState(2);
-        const [uncP,setUncP]=useState(1);
-        const [npsha,setNpsha]=useState("");
-        const [npshr,setNpshr]=useState("");
-        const [npshMargin,setNpshMargin]=useState(0.5);
-
-        // Päivitä ρ lämpötilasta (vedelle)
-        useEffect(()=>{
-          const T = parseFloat(temp);
-          if (!Number.isNaN(T)) setRho(parseFloat(waterDensityApprox(T).toFixed(1)));
-        },[temp]);
-
-        // --- Laskenta ---
-        const calc = useMemo(()=>{
-          const Qs = flowToM3s(qVal,qUnit);
-          let Hval = headMode==="H" ? Number(H) : dpToHead(dP, dPunit, rho, g);
-          if (!Number.isFinite(Qs) || !Number.isFinite(Hval) || Qs<=0 || Hval<=0) return { warn:"Tarkista Q ja H/Δp." };
-
-          const Phyd_W = rho*g*Qs*Hval;
-          const Phyd_kW = Phyd_W/1000;
-
-          let Pshaft_kW, Pelec_kW, etaM, etaTot;
-          if (powMode==="elec"){
-            if (!Number.isFinite(Pelec) || Pelec<=0 || !Number.isFinite(etaVFD) || etaVFD<=0) return { warn:"Tarkista verkkoteho ja VFD η." };
-            const shaft_guess = Pelec*etaVFD*0.94;
-            const mmode = (motorMode==="ie2"||motorMode==="ie4")?motorMode:"ie3";
-            etaM = (motorMode==="manual" ? clamp(etaMotor||0,0,1) : motorEffEstimate(motorRated, shaft_guess, mmode));
-            Pshaft_kW = Pelec*etaVFD*etaM;
-            Pelec_kW  = Pelec;
-            etaTot    = clamp(Phyd_kW / Pelec_kW, 0, 1);
-          } else {
-            if (!Number.isFinite(PshaftIn) || PshaftIn<=0) return { warn:"Tarkista akseliteho." };
-            Pshaft_kW = PshaftIn;
-            Pelec_kW  = Number.isFinite(Pelec)&&Pelec>0 ? Pelec : undefined;
-            etaTot    = (Pelec_kW ? clamp(Phyd_kW / Pelec_kW, 0, 1) : undefined);
+        const calc=useMemo(()=>{
+          const Qs=flowToM3s(qVal,qUnit);
+          let Hval=headMode==="H"?Number(H):dpToHead(dP,dPunit,rho,g);
+          if(!Number.isFinite(Qs)||!Number.isFinite(Hval)||Qs<=0||Hval<=0) return {warn:"Tarkista Q ja H/Δp."};
+          const Phyd_W=rho*g*Qs*Hval, Phyd_kW=Phyd_W/1000;
+          let Pshaft_kW, Pelec_kW, etaTot;
+          if(powMode==="elec"){
+            if(!Number.isFinite(Pelec)||Pelec<=0||!Number.isFinite(etaVFD)||etaVFD<=0) return {warn:"Tarkista verkkoteho ja VFD η."};
+            const shaft_guess=Pelec*etaVFD*0.94;
+            const mmode=(motorMode==="ie2"||motorMode==="ie4")?motorMode:"ie3";
+            const etaM=(motorMode==="manual"?clamp(etaMotor||0,0,1):motorEffEstimate(motorRated,shaft_guess,mmode));
+            Pshaft_kW=Pelec*etaVFD*etaM; Pelec_kW=Pelec; etaTot=clamp(Phyd_kW/Pelec_kW,0,1);
+          }else{
+            if(!Number.isFinite(PshaftIn)||PshaftIn<=0) return {warn:"Tarkista akseliteho."};
+            Pshaft_kW=PshaftIn; Pelec_kW=(Number.isFinite(Pelec)&&Pelec>0)?Pelec:undefined; etaTot=Pelec_kW?clamp(Phyd_kW/Pelec_kW,0,1):undefined;
           }
+          const etaPump=clamp(Phyd_kW/Pshaft_kW,0,1), Q_m3h=Qs*3600, spec=(Pelec_kW&&Q_m3h>0)?(Pelec_kW/Q_m3h):undefined;
+          const annual_kWh=Pelec_kW?Pelec_kW*hrs:undefined, annual_cost=annual_kWh?annual_kWh*price:undefined;
 
-          const etaPump = clamp(Phyd_kW / Pshaft_kW, 0, 1);
-          const Q_m3h   = Qs*3600;
-          const spec    = (Pelec_kW && Q_m3h>0) ? (Pelec_kW/Q_m3h) : undefined;
-          const annual_kWh = Pelec_kW ? Pelec_kW*hrs : undefined;
-          const annual_cost = annual_kWh ? annual_kWh*price : undefined;
-
-          // Säästöpotentiaali
           let savingsText="–";
-          if (Number.isFinite(targetEta) && targetEta>0){
-            const neededPshaft = Phyd_kW/targetEta;
-            const delta_kW = Pshaft_kW - neededPshaft;
-            if (delta_kW<=0) savingsText = "Tavoite saavutettu – ei säästöpotentiaalia tällä kuormalla.";
-            else {
+          if(Number.isFinite(targetEta)&&targetEta>0){
+            const neededPshaft=Phyd_kW/targetEta, delta_kW=Pshaft_kW-neededPshaft;
+            if(delta_kW<=0) savingsText="Tavoite saavutettu – ei säästöpotentiaalia tällä kuormalla.";
+            else{
               let delta_elec_kW;
-              if (powMode==="elec"){
-                const mmode2 = (motorMode==="ie2"||motorMode==="ie4")?motorMode:"ie3";
-                const etaM2 = (motorMode==="manual"? clamp(etaMotor||0,0,1) : motorEffEstimate(motorRated, neededPshaft, mmode2));
-                const chain = etaVFD*etaM2;
-                delta_elec_kW = chain>0 ? delta_kW/chain : undefined;
+              if(powMode==="elec"){
+                const mmode2=(motorMode==="ie2"||motorMode==="ie4")?motorMode:"ie3";
+                const etaM2=(motorMode==="manual"?clamp(etaMotor||0,0,1):motorEffEstimate(motorRated,neededPshaft,mmode2));
+                const chain=etaVFD*etaM2; delta_elec_kW=chain>0?delta_kW/chain:undefined;
               }
-              const save_kWh_y = (delta_elec_kW ? delta_elec_kW*hrs : undefined);
-              const save_eur   = (save_kWh_y ? save_kWh_y*price : undefined);
-              savingsText = `Akselisäästöpotentiaali: ${delta_kW.toFixed(2)} kW.` +
-                (delta_elec_kW? ` Arvio verkossa: ${delta_elec_kW.toFixed(2)} kW.`:"") +
-                (save_kWh_y? ` Vuosisäästö: ${save_kWh_y.toFixed(0)} kWh ≈ ${save_eur.toFixed(0)} €.`:"");
+              const save_kWh_y=delta_elec_kW?delta_elec_kW*hrs:undefined, save_eur=save_kWh_y?save_kWh_y*price:undefined;
+              savingsText=`Akselisäästöpotentiaali: ${delta_kW.toFixed(2)} kW.`+(delta_elec_kW?` Arvio verkossa: ${delta_elec_kW.toFixed(2)} kW.`:"")+(save_kWh_y?` Vuosisäästö: ${save_kWh_y.toFixed(0)} kWh ≈ ${save_eur.toFixed(0)} €.`:"");
             }
           }
 
-          // Epävarmuus (min–max)
-          const uq = Math.abs(uncQ)/100 || 0;
-          const uh = Math.abs(uncH)/100 || 0;
-          const up = Math.abs(uncP)/100 || 0;
-          const Qmin = Qs*(1-uq), Qmax = Qs*(1+uq);
-          const Hmin = Hval*(1-uh), Hmax = Hval*(1+uh);
-          const Phyd_min = rho*g*Math.max(Qmin,0)*Math.max(Hmin,0)/1000;
-          const Phyd_max = rho*g*Math.max(Qmax,0)*Math.max(Hmax,0)/1000;
-          const Pshaft_min = Pshaft_kW*(1-up), Pshaft_max = Pshaft_kW*(1+up);
-          const Pelec_min  = Pelec_kW ? Pelec_kW*(1-up) : undefined;
-          const Pelec_max  = Pelec_kW ? Pelec_kW*(1+up) : undefined;
-          const etaPump_min = clamp(Phyd_min/Math.max(Pshaft_max,1e-9),0,1);
-          const etaPump_max = clamp(Phyd_max/Math.max(Pshaft_min,1e-9),0,1);
-          const etaTot_min  = (Pelec_kW? clamp(Phyd_min/Math.max(Pelec_max,1e-9),0,1) : undefined);
-          const etaTot_max  = (Pelec_kW? clamp(Phyd_max/Math.max(Pelec_min,1e-9),0,1) : undefined);
+          const uq=Math.abs(uncQ)/100||0, uh=Math.abs(uncH)/100||0, up=Math.abs(uncP)/100||0;
+          const Qmin=Qs*(1-uq), Qmax=Qs*(1+uq), Hmin=Hval*(1-uh), Hmax=Hval*(1+uh);
+          const Phyd_min=rho*g*Math.max(Qmin,0)*Math.max(Hmin,0)/1000, Phyd_max=rho*g*Math.max(Qmax,0)*Math.max(Hmax,0)/1000;
+          const Pshaft_min=Pshaft_kW*(1-up), Pshaft_max=Pshaft_kW*(1+up);
+          const Pelec_min=Pelec_kW?Pelec_kW*(1-up):undefined, Pelec_max=Pelec_kW?Pelec_kW*(1+up):undefined;
+          const etaPump_min=clamp(Phyd_min/Math.max(Pshaft_max,1e-9),0,1), etaPump_max=clamp(Phyd_max/Math.max(Pshaft_min,1e-9),0,1);
+          const etaTot_min=Pelec_kW?clamp(Phyd_min/Math.max(Pelec_max,1e-9),0,1):undefined;
+          const etaTot_max=Pelec_kW?clamp(Phyd_max/Math.max(Pelec_min,1e-9),0,1):undefined;
 
           // NPSH
-          let npshMsg = "Syötä NPSH_a ja NPSH_r tarvittaessa. Ei vaikuta hyötysuhteisiin.";
-          let npshOK  = null;
-          if (npsha!=="" && npshr!==""){
-            const a = parseFloat(npsha), r = parseFloat(npshr), m = parseFloat(npshMargin||0);
-            if (Number.isFinite(a) && Number.isFinite(r)) {
-              npshOK = (a >= r + m);
-              npshMsg = npshOK
-                ? `OK: NPSH_a − NPSH_r = ${(a-r).toFixed(2)} m (≥ marginaali ${m} m)`
-                : `VAROITUS: NPSH_a − NPSH_r = ${(a-r).toFixed(2)} m < marginaali ${m} m`;
+          let npshMsg="Syötä NPSH_a ja NPSH_r tarvittaessa. Ei vaikuta hyötysuhteisiin.", npshOK=null;
+          if(npsha!=="" && npshr!==""){
+            const a=parseFloat(npsha), r=parseFloat(npshr), m=parseFloat(npshMargin||0);
+            if(Number.isFinite(a)&&Number.isFinite(r)){
+              npshOK=(a>=r+m);
+              npshMsg=npshOK?`OK: NPSH_a − NPSH_r = ${(a-r).toFixed(2)} m (≥ marginaali ${m} m)`:`VAROITUS: NPSH_a − NPSH_r = ${(a-r).toFixed(2)} m < marginaali ${m} m`;
             }
           }
 
-          return {
-            warn: (etaPump<0.35 ? "η_pump < 35 %: tarkista virtaama ja H/Δp." :
-                   (etaPump>0.92 ? "η_pump > 92 % vaikuttaa epätodennäköiseltä – tarkista syötteet." : "")),
-            Qs, Hval, Phyd_kW, Pshaft_kW, Pelec_kW,
-            etaPump, etaTot, spec, annual_kWh, annual_cost, etaM,
-            etaPump_min, etaPump_max, etaTot_min, etaTot_max,
-            savingsText, npshMsg, npshOK
-          };
-        }, [qVal,qUnit,headMode,H,dP,dPunit,rho,g,powMode,Pelec,etaVFD,motorRated,motorMode,etaMotor,PshaftIn,hrs,price,targetEta,uncQ,uncH,uncP,npsha,npshr,npshMargin]);
+          return {warn:(etaPump<0.35?"η_pump < 35 %: tarkista virtaama ja H/Δp.":(etaPump>0.92?"η_pump > 92 % vaikuttaa epätodennäköiseltä – tarkista syötteet.":"")),
+                  Qs,Hval,Phyd_kW,Pshaft_kW,Pelec_kW,etaPump,etaTot,spec,annual_kWh,annual_cost,
+                  etaPump_min,etaPump_max,etaTot_min,etaTot_max,savingsText,npshMsg,npshOK};
+        },[qVal,qUnit,headMode,H,dP,dPunit,rho,g,powMode,Pelec,etaVFD,motorRated,motorMode,etaMotor,PshaftIn,hrs,price,targetEta,uncQ,uncH,uncP,npsha,npshr,npshMargin]);
 
-        // ---- TESTIESIMERKIT ----
-        const presets = [
-          { key:"good", name:"Hyvä η_pump (IE3, VFD 0.98)",
-            s: { qVal:80, qUnit:"m3h", headMode:"H", H:40, rho:998, g:9.81,
-                 powMode:"elec", Pelec:30, etaVFD:0.98, motorRated:37, motorMode:"ie3",
-                 hrs:4000, price:0.12, targetEta:0.80, uncQ:2, uncH:2, uncP:1 } },
-          { key:"low", name:"Matala η_pump (epäsopiva piste)",
-            s: { qVal:50, qUnit:"m3h", headMode:"H", H:10, rho:998, g:9.81,
-                 powMode:"elec", Pelec:30, etaVFD:0.97, motorRated:30, motorMode:"ie2",
-                 hrs:6000, price:0.12, targetEta:0.80, uncQ:3, uncH:3, uncP:1.5 } },
-          { key:"shaft", name:"Akseliteho syötetty",
-            s: { qVal:60, qUnit:"m3h", headMode:"H", H:35, rho:998,
-                 powMode:"shaft", PshaftIn:22, Pelec:undefined,
-                 hrs:3000, price:0.10 } },
-          { key:"dp", name:"Δp-syöttö (bar→H-muunnos)",
-            s: { qVal:100, qUnit:"m3h", headMode:"dP", dP:3.2, dPunit:"bar", rho:998, g:9.81,
-                 powMode:"elec", Pelec:45, etaVFD:0.985, motorRated:55, motorMode:"ie4",
-                 hrs:5000, price:0.11 } },
-          { key:"sea", name:"Merivesi 20°C (ρ≈1025)",
-            s: { qVal:120, qUnit:"m3h", headMode:"H", H:30, rho:1025, g:9.81,
-                 powMode:"elec", Pelec:35, etaVFD:0.98, motorRated:45, motorMode:"ie3",
-                 hrs:5000, price:0.14 } },
+        // Presetit testailuun
+        const presets=[
+          {name:"Hyvä η_pump (IE3, VFD 0.98)", s:{qVal:80,qUnit:"m3h",headMode:"H",H:40,rho:998,g:9.81,powMode:"elec",Pelec:30,etaVFD:0.98,motorRated:37,motorMode:"ie3",hrs:4000,price:0.12,targetEta:0.8,uncQ:2,uncH:2,uncP:1}},
+          {name:"Matala η_pump", s:{qVal:50,qUnit:"m3h",headMode:"H",H:10,rho:998,g:9.81,powMode:"elec",Pelec:30,etaVFD:0.97,motorRated:30,motorMode:"ie2",hrs:6000,price:0.12,targetEta:0.8,uncQ:3,uncH:3,uncP:1.5}},
+          {name:"Akseliteho syötetty", s:{qVal:60,qUnit:"m3h",headMode:"H",H:35,rho:998,powMode:"shaft",PshaftIn:22,hrs:3000,price:0.10}},
+          {name:"Δp→H -muunnos", s:{qVal:100,qUnit:"m3h",headMode:"dP",dP:3.2,dPunit:"bar",rho:998,g:9.81,powMode:"elec",Pelec:45,etaVFD:0.985,motorRated:55,motorMode:"ie4",hrs:5000,price:0.11}},
+          {name:"Merivesi 20°C", s:{qVal:120,qUnit:"m3h",headMode:"H",H:30,rho:1025,g:9.81,powMode:"elec",Pelec:35,etaVFD:0.98,motorRated:45,motorMode:"ie3",hrs:5000,price:0.14}},
         ];
-        const applyPreset = (p) => {
-          if (!p) return;
-          setQVal(p.qVal ?? qVal); setQUnit(p.qUnit ?? qUnit);
-          setHeadMode(p.headMode ?? headMode); setH(p.H ?? H);
-          setDP(p.dP ?? dP); setDPunit(p.dPunit ?? dPunit);
-          setRho(p.rho ?? rho); setG(p.g ?? g);
-          setPowMode(p.powMode ?? powMode);
-          if (p.Pelec !== undefined) setPelec(p.Pelec);
-          setEtaVFD(p.etaVFD ?? etaVFD);
-          setMotorRated(p.motorRated ?? motorRated);
-          setMotorMode(p.motorMode ?? motorMode);
-          if (p.PshaftIn !== undefined) setPshaftIn(p.PshaftIn);
-          setHrs(p.hrs ?? hrs); setPrice(p.price ?? price); setTargetEta(p.targetEta ?? targetEta);
-          setUncQ(p.uncQ ?? uncQ); setUncH(p.uncH ?? uncH); setUncP(p.uncP ?? uncP);
+        const applyPreset = (p)=>{
+          const s=p||{}; setQVal(s.qVal??qVal); setQUnit(s.qUnit??qUnit); setHeadMode(s.headMode??headMode);
+          setH(s.H??H); setDP(s.dP??dP); setDPunit(s.dPunit??dPunit); setRho(s.rho??rho); setG(s.g??g);
+          setPowMode(s.powMode??powMode); if(s.Pelec!==undefined) setPelec(s.Pelec); setEtaVFD(s.etaVFD??etaVFD);
+          setMotorRated(s.motorRated??motorRated); setMotorMode(s.motorMode??motorMode); if(s.PshaftIn!==undefined) setPshaftIn(s.PshaftIn);
+          setHrs(s.hrs??hrs); setPrice(s.price??price); setTargetEta(s.targetEta??targetEta);
+          setUncQ(s.uncQ??uncQ); setUncH(s.uncH??uncH); setUncP(s.uncP??uncP);
           setShowPresets(false);
         };
 
-        // URL-jako
-        const saveToURL = () => {
-          const state = {
-            qVal,qUnit,headMode,H,dP,dPunit,rho,temp,g,
-            powMode,Pelec,etaVFD,motorRated,motorMode,etaMotor,PshaftIn,
-            hrs,price,targetEta,uncQ,uncH,uncP,npsha,npshr,npshMargin
-          };
-          const enc = encodeURIComponent(btoa(JSON.stringify(state)));
-          location.hash = "s="+enc;
+        // Jaa URL
+        const saveToURL=()=>{
+          const state={qVal,qUnit,headMode,H,dP,dPunit,rho,temp,g,powMode,Pelec,etaVFD,motorRated,motorMode,etaMotor,PshaftIn,hrs,price,targetEta,uncQ,uncH,uncP,npsha,npshr,npshMargin};
+          const enc=encodeURIComponent(btoa(JSON.stringify(state))); location.hash="s="+enc;
           navigator.clipboard?.writeText(location.href).then(()=>alert("Linkki kopioitu leikepöydälle."));
         };
         useEffect(()=>{
-          if (location.hash.startsWith("#s=")){
+          if(location.hash.startsWith("#s=")){
             try{
-              const state = JSON.parse(atob(decodeURIComponent(location.hash.slice(3))));
-              setQVal(state.qVal??qVal); setQUnit(state.qUnit??qUnit);
-              setHeadMode(state.headMode??"H"); setH(state.H??H); setDP(state.dP??dP); setDPunit(state.dPunit??dPunit);
-              setRho(state.rho??rho); setTemp(state.temp??""); setG(state.g??g);
-              setPowMode(state.powMode??"elec"); setPelec(state.Pelec??Pelec); setEtaVFD(state.etaVFD??etaVFD);
-              setMotorRated(state.motorRated??motorRated); setMotorMode(state.motorMode??motorMode); setEtaMotor(state.etaMotor);
-              setPshaftIn(state.PshaftIn??PshaftIn);
-              setHrs(state.hrs??hrs); setPrice(state.price??price); setTargetEta(state.targetEta??targetEta);
-              setUncQ(state.uncQ??uncQ); setUncH(state.uncH??uncH); setUncP(state.uncP??uncP);
-              setNpsha(state.npsha??""); setNpshr(state.npshr??""); setNpshMargin(state.npshMargin??0.5);
+              const s=JSON.parse(atob(decodeURIComponent(location.hash.slice(3))));
+              setQVal(s.qVal??qVal); setQUnit(s.qUnit??qUnit); setHeadMode(s.headMode??"H"); setH(s.H??H);
+              setDP(s.dP??dP); setDPunit(s.dPunit??dPunit); setRho(s.rho??rho); setTemp(s.temp??""); setG(s.g??g);
+              setPowMode(s.powMode??"elec"); setPelec(s.Pelec??Pelec); setEtaVFD(s.etaVFD??etaVFD);
+              setMotorRated(s.motorRated??motorRated); setMotorMode(s.motorMode??motorMode); setEtaMotor(s.etaMotor);
+              setPshaftIn(s.PshaftIn??PshaftIn); setHrs(s.hrs??hrs); setPrice(s.price??price); setTargetEta(s.targetEta??targetEta);
+              setUncQ(s.uncQ??uncQ); setUncH(s.uncH??uncH); setUncP(s.uncP??uncP); setNpsha(s.npsha??""); setNpshr(s.npshr??""); setNpshMargin(s.npshMargin??0.5);
             }catch(e){}
           }
         },[]);
 
-        // Tulostettava yhteenveto (ilman ?. ja ??)
-        const printSummary = () => {
-          const r = calc;
-          const Ph = (r.Phyd_kW!=null) ? r.Phyd_kW.toFixed(2) : "–";
-          const Ps = (r.Pshaft_kW!=null) ? r.Pshaft_kW.toFixed(2) : "–";
-          const ep = (r.etaPump!=null) ? (r.etaPump*100).toFixed(1)+" %" : "–";
-          const epMinMax = (r.etaPump_min!=null && r.etaPump_max!=null)
-              ? (r.etaPump_min*100).toFixed(1)+"–"+(r.etaPump_max*100).toFixed(1)+" %":"–";
-          const et = (r.etaTot!=null) ? (r.etaTot*100).toFixed(1)+" %" : "–";
-          const etMinMax = (r.etaTot_min!=null && r.etaTot_max!=null)
-              ? (r.etaTot_min*100).toFixed(1)+"–"+(r.etaTot_max*100).toFixed(1)+" %":"–";
-          const specTxt = (r.spec!=null) ? r.spec.toFixed(4)+" kWh/m³" : "–";
-          const kWhTxt  = (r.annual_kWh!=null) ? r.annual_kWh.toFixed(0)+" kWh" : "–";
-          const eurTxt  = (r.annual_cost!=null) ? r.annual_cost.toFixed(0)+" €" : "–";
-          const Htxt    = (headMode==="H" ? (H+" m") : (Number.isFinite(r.Hval) ? r.Hval.toFixed(3)+" m (Δp:stä)" : "–"));
-          const DPtxt   = (headMode==="dP" ? (dP+" "+dPunit) : "–");
+        // Print (escape </script>)
+        const printSummary=()=>{
+          const r=calc;
+          const Ph=(r.Phyd_kW!=null)?r.Phyd_kW.toFixed(2):"–";
+          const Ps=(r.Pshaft_kW!=null)?r.Pshaft_kW.toFixed(2):"–";
+          const ep=(r.etaPump!=null)?(r.etaPump*100).toFixed(1)+" %":"–";
+          const epMM=(r.etaPump_min!=null&&r.etaPump_max!=null)?(r.etaPump_min*100).toFixed(1)+"–"+(r.etaPump_max*100).toFixed(1)+" %":"–";
+          const et=(r.etaTot!=null)?(r.etaTot*100).toFixed(1)+" %":"–";
+          const etMM=(r.etaTot_min!=null&&r.etaTot_max!=null)?(r.etaTot_min*100).toFixed(1)+"–"+(r.etaTot_max*100).toFixed(1)+" %":"–";
+          const specTxt=(r.spec!=null)?r.spec.toFixed(4)+" kWh/m³":"–";
+          const kWhTxt=(r.annual_kWh!=null)?r.annual_kWh.toFixed(0)+" kWh":"–";
+          const eurTxt=(r.annual_cost!=null)?r.annual_cost.toFixed(0)+" €":"–";
+          const Htxt=(headMode==="H"?(H+" m"):(Number.isFinite(r.Hval)?r.Hval.toFixed(3)+" m (Δp:stä)":"–"));
+          const DPtxt=(headMode==="dP"?(dP+" "+dPunit):"–");
 
-          const html = `
-            <!doctype html><html><head><meta charset="utf-8">
-            <title>Pumpun hyötysuhde – yhteenveto</title>
-            <style>
-              body{ font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; margin:24px; }
-              h1{ margin:0 0 8px; } h2{ margin:18px 0 8px; }
-              table{ border-collapse:collapse; width:100%; margin:8px 0 16px; }
-              th,td{ border:1px solid #ddd; padding:8px; font-size:14px; }
-              th{ background:#f3f4f6; text-align:left; }
-              .muted{ color:#6b7280; font-size:12px; }
-            </style></head><body>
-            <h1>Pumpun hyötysuhdelaskelma – yhteenveto</h1>
-            <div class="muted">Luotu ${new Date().toLocaleString()}</div>
-            <h2>Syötteet</h2>
-            <table><tbody>
-              <tr><th>Virtaama Q</th><td>${qVal} ${qUnit}</td><th>H/Δp valinta</th><td>${headMode==="H"?"H":"Δp"}</td></tr>
-              <tr><th>Nostokorkeus H</th><td>${Htxt}</td><th>Δp</th><td>${DPtxt}</td></tr>
-              <tr><th>Tiheys ρ</th><td>${rho} kg/m³</td><th>Lämpötila</th><td>${(temp!==""?temp:"-")} °C</td></tr>
-              <tr><th>Tehomittaustapa</th><td>${powMode==="elec"?"Verkkoteho":"Akseliteho"}</td>
-                  <th>P_elec / P_shaft</th><td>${powMode==="elec"? (Pelec+" kW") : (PshaftIn+" kW")}</td></tr>
-              <tr><th>VFD η</th><td>${etaVFD}</td><th>Moottorin arvio</th><td>${motorMode}${(etaMotor?(" (η="+etaMotor+")"):"")}</td></tr>
-              <tr><th>Käyttötunnit</th><td>${hrs} h</td><th>Sähkön hinta</th><td>${price} €/kWh</td></tr>
-              <tr><th>Epävarmuudet</th><td colspan="3">Q ±${uncQ}% , H/Δp ±${uncH}% , P ±${uncP}%</td></tr>
-              <tr><th>NPSH</th><td colspan="3">NPSH_a ${npsha||"-"} m, NPSH_r ${npshr||"-"} m, marg. ${npshMargin||0} m</td></tr>
-            </tbody></table>
-
-            <h2>Tulokset</h2>
-            <table><tbody>
-              <tr><th>Hydraulinen teho</th><td>${Ph} kW</td><th>Akseliteho</th><td>${Ps} kW</td></tr>
-              <tr><th>Pumpun hyötysuhde η_pump</th><td>${ep}</td><th>Vaihteluväli</th><td>${epMinMax}</td></tr>
-              <tr><th>Kokonaishyötysuhde η_tot</th><td>${et}</td><th>Vaihteluväli</th><td>${etMinMax}</td></tr>
-              <tr><th>Ominaisenergiankulutus</th><td>${specTxt}</td><th>Vuosikulutus</th><td>${kWhTxt}</td></tr>
-              <tr><th>Vuosikustannus</th><td>${eurTxt}</td><th>Säästöpotentiaali</th><td>${r.savingsText||"–"}</td></tr>
-            </tbody></table>
-            <div class="muted">Kaavat: P_hyd=ρgQH; η_pump=P_hyd/P_shaft; η_tot=P_hyd/P_elec; H=Δp/(ρg).</div>
-            <script>window.print()</script>
-            </body></html>`;
-          const w = window.open('', '_blank'); w.document.write(html); w.document.close();
+          const html=`<!doctype html><html><head><meta charset="utf-8"><title>Pumpun hyötysuhde – yhteenveto</title>
+          <style>body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:24px;}h1{margin:0 0 8px;}h2{margin:18px 0 8px;}
+          table{border-collapse:collapse;width:100%;margin:8px 0 16px;}th,td{border:1px solid #ddd;padding:8px;font-size:14px;}
+          th{background:#f3f4f6;text-align:left;}.muted{color:#6b7280;font-size:12px;}</style></head><body>
+          <h1>Pumpun hyötysuhdelaskelma – yhteenveto</h1><div class="muted">Luotu ${new Date().toLocaleString()}</div>
+          <h2>Syötteet</h2><table><tbody>
+          <tr><th>Virtaama Q</th><td>${qVal} ${qUnit}</td><th>H/Δp valinta</th><td>${headMode==="H"?"H":"Δp"}</td></tr>
+          <tr><th>Nostokorkeus H</th><td>${Htxt}</td><th>Δp</th><td>${DPtxt}</td></tr>
+          <tr><th>Tiheys ρ</th><td>${rho} kg/m³</td><th>Lämpötila</th><td>${(temp!==""?temp:"-")} °C</td></tr>
+          <tr><th>Tehomittaustapa</th><td>${powMode==="elec"?"Verkkoteho":"Akseliteho"}</td><th>P_elec / P_shaft</th><td>${powMode==="elec"?(Pelec+" kW"):(PshaftIn+" kW")}</td></tr>
+          <tr><th>VFD η</th><td>${etaVFD}</td><th>Moottorin arvio</th><td>${motorMode}${(etaMotor?(" (η="+etaMotor+")"):"")}</td></tr>
+          <tr><th>Käyttötunnit</th><td>${hrs} h</td><th>Sähkön hinta</th><td>${price} €/kWh</td></tr>
+          <tr><th>Epävarmuudet</th><td colspan="3">Q ±${uncQ}% , H/Δp ±${uncH}% , P ±${uncP}%</td></tr>
+          <tr><th>NPSH</th><td colspan="3">NPSH_a ${npsha||"-"} m, NPSH_r ${npshr||"-"} m, marg. ${npshMargin||0} m</td></tr>
+          </tbody></table>
+          <h2>Tulokset</h2><table><tbody>
+          <tr><th>Hydraulinen teho</th><td>${Ph} kW</td><th>Akseliteho</th><td>${Ps} kW</td></tr>
+          <tr><th>Pumpun hyötysuhde η_pump</th><td>${ep}</td><th>Vaihteluväli</th><td>${epMM}</td></tr>
+          <tr><th>Kokonaishyötysuhde η_tot</th><td>${et}</td><th>Vaihteluväli</th><td>${etMM}</td></tr>
+          <tr><th>Ominaisenergiankulutus</th><td>${specTxt}</td><th>Vuosikulutus</th><td>${kWhTxt}</td></tr>
+          <tr><th>Vuosikustannus</th><td>${eurTxt}</td><th>Säästöpotentiaali</th><td>${(r.savingsText||"–")}</td></tr>
+          </tbody></table>
+          <div class="muted">Kaavat: P_hyd=ρgQH; η_pump=P_hyd/P_shaft; η_tot=P_hyd/P_elec; H=Δp/(ρg).</div>
+          <script>window.print()<\/script></body></html>`; /* <-- escaped </script> */
+          const w=window.open('','_blank'); w.document.write(html); w.document.close();
         };
 
         return (
@@ -394,16 +268,11 @@
                   </div>
                 </div>
                 <div className="relative flex items-center gap-2">
-                  <button onClick={()=>setShowPresets(v=>!v)} className="px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50 text-sm">
-                    Testaa esimerkit
-                  </button>
+                  <button onClick={()=>setShowPresets(v=>!v)} className="px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50 text-sm">Testaa esimerkit</button>
                   {showPresets && (
                     <div className="absolute right-0 top-12 z-10 w-72 bg-white border rounded-xl shadow-lg p-2">
-                      {presets.map(p=>(
-                        <button key={p.key} onClick={()=>applyPreset(p.s)}
-                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50">
-                          {p.name}
-                        </button>
+                      {presets.map((p,i)=>(
+                        <button key={i} onClick={()=>applyPreset(p.s)} className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50">{p.name}</button>
                       ))}
                     </div>
                   )}
@@ -415,27 +284,25 @@
                 </div>
               </header>
 
-              {/* Perusasetukset */}
               <section className="bg-white p-4 sm:p-6 rounded-2xl shadow">
                 <h2 className="font-semibold mb-4">Perusasetukset</h2>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* vasen */}
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <NumberField label="Virtaama Q" value={qVal} onChange={setQVal} step={0.001} min={0.0001} unit="" />
-                      <Select label="Yksikkö" value={qUnit} onChange={setQUnit}
+                      <SelectField label="Yksikkö" value={qUnit} onChange={setQUnit}
                         options={[{value:"m3h",label:"m³/h"},{value:"ls",label:"L/s"},{value:"m3s",label:"m³/s"},{value:"gpm",label:"US gpm"}]} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <Select label="Nostokorkeus vai paine-ero" value={headMode} onChange={setHeadMode}
+                      <SelectField label="Nostokorkeus vai paine-ero" value={headMode} onChange={setHeadMode}
                         options={[{value:"H",label:"Annan H"},{value:"dP",label:"Annan Δp"}]} />
                       {headMode==="H" ? (
                         <NumberField label="Nostokorkeus H" value={H} onChange={setH} step={0.001} min={0.0001} unit="m" />
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
                           <NumberField label="Paine-ero Δp" value={dP} onChange={setDP} step={0.001} min={0} unit="" />
-                          <Select label="Yksikkö" value={dPunit} onChange={setDPunit}
+                          <SelectField label="Yksikkö" value={dPunit} onChange={setDPunit}
                             options={[{value:"bar",label:"bar"},{value:"kpa",label:"kPa"},{value:"pa",label:"Pa"}]} />
                         </div>
                       )}
@@ -448,10 +315,9 @@
                     <NumberField label="Painovoimakiihtyvyys g" value={g} onChange={setG} step={0.0001} min={9.78} max={9.83} unit="m/s²" />
                   </div>
 
-                  {/* oikea */}
                   <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <Select label="Mikä teho on mitattu?" value={powMode} onChange={setPowMode}
+                      <SelectField label="Mikä teho on mitattu?" value={powMode} onChange={setPowMode}
                         options={[{value:"elec",label:"Verkkoteho (P_elec)"},{value:"shaft",label:"Akseliteho (P_shaft)"}]} />
 
                       {powMode==="elec" ? (
@@ -460,14 +326,8 @@
                           <NumberField label="VFD-hyötysuhde η_VFD" value={etaVFD} onChange={setEtaVFD} step={0.001} min={0.5} max={1} unit="-" />
                           <NumberField label="Moottorin nimellisteho" value={motorRated} onChange={setMotorRated} step={0.1} min={0.1} unit="kW" />
                           <div className="grid grid-cols-2 gap-4">
-                            <Select label="Moottorin hyötysuhde – arviointitapa" value={motorMode} onChange={setMotorMode}
-                              options={[
-                                {value:"auto",label:"Automaattinen (IE3)"},
-                                {value:"ie2",label:"Automaattinen (IE2)"},
-                                {value:"ie3",label:"Automaattinen (IE3)"},
-                                {value:"ie4",label:"Automaattinen (IE4)"},
-                                {value:"manual",label:"Syötän itse"}
-                              ]}/>
+                            <SelectField label="Moottorin hyötysuhde – arviointitapa" value={motorMode} onChange={setMotorMode}
+                              options={[{value:"auto",label:"Automaattinen (IE3)"},{value:"ie2",label:"Automaattinen (IE2)"},{value:"ie3",label:"Automaattinen (IE3)"},{value:"ie4",label:"Automaattinen (IE4)"},{value:"manual",label:"Syötän itse"}]} />
                             <NumberField label="η_moottori (jos syötän itse)" value={etaMotor} onChange={setEtaMotor} step={0.001} min={0.5} max={1} unit="-" disabled={motorMode!=="manual"} />
                           </div>
                           <div className="text-xs text-gray-500">Automaattinen arvio perustuu nimellistehoon ja kuormitusasteeseen.</div>
@@ -490,8 +350,8 @@
                       <h3 className="text-sm uppercase tracking-wide text-gray-500">Tulokset</h3>
                       <ResultRow label="Hydraulinen teho" value={calc.Phyd_kW} unit="kW" />
                       <ResultRow label="Akseliteho (syöte/arvio)" value={calc.Pshaft_kW} unit="kW" />
-                      <ResultRow label="Pumpun hyötysuhde η_pump" value={calc.etaPump!=null? calc.etaPump*100 : undefined} unit="%" digits={1} />
-                      <ResultRow label="Kokonaishyötysuhde (sähkö→vesi)" value={calc.etaTot!=null? calc.etaTot*100 : undefined} unit="%" digits={1} />
+                      <ResultRow label="Pumpun hyötysuhde η_pump" value={calc.etaPump!=null?calc.etaPump*100:undefined} unit="%" digits={1} />
+                      <ResultRow label="Kokonaishyötysuhde (sähkö→vesi)" value={calc.etaTot!=null?calc.etaTot*100:undefined} unit="%" digits={1} />
                       <ResultRow label="Ominaisenergiankulutus" value={calc.spec} unit="kWh/m³" digits={4} />
                       <ResultRow label="Vuosikulutus" value={calc.annual_kWh} unit="kWh/a" digits={0} />
                       <ResultRow label="Vuosikustannus" value={calc.annual_cost} unit="€/a" digits={0} />
@@ -501,7 +361,6 @@
                 </div>
               </section>
 
-              {/* Lisäasetukset */}
               {showAdvanced && (
                 <section className="bg-white p-4 sm:p-6 rounded-2xl shadow space-y-6">
                   <h2 className="font-semibold">Lisäasetukset</h2>
@@ -514,14 +373,10 @@
                         <NumberField label="Teho (P_elec/P_shaft)" value={uncP} onChange={setUncP} step={0.1} min={0} max={50} unit="%" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <ResultRow label="η_pump ~ min–max" value={calc.etaPump_min!=null? (calc.etaPump_min*100) : undefined} unit="… %" digits={1} />
-                        <div className="text-right text-gray-700 font-semibold">
-                          {calc.etaPump_max!=null? (calc.etaPump_max*100).toFixed(1)+" %" : "-"}
-                        </div>
-                        <ResultRow label="η_tot ~ min–max" value={calc.etaTot_min!=null? (calc.etaTot_min*100) : undefined} unit="… %" digits={1} />
-                        <div className="text-right text-gray-700 font-semibold">
-                          {calc.etaTot_max!=null? (calc.etaTot_max*100).toFixed(1)+" %" : "-"}
-                        </div>
+                        <ResultRow label="η_pump ~ min–max" value={calc.etaPump_min!=null?(calc.etaPump_min*100):undefined} unit="… %" digits={1} />
+                        <div className="text-right text-gray-700 font-semibold">{calc.etaPump_max!=null?(calc.etaPump_max*100).toFixed(1)+" %":"-"}</div>
+                        <ResultRow label="η_tot ~ min–max" value={calc.etaTot_min!=null?(calc.etaTot_min*100):undefined} unit="… %" digits={1} />
+                        <div className="text-right text-gray-700 font-semibold">{calc.etaTot_max!=null?(calc.etaTot_max*100).toFixed(1)+" %":"-"}</div>
                       </div>
                     </div>
 
@@ -532,7 +387,7 @@
                         <NumberField label="NPSH_r" value={npshr} onChange={setNpshr} step={0.01} min={0} unit="m" />
                         <NumberField label="Turvamarginaali" value={npshMargin} onChange={setNpshMargin} step={0.01} min={0} unit="m" />
                       </div>
-                      <div className={`text-sm ${calc.npshOK===false?"text-red-600": (calc.npshOK===true?"text-emerald-600":"text-gray-500")}`}>
+                      <div className={`text-sm ${calc.npshOK===false?"text-red-600":(calc.npshOK===true?"text-emerald-600":"text-gray-500")}`}>
                         {calc.npshMsg}
                       </div>
                     </div>
