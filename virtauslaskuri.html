@@ -6,29 +6,20 @@
     <title>Virtauslaskuri · Villen koodailut</title>
     <link rel="icon" href="logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-<style>
-  html,body,#root { height:100%; }
-
-  /* Taustakuva + tumma overlay luettavuuden takia */
-  .bg-hero{
-    background-image:
-      linear-gradient(135deg, rgba(2,6,23,.90), rgba(15,23,42,.85)),
-    background-size: cover;
-    background-position: center 20%;
-    background-repeat: no-repeat;
-    background-attachment: fixed;  /* jos nykii mobiilissa, poista tämä */
-  }
-</style>
-    
-   </head>
-  <body class="bg-hero">
-    <nav class="bg-white/80 backdrop-blur border-b">
+    <style>
+      html,body,#root { height:100%; }
+      /* ei taustakuvaa */
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <nav class="bg-white border-b">
       <div class="max-w-6xl mx-auto px-4 py-2 text-sm text-gray-600 flex items-center gap-3">
         <a href="index.html" class="hover:underline">← Etusivu</a>
         <span class="text-gray-300">|</span>
         <span>Virtauslaskuri</span>
       </div>
     </nav>
+
     <div id="root"></div>
 
     <!-- React & Babel -->
@@ -39,7 +30,7 @@
     <!-- App -->
     <script type="text/babel">
       const { useState, useMemo, useEffect } = React;
-      const LOGO_SRC = "logo.png"; // vapaaehtoinen; jos puuttuu, piilotetaan kuva
+      const LOGO_SRC = "logo.png";
 
       // --- Materiaalit ---
       const materials = [
@@ -142,99 +133,83 @@
           </div>
         );
       }
+
       function HelpModal({ open, onClose }) {
-  if (!open) return null;
-
-  const rows = [
-    { nimi: "Kylmä-/lämminvesi (LVIS)", arvo: "0,6 – 2,0 m/s" },
-    { nimi: "Kaukolämpö / kaukokylmä, rungot", arvo: "0,8 – 2,5 m/s" },
-    { nimi: "Glykolipiirit (30–40%)", arvo: "0,5 – 1,5 m/s" },
-    { nimi: "Öljyt (riippuu viskositeetista)", arvo: "0,3 – 1,5 m/s" },
-    { nimi: "Imulinjat (kavitaation välttäminen)", arvo: "0,5 – 1,0 m/s" },
-    { nimi: "Jätevesi painelinja", arvo: "0,7 – 2,5 m/s" },
-  ];
-
-  return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 max-w-3xl mx-auto my-6">
-        <div className="rounded-2xl bg-white shadow-xl overflow-hidden">
-          <div className="px-5 py-4 border-b flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Käyttöohjeet & suositukset</h2>
-            <button onClick={onClose} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">Sulje</button>
-          </div>
-
-          <div className="p-5 space-y-6 text-sm text-gray-800">
-            <section className="space-y-2">
-              <h3 className="font-medium">Pikaopas</h3>
-              <ol className="list-decimal list-inside space-y-1 text-gray-700">
-                <li>Valitse <b>DN</b> tai syötä <b>sisähalkaisija</b> (mm).</li>
-                <li>Aseta haluttu <b>virtausnopeus v</b> (m/s) ja <b>putken pituus L</b> (m).</li>
-                <li>Tarvittaessa avaa <b>Tarkemmat tiedot</b>: neste, lämpötila, materiaali/karheus, pienhäviöt ΣK, hyötysuhde.</li>
-                <li>Lue tulokset: <b>massavirta</b> (kg/s), <b>painehäviö</b> (bar), <b>tehot</b> (kW) ja <b>vuosienergia</b> (kWh/a).</li>
-              </ol>
-            </section>
-
-            <section className="space-y-2">
-              <h3 className="font-medium">Termit</h3>
-              <ul className="list-disc list-inside space-y-1 text-gray-700">
-                <li><b>D</b> = putken sisähalkaisija (m), <b>L</b> = pituus (m), <b>v</b> = nopeus (m/s)</li>
-                <li><b>ρ</b> = tiheys (kg/m³), <b>ν</b> = kin. viskositeetti (m²/s)</li>
-                <li><b>Re</b> = Reynolds = v·D/ν, <b>f</b> = Darcy–Weisbachin kitkakerroin</li>
-                <li><b>ΣK</b> = pienhäviökertoimien summa (mutkat, venttiilit, T-haarat, ym.)</li>
-                <li><b>Δp</b> = painehäviö, <b>P<sub>hyd</sub></b> = hydraulinen teho, <b>P<sub>in</sub></b> = sähköteho (η huomioiden)</li>
-              </ul>
-            </section>
-
-            <section className="space-y-2">
-              <h3 className="font-medium">Kaavat (yhteenveto)</h3>
-              <div className="rounded-lg bg-gray-50 border p-3 text-gray-700">
-                <p><b>Päänhäviö:</b> h = ( f·L/D + ΣK ) · v² / (2g)</p>
-                <p><b>Painehäviö:</b> Δp = ρ·g·h = ρ · ( f·L/D + ΣK ) · v² / 2</p>
-                <p><b>Swamee–Jain (turbulentti likiarvo):</b> f = 0.25 / [log10( ε/(3.7D) + 5.74/Re^0.9 )]²</p>
-                <p className="text-xs text-gray-500 mt-1">Laminaarissa (Re &lt; 2300): f ≈ 64/Re.</p>
+        if (!open) return null;
+        const rows = [
+          { nimi: "Kylmä-/lämminvesi (LVIS)", arvo: "0,6 – 2,0 m/s" },
+          { nimi: "Kaukolämpö / kaukokylmä, rungot", arvo: "0,8 – 2,5 m/s" },
+          { nimi: "Glykolipiirit (30–40%)", arvo: "0,5 – 1,5 m/s" },
+          { nimi: "Öljyt (riippuu viskositeetista)", arvo: "0,3 – 1,5 m/s" },
+          { nimi: "Imulinjat (kavitaation välttäminen)", arvo: "0,5 – 1,0 m/s" },
+          { nimi: "Jätevesi painelinja", arvo: "0,7 – 2,5 m/s" },
+        ];
+        return (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+            <div className="relative z-10 max-w-3xl mx-auto my-6">
+              <div className="rounded-2xl bg-white shadow-xl overflow-hidden">
+                <div className="px-5 py-4 border-b flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Käyttöohjeet & suositukset</h2>
+                  <button onClick={onClose} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">Sulje</button>
+                </div>
+                <div className="p-5 space-y-6 text-sm text-gray-800">
+                  <section className="space-y-2">
+                    <h3 className="font-medium">Pikaopas</h3>
+                    <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                      <li>Valitse <b>DN</b> tai syötä <b>sisähalkaisija</b> (mm).</li>
+                      <li>Aseta <b>virtausnopeus v</b> (m/s) ja <b>pituus L</b> (m).</li>
+                      <li>Avaa tarvittaessa <b>Tarkemmat tiedot</b>: neste, lämpötila, materiaali/karheus, pienhäviöt ΣK, hyötysuhde.</li>
+                      <li>Lue tulokset: <b>ṁ</b> (kg/s), <b>Δp</b> (bar), <b>tehot</b> (kW) ja <b>kWh/a</b>.</li>
+                    </ol>
+                  </section>
+                  <section className="space-y-2">
+                    <h3 className="font-medium">Termit</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      <li><b>D</b> (m), <b>L</b> (m), <b>v</b> (m/s)</li>
+                      <li><b>ρ</b> (kg/m³), <b>ν</b> (m²/s)</li>
+                      <li><b>Re</b> = v·D/ν, <b>f</b> = Darcy–Weisbach</li>
+                      <li><b>ΣK</b> = paikallishäviöt</li>
+                      <li><b>P<sub>hyd</sub></b> ja <b>P<sub>in</sub></b> (η huomioiden)</li>
+                    </ul>
+                  </section>
+                  <section className="space-y-2">
+                    <h3 className="font-medium">Kaavat</h3>
+                    <div className="rounded-lg bg-gray-50 border p-3 text-gray-700">
+                      <p><b>Päänhäviö:</b> h = ( f·L/D + ΣK ) · v² / (2g)</p>
+                      <p><b>Painehäviö:</b> Δp = ρ·g·h = ρ · ( f·L/D + ΣK ) · v² / 2</p>
+                      <p><b>Swamee–Jain:</b> f = 0.25 / [log10( ε/(3.7D) + 5.74/Re^0.9 )]²</p>
+                      <p className="text-xs text-gray-500">Laminaarissa (Re &lt; 2300): f ≈ 64/Re.</p>
+                    </div>
+                  </section>
+                  <section className="space-y-2">
+                    <h3 className="font-medium">Suositellut v (m/s)</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border text-sm">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="text-left p-2 border">Sovellus</th>
+                            <th className="text-left p-2 border">v</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map(r=>(
+                            <tr key={r.nimi} className="odd:bg-white even:bg-gray-50">
+                              <td className="p-2 border">{r.nimi}</td>
+                              <td className="p-2 border">{r.arvo}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-xs text-gray-500">Huom: imulinjat pidetään matalana (kavitaatio).</p>
+                  </section>
+                </div>
               </div>
-            </section>
-
-            <section className="space-y-2">
-              <h3 className="font-medium">Suositellut virtausnopeudet (suuntaa-antavat)</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left p-2 border">Sovellus</th>
-                      <th className="text-left p-2 border">v (m/s)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.nimi} className="odd:bg-white even:bg-gray-50">
-                        <td className="p-2 border">{r.nimi}</td>
-                        <td className="p-2 border">{r.arvo}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-gray-500">Huom: Valitse nopeus melutason, eroosion, painehäviön ja kavitaation riskin mukaan. Imulinjoilla pidä nopeus matalana.</p>
-            </section>
-
-            <section className="space-y-2">
-              <h3 className="font-medium">Vinkkejä mitoitukseen</h3>
-              <ul className="list-disc list-inside space-y-1 text-gray-700">
-                <li>Tyypillinen painehäviö runkolinjoissa usein luokkaa <b>100–300 Pa/m</b> (tilannekohtainen).</li>
-                <li>Laske pienhäviöt ΣK realistisesti – mutkat, venttiilit, T-haarat, supistukset/laajennukset.</li>
-                <li>Glykolit ja öljyt: viskositeetti kasvaa kylmänä → suurempi Δp ja pienempi Re.</li>
-                <li>Imu: minimoi paikallishäviöt ja pidä NPSH-välys riittävänä (vältä kavitaatiota).</li>
-              </ul>
-            </section>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
+        );
+      }
 
       function App(){
         // Oletukset: DN100, 1.5 m/s, 100 m, vesi 20 °C
@@ -243,6 +218,7 @@
         const [length,setLength]=useState(100);
 
         const [showAdvanced,setShowAdvanced]=useState(false);
+        const [showHelp, setShowHelp] = useState(false);
 
         const [fluidKey,setFluidKey]=useState("water");
         const [fluidTemp,setFluidTemp]=useState(20);
@@ -260,17 +236,14 @@
 
         const [eff,setEff]=useState(0.7);
         const [hours,setHours]=useState(4000);
-        const [energyPrice,setEnergyPrice]=useState(0.12);,
+        const [energyPrice,setEnergyPrice]=useState(0.12); // ← korjattu: EI pilkkua
 
-        const [showHelp, setShowHelp] = useState(false);
-
-// Sulje ESC:llä
-      useEffect(() => {
-        const onKey = (e) => { if (e.key === "Escape") setShowHelp(false); };
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        // ESC sulkee ohjeen
+        useEffect(() => {
+          const onKey = (e) => { if (e.key === "Escape") setShowHelp(false); };
+          window.addEventListener("keydown", onKey);
+          return () => window.removeEventListener("keydown", onKey);
         }, []);
-
 
         useEffect(()=>setEpsMM(selectedMat.eps_mm),[materialKey]);
         useEffect(()=>{ if(overrideFluid) return; const f=fluids.find(x=>x.key===fluidKey); if(!f) return;
@@ -299,7 +272,7 @@
         },[diameterMM,velocity,length,rho,nu,epsMM,eff,hours,energyPrice,sumK]);
 
         return (
-          <div className="min-h-screen bg-gray-50 text-gray-900 p-4 sm:p-8">
+          <div className="min-h-screen text-gray-900 p-4 sm:p-8">
             <div className="mx-auto max-w-6xl space-y-6">
               <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-3">
@@ -314,9 +287,8 @@
                     {showAdvanced ? "Piilota tarkemmat tiedot" : "Tarkemmat tiedot"}
                   </button>
                   <button onClick={()=>setShowHelp(true)} className="px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50 text-sm">
-  Käyttöohjeet
-</button>
-
+                    Käyttöohjeet
+                  </button>
                 </div>
               </header>
 
@@ -346,7 +318,7 @@
                       <ResultRow label="Q" value={results.Q_m3h} unit="m³/h" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt ja hukattu energia</h3>
+                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt ja energia</h3>
                       <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
                       <ResultRow label="Hydraulinen teho" value={results.P_hyd / 1000} unit="kW" />
                       <ResultRow label="Sähköteho" value={results.P_in / 1000} unit="kW" />
@@ -457,7 +429,8 @@
                   </div>
                 </section>
               )}
-<HelpModal open={showHelp} onClose={()=>setShowHelp(false)} />
+
+              <HelpModal open={showHelp} onClose={()=>setShowHelp(false)} />
 
               <footer className="text-center text-xs text-gray-400">© {new Date().getFullYear()} Virtauslaskuri - Villen koodailut </footer>
             </div>
