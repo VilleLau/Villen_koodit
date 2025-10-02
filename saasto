@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paineilmakustannuslaskuri – positioijat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card{ @apply bg-white/90 backdrop-blur shadow-lg rounded-2xl p-6; }
+    .label{ @apply text-sm font-medium text-gray-700; }
+    .input{ @apply w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
+    .hint{ @apply text-xs text-gray-500; }
+    .pill{ @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs bg-gray-100; }
+    .num{ font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 text-slate-900">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <header class="mb-6 text-white">
+      <h1 class="text-3xl md:text-4xl font-bold">Paineilmakustannuslaskuri – positioijat</h1>
+      <p class="mt-2 opacity-80">Laskee vuosittaisen sähkökustannuksen positioijan <em>steady‑state</em> (venttiili paikallaan) ‑ilmankulutuksesta ja halutessa myös liikkeiden dynaamisesta kulutuksesta.</p>
+    </header>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Asetukset -->
+      <section class="card md:col-span-1">
+        <h2 class="text-lg font-semibold mb-4">Asetukset</h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="label">Sähkön hinta (€/kWh)</label>
+            <input id="price" type="number" step="0.001" value="0.12" class="input" />
+            <p class="hint">Esim. 0,12 €/kWh</p>
+          </div>
+
+          <div>
+            <label class="label">Kompressorin SFP (kWh/Nm³)</label>
+            <input id="sfp" type="number" step="0.001" value="0.12" class="input" />
+            <p class="hint">Tyypillinen alue ~0,09–0,16 kWh/Nm³. Jos et tiedä, jätä 0,12.</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="label">Paikallaan‑osuus (%)</label>
+              <input id="idlePct" type="number" step="1" value="95" class="input" />
+            </div>
+            <div>
+              <label class="label">Tuntia vuodessa</label>
+              <input id="hours" type="number" step="1" value="8760" class="input" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="label">Lukumäärä (kpl)</label>
+              <input id="qty" type="number" step="1" min="1" value="1" class="input" />
+            </div>
+            <div>
+              <label class="label">Vertailuperuste</label>
+              <select id="base" class="input">
+                <option value="siemens">Siemens SIPART PS2</option>
+                <option value="abb">ABB TZIDC</option>
+                <option value="fisher">Emerson Fisher DVC6200 (low‑bleed)</option>
+                <option value="samson">SAMSON 3730‑x</option>
+                <option value="custom">Oma arvo…</option>
+              </select>
+            </div>
+          </div>
+
+          <details class="mt-2">
+            <summary class="cursor-pointer font-medium">Lisäasetukset: dynaaminen kulutus (liikkeet)</summary>
+            <div class="mt-3 space-y-3">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="label">Syklejä per tunti</label>
+                  <input id="cyclesPerHour" type="number" step="0.1" value="0" class="input" />
+                </div>
+                <div>
+                  <label class="label">Ilmaa per sykli (Nm³)</label>
+                  <input id="airPerCycle" type="number" step="0.001" value="0" class="input" />
+                </div>
+              </div>
+              <details>
+                <summary class="cursor-pointer text-sm">Arvioi ilmaa/sykli toimilaitteen tilavuuden perusteella</summary>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="label">Toimilaitteen netto‑tilavuus (l)</label>
+                    <input id="actVolL" type="number" step="0.1" value="0" class="input" />
+                  </div>
+                  <div>
+                    <label class="label">Syöttöpaine (bar<sub>g</sub>)</label>
+                    <input id="supplyBarG" type="number" step="0.1" value="6" class="input" />
+                  </div>
+                </div>
+                <p class="hint mt-1">Arvio: Nm³/sykli ≈ (V<sub>l</sub>/1000) × (bar<sub>abs</sub>), missä bar<sub>abs</sub> = bar<sub>g</sub> + 1.</p>
+                <button id="estimateCycleAir" class="mt-2 rounded-xl bg-indigo-600 text-white px-3 py-2">Laske arvio</button>
+              </details>
+            </div>
+          </details>
+
+          <div id="customWrap" class="hidden">
+            <label class="label mt-4">Oma steady‑state‑kulutus (Nm³/h)</label>
+            <input id="customNm3h" type="number" step="0.001" value="0.030" class="input" />
+            <p class="hint">Käytä valmistajan ilmoittamaa "controlled/steady state"‑arvoa.</p>
+          </div>
+
+          <button id="calc" class="w-full mt-2 rounded-xl bg-indigo-600 text-white px-4 py-3 font-semibold">Laske</button>
+        </div>
+      </section>
+
+      <!-- Tuloskortit -->
+      <section class="md:col-span-2 space-y-6">
+        <div class="card">
+          <h2 class="text-lg font-semibold mb-4">Yhteenveto</h2>
+          <div class="grid md:grid-cols-3 gap-4">
+            <div class="bg-indigo-50 rounded-xl p-4">
+              <div class="text-sm text-gray-600">Valittu vertailuperuste</div>
+              <div id="summaryBase" class="text-xl font-bold mt-1">–</div>
+              <div id="summaryBaseNm3h" class="hint">– Nm³/h (steady)</div>
+            </div>
+            <div class="bg-green-50 rounded-xl p-4">
+              <div class="text-sm text-gray-600">Kokonaiskustannus / vuosi*</div>
+              <div id="summaryTotal" class="text-2xl font-extrabold mt-1 num">– €</div>
+              <div class="hint">*sis. steady‑state + dynaaminen (jos syötetty)</div>
+            </div>
+            <div class="bg-yellow-50 rounded-xl p-4">
+              <div class="text-sm text-gray-600">Säästö verrattuna suurimpaan</div>
+              <div id="summarySavings" class="text-xl font-bold mt-1 num">– € / a</div>
+              <div class="hint">Sama käyttöprofiili kaikille.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card overflow-x-auto">
+          <h2 class="text-lg font-semibold mb-4">Vertailutaulukko (per laite &times; kpl)</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left border-b">
+                <th class="py-2 pr-4">Laite</th>
+                <th class="py-2 pr-4">Steady (Nm³/h)</th>
+                <th class="py-2 pr-4">kWh/a (1 kpl)</th>
+                <th class="py-2 pr-4">€/a (1 kpl)</th>
+                <th class="py-2 pr-4">€/a (× kpl)</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-2">Huomioita</h3>
+          <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
+            <li><span class="font-medium">Steady‑state</span> = venttiili ei liiku; dynaaminen kulutus riippuu syklistä ja toimilaitteen tilavuudesta.</li>
+            <li>SFP = kompressorin ominaisenergiankulutus. Kustannukset skaalautuvat suoraan SFP:n mukaan.</li>
+            <li>Jos syöttöpaine on hyvin erilainen kuin datasheeteissä, steady‑state‑lukemat voivat poiketa.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+// Datasheet-tyypilliset steady-state kulutukset (Nm3/h)
+const DEVICES = {
+  siemens: { name: 'Siemens SIPART PS2', nm3h: 0.012 }, // ~0.006–0.012 scfm ~ 0.010–0.020 Nm3/h; käytetään 0.012
+  abb:     { name: 'ABB TZIDC',           nm3h: 0.0255 },
+  fisher:  { name: 'Emerson Fisher DVC6200 (low‑bleed)', nm3h: 0.170 },
+  samson:  { name: 'SAMSON 3730‑x',       nm3h: 0.110 },
+  custom:  { name: 'Oma arvo',            nm3h: 0.030 },
+};
+
+function fmtEuro(x){
+  if(!isFinite(x)) return '– €';
+  return new Intl.NumberFormat('fi-FI',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(x);
+}
+function fmtNum(x, d=3){
+  if(!isFinite(x)) return '–';
+  return new Intl.NumberFormat('fi-FI',{maximumFractionDigits:d}).format(x);
+}
+
+function getInputs(){
+  const price = parseFloat(document.getElementById('price').value)||0;
+  const sfp = parseFloat(document.getElementById('sfp').value)||0;
+  const idlePct = Math.min(100, Math.max(0, parseFloat(document.getElementById('idlePct').value)||0));
+  const hours = parseFloat(document.getElementById('hours').value)||0;
+  const qty = Math.max(1, parseInt(document.getElementById('qty').value)||1);
+  const base = document.getElementById('base').value;
+  const cyclesPerHour = parseFloat(document.getElementById('cyclesPerHour').value)||0;
+  let airPerCycle = parseFloat(document.getElementById('airPerCycle').value)||0;
+  const actVolL = parseFloat(document.getElementById('actVolL').value)||0;
+  const supplyBarG = parseFloat(document.getElementById('supplyBarG').value)||0;
+  // if user filled actuator volume but not air/cycle, estimate
+  if(airPerCycle===0 && actVolL>0){
+    const barAbs = Math.max(0, supplyBarG + 1);
+    airPerCycle = (actVolL/1000) * barAbs; // Nm3 per full fill
+  }
+  // custom device override
+  const customNm3h = parseFloat(document.getElementById('customNm3h').value)||DEVICES.custom.nm3h;
+  return {price,sfp,idlePct,hours,qty,base,cyclesPerHour,airPerCycle,customNm3h};
+}
+
+function calcOne(nm3h, p){
+  const {price,sfp,idlePct,hours,qty,cyclesPerHour,airPerCycle} = p;
+  const idleFrac = idlePct/100;
+  const Qidle = nm3h * idleFrac;                 // Nm3/h in steady state
+  const Qdyn = (cyclesPerHour>0 && airPerCycle>0) ? (cyclesPerHour * airPerCycle) : 0; // Nm3/h from motion
+  const Nm3_per_h = Qidle + Qdyn;
+  const kWh_per_h = Nm3_per_h * sfp;
+  const kWh_per_y = kWh_per_h * p.hours;
+  const eur_per_y_1 = kWh_per_y * price;
+  const eur_per_y_qty = eur_per_y_1 * p.qty;
+  return { Qidle, Qdyn, Nm3_per_h, kWh_per_y, eur_per_y_1, eur_per_y_qty };
+}
+
+function refresh(){
+  const p = getInputs();
+  // show/hide custom input
+  document.getElementById('customWrap').classList.toggle('hidden', p.base !== 'custom');
+
+  // build device list including custom value
+  const devs = JSON.parse(JSON.stringify(DEVICES));
+  devs.custom.nm3h = p.customNm3h;
+
+  const rows = [];
+  let maxCost = -Infinity;
+  let baseNm3h = devs[p.base].nm3h;
+  let baseName = devs[p.base].name;
+
+  Object.entries(devs).forEach(([key, dev])=>{
+    const r = calcOne(dev.nm3h, p);
+    rows.push({ key, name: dev.name, nm3h: dev.nm3h, kWhY: r.kWh_per_y, eurY1: r.eur_per_y_1, eurYQty: r.eur_per_y_qty });
+    if(r.eur_per_y_1 > maxCost) maxCost = r.eur_per_y_1;
+  });
+
+  // Update summary
+  document.getElementById('summaryBase').textContent = baseName;
+  document.getElementById('summaryBaseNm3h').textContent = `${fmtNum(baseNm3h,3)} Nm³/h (steady)`;
+  // total cost for base
+  const baseRow = rows.find(r=>r.key===p.base);
+  document.getElementById('summaryTotal').textContent = fmtEuro(baseRow.eurYQty);
+  const savings = (maxCost - baseRow.eurY1) * p.qty;
+  document.getElementById('summarySavings').textContent = isFinite(savings)? `${fmtEuro(savings)} / a` : '– € / a';
+
+  // Render table
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.className = 'border-b last:border-0';
+    tr.innerHTML = `
+      <td class="py-2 pr-4">${r.name}</td>
+      <td class="py-2 pr-4 num">${fmtNum(r.nm3h,3)}</td>
+      <td class="py-2 pr-4 num">${fmtNum(r.kWhY,1)}</td>
+      <td class="py-2 pr-4 num">${fmtEuro(r.eurY1)}</td>
+      <td class="py-2 pr-4 num">${fmtEuro(r.eurYQty)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Estimate helper button
+document.getElementById('estimateCycleAir').addEventListener('click', (e)=>{
+  e.preventDefault();
+  const actVolL = parseFloat(document.getElementById('actVolL').value)||0;
+  const supplyBarG = parseFloat(document.getElementById('supplyBarG').value)||0;
+  if(actVolL>0){
+    const barAbs = Math.max(0, supplyBarG + 1);
+    const nm3 = (actVolL/1000) * barAbs;
+    document.getElementById('airPerCycle').value = nm3.toFixed(3);
+  }
+});
+
+// Recalc on changes
+['price','sfp','idlePct','hours','qty','base','cyclesPerHour','airPerCycle','customNm3h','actVolL','supplyBarG']
+  .forEach(id=>document.getElementById(id).addEventListener('input', refresh));
+
+// Toggle custom field visibility on base change
+document.getElementById('base').addEventListener('change', refresh);
+
+document.getElementById('calc').addEventListener('click', refresh);
+
+// Initial render
+refresh();
+</script>
+</body>
+</html>
