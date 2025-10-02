@@ -1,386 +1,200 @@
 <!doctype html>
 <html lang="fi">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SIPART PS2 – Energiatehokas asennoitin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      html,body{height:100%}
-      .gradient{background: radial-gradient(1200px 600px at 20% -10%, rgba(59,130,246,.25), transparent 60%),
-                           radial-gradient(900px 480px at 90% 110%, rgba(16,185,129,.25), transparent 60%),
-                           linear-gradient(180deg, #0b1220, #0a0f1a)}
-      .shine{position:relative;overflow:hidden}
-      .shine::after{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg, transparent 0 340deg, rgba(255,255,255,.06) 340deg 360deg);animation:spin 18s linear infinite}
-      @keyframes spin{to{transform:rotate(1turn)}}
-    .airflow{height:110px;border-radius:1rem;background-image:radial-gradient(3px 3px at 0 50%, rgba(255,255,255,.45), transparent 60%),radial-gradient(2px 2px at 0 30%, rgba(255,255,255,.25), transparent 60%),linear-gradient(180deg, rgba(59,130,246,.18), rgba(16,185,129,.12));background-repeat:repeat-x,repeat-x,no-repeat;background-size:80px 100%,140px 100%,100% 100%;background-position:0 50%,0 50%,0 0;animation:flow1 18s linear infinite, flow2 24s linear infinite}
-      @keyframes flow1{to{background-position:-80px 50%,0 50%,0 0}}
-      @keyframes flow2{to{background-position:0 50%,-140px 50%,0 0}}
-    </style>
-  </head>
-  <body class="gradient text-slate-100">
-    <!-- Safe area for 16:9 screens -->
-    <div class="mx-auto max-w-[1700px] min-h-screen flex flex-col p-6 md:p-10">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIPART PS2 – energiatehokas asennoitin (standalone)</title>
+  <style>
+    :root{
+      --bg:#0b1220; /* tumma tausta */
+      --card: rgba(255,255,255,.06);
+      --muted: #c9d1e1;
+      --muted2: #9aa6bd;
+      --accent:#0ea5a3; /* Siemens-tyyli */
+      --brand:#105a9a;  /* Jukkola-sininen */
+      --ok:#22c55e;
+    }
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:#e6edf7}
+    .wrap{max-width:1600px;margin:0 auto;padding:20px 28px 40px}
+    /* Header */
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .left{display:flex;align-items:center;gap:20px}
+    h1{font-size:clamp(20px,3vw,34px);font-weight:650;margin:0}
+    .logos img{display:block;object-fit:contain;height:42px}
+    .logos{display:flex;align-items:center;gap:14px}
+    button{background:rgba(255,255,255,.08);border:0;border-radius:12px;color:#e6edf7;padding:8px 12px;cursor:pointer}
+    button:hover{background:rgba(255,255,255,.12)}
 
-      <!-- Header / Brand strip -->
-      <header class="flex items-center justify-between gap-6 pb-4 border-b border-white/10">
-        <div class="flex items-center gap-6">
-          <img src="jukkolasystems_logo_png.png" alt="Jukkola Systems" class="h-10 md:h-14 object-contain" />
-          <h1 class="text-xl md:text-3xl font-semibold leading-tight">SIPART PS2 – energiatehokas asennoitin</h1>
-        </div>
-        </div>
-        <div class="flex items-center gap-4">
-          <button id="btnPresent" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm">Esitystila: pois</button>
-          <img src="Siemens-logo.svg.png" alt="Siemens" class="h-8 md:h-10 object-contain" />
-        </div>
-      </header>
+    /* Airflow band */
+    .airflow{height:110px;border-radius:16px;border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden;margin-top:14px}
+    .airflow::before,.airflow::after{content:"";position:absolute;inset:0;background-repeat:repeat-x}
+    .airflow::before{background-image:radial-gradient(3px 3px at 0 50%, rgba(255,255,255,.45), transparent 60%),radial-gradient(2px 2px at 0 30%, rgba(255,255,255,.25), transparent 60%);background-size:80px 100%,140px 100%;animation:flow1 18s linear infinite, flow2 24s linear infinite}
+    .airflow::after{background-image:linear-gradient(180deg, rgba(16,90,154,.22), rgba(14,165,163,.14));}
+    @keyframes flow1{to{background-position:-80px 50%,0 50%}}
+    @keyframes flow2{to{background-position:0 50%,-140px 50%}}
 
-      <!-- Hero metric band -->
-      <section id="airflowBand" class="mt-4">
-        <div class="airflow border border-white/10"></div>
-      </section>
+    /* Grid */
+    .grid{display:grid;gap:18px;margin-top:18px}
+    @media (min-width:1000px){.grid{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:20px}
+    .muted{color:var(--muted2);font-size:14px}
+    .big{font-size:clamp(40px,7vw,84px);font-weight:800;letter-spacing:.5px}
+    .sub{color:#b7c2d8}
 
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
-        <div class="col-span-1 lg:col-span-2 rounded-2xl p-6 shine bg-white/5 border border-white/10">
-          <p class="text-slate-300 text-sm">Vuosisäästö</p>
-          <div class="mt-1 flex items-end gap-4">
-            <div>
-              <div id="euroYear" class="text-5xl md:text-7xl font-bold tabular-nums">0</div>
-              <div class="text-slate-400">€/vuosi</div>
-            </div>
-          </div>
-          <div class="mt-3 text-sm text-slate-300">≈ <span id="counterSaved">0</span> kWh/vuosi</div>
-          <p class="mt-3 text-xs text-slate-400">*Tunnit & kappalemäärä muokattavissa. Sähkön hinta 0,12 €/kWh (muokattava).</p>
-        </div>
-        <div class="rounded-2xl p-6 bg-white/5 border border-white/10 feature-card hidden">
-          <p class="text-slate-300 text-sm">Virtauksen hallinta</p>
-          <p class="mt-1 text-xl">Tarkka asento-ohjaus & itseoppiva viritys</p>
-          <ul class="mt-3 space-y-1 text-sm text-slate-300 list-disc list-inside">
-            <li>Alhainen paineilman kulutus</li>
-            <li>Laaja diagnostiikka (HART/PA/PROFIBUS*)</li>
-            <li>Partial Stroke Test -valmius*</li>
-          </ul>
-          <p class="mt-2 text-xs text-slate-500">*Riippuu kokoonpanosta/versiosta</p>
-        </div>
-        <div class="rounded-2xl p-6 bg-white/5 border border-white/10">
-          <p class="text-slate-300 text-sm">Takaisinmaksu (poistettu)</p>
-          <div class="mt-1 text-3xl md:text-4xl font-bold"><span id="paybackMonths">–</span> kk</div>
-          <p class="mt-2 text-sm text-slate-300">Esimerkin mukaan 6–18 kk kokoonpanosta riippuen.</p>
-        </div>
-      </section>
+    /* Bars */
+    .bars{display:grid;gap:14px}
+    .bar{height:18px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}
+    .bar>span{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#0ea5a3)}
+    .row{display:flex;justify-content:space-between;align-items:center;color:#e6edf7}
 
-      <!-- Controls: Live calculator -->
-      <section id="controls" class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- Big quantity card -->
-        <div class="lg:col-span-4 rounded-2xl p-6 bg-white/5 border border-white/10 flex flex-col justify-between">
+    /* Controls */
+    .controls{display:grid;gap:12px}
+    @media (min-width:1000px){.controls{grid-template-columns:repeat(3,1fr)}}
+    .input{display:flex;flex-direction:column;gap:6px}
+    .input input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#e6edf7;border-radius:12px;padding:10px 12px;font-size:16px}
+    .qtyBox{display:flex;align-items:end;gap:10px}
+    .qtyBig{font-size:clamp(48px,8vw,96px);font-weight:900}
+    .hidden{display:none!important}
+
+    footer{margin-top:14px;color:#9aa6bd;font-size:13px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="left">
+        <img src="jukkolasystems_logo_png.png" alt="Jukkola Systems" style="height:44px"/>
+        <h1>SIPART PS2 – energiatehokas asennoitin</h1>
+      </div>
+      <div class="logos">
+        <button id="btnPresent" title="Esitystila (H)">Esitystila: pois</button>
+        <img src="Siemens-logo.svg.png" alt="Siemens"/>
+      </div>
+    </header>
+
+    <section class="airflow" aria-hidden="true"></section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="muted">Vuosisäästö</div>
+        <div class="qtyBox" style="margin-top:6px">
           <div>
-            <p class="text-slate-300 text-sm">Kappalemäärä (venttiilit)</p>
-            <div class="mt-2 flex items-end gap-3">
-              <div id="qtyBig" class="text-6xl md:text-7xl font-bold tabular-nums">200</div>
-              <span class="text-slate-400 mb-3">kpl</span>
-            </div>
-          </div>
-          <div class="mt-4 flex items-center gap-2">
-            <button id="minusQty" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15">−10</button>
-            <input id="inpValves" type="number" min="1" max="5000" step="1" class="w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-            <button id="plusQty" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15">+10</button>
+            <div id="euroYear" class="big">0</div>
+            <div class="sub">€/vuosi</div>
           </div>
         </div>
+        <div style="margin-top:10px" class="sub">≈ <span id="kwhYear">0</span> kWh/vuosi</div>
+      </div>
 
-        <!-- Hours & electricity price -->
-        <div class="lg:col-span-4 rounded-2xl p-6 bg-white/5 border border-white/10 grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-slate-300 text-sm">Tunnit vuodessa</label>
-            <input id="inpHours" type="number" min="0" max="8760" step="100" class="mt-2 w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-          </div>
-          <div>
-            <label class="text-slate-300 text-sm">Sähkön hinta (€/kWh)</label>
-            <input id="inpPrice" type="number" min="0" max="5" step="0.01" class="mt-2 w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-          </div>
-          <div>
-            <label class="text-slate-300 text-sm">Kompressorin ominaissähkö (kWh/Nm³)</label>
-            <input id="inpSE" type="number" min="0.01" max="1" step="0.01" class="mt-2 w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-          </div>
+      <div class="card">
+        <div class="muted">Paineilman kulutus (Nl/min)</div>
+        <div class="bars" style="margin-top:10px">
+          <div class="row"><span>SIPART PS2</span><span id="ps2Val">2.0</span></div>
+          <div class="bar"><span id="ps2Bar" style="width:25%"></span></div>
+          <div class="row"><span>Kilpailija A</span><span id="aVal">5.0</span></div>
+          <div class="bar"><span id="aBar" style="width:62%"></span></div>
+          <div class="row"><span>Kilpailija B</span><span id="bVal">7.5</span></div>
+          <div class="bar"><span id="bBar" style="width:90%"></span></div>
         </div>
+      </div>
+    </section>
 
-        <!-- Air consumption inputs -->
-        <div class="lg:col-span-4 rounded-2xl p-6 bg-white/5 border border-white/10 grid grid-cols-1 gap-3">
-          <div>
-            <label class="text-slate-300 text-sm">SIPART PS2 (Nl/min)</label>
-            <input id="inpPS2" type="number" min="0.1" max="50" step="0.1" class="mt-2 w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-          </div>
-          <div>
-            <label class="text-slate-300 text-sm">Kilpailija A (Nl/min)</label>
-            <input id="inpA" type="number" min="0.1" max="50" step="0.1" class="mt-2 w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-          </div>
-          <div>
-            <label class="text-slate-300 text-sm">Kilpailija B (Nl/min)</label>
-            <input id="inpB" type="number" min="0.1" max="50" step="0.1" class="mt-2 w-full px-3 py-2 rounded-xl bg-white/10 focus:outline-none"/>
-          </div>
+    <section id="controls" class="card" style="margin-top:18px">
+      <div class="muted" style="margin-bottom:8px">Laskuri (muokkaa arvoja)</div>
+      <div class="controls">
+        <div class="input">
+          <label>Kappalemäärä (venttiilit)</label>
+          <input id="valves" type="number" value="200" min="1" max="5000" step="1"/>
         </div>
-      </section>
-
-      <!-- Comparison: PS2 vs kilpailija -->
-      <section class="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div class="rounded-2xl p-6 bg-white/5 border border-white/10">
-          <h2 class="text-xl md:text-2xl font-semibold mb-4">Paineilman kulutus
-            <span class="text-sm font-normal text-slate-400">(norm. käyttötilanne)</span>
-          </h2>
-          <!-- Bars -->
-          <div class="space-y-4">
-            <div>
-              <div class="flex justify-between text-sm"><span>SIPART PS2</span><span id="ps2Val">0</span> Nl/min</div>
-              <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                <div id="ps2Bar" class="h-3 bg-emerald-400/80" style="width:0%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-sm"><span>Kilpailija A</span><span id="compAVal">0</span> Nl/min</div>
-              <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                <div id="compABar" class="h-3 bg-sky-400/80" style="width:0%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-sm"><span>Kilpailija B</span><span id="compBVal">0</span> Nl/min</div>
-              <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                <div id="compBBar" class="h-3 bg-indigo-400/80" style="width:0%"></div>
-              </div>
-            </div>
-          </div>
-          <p class="mt-3 text-xs text-slate-400">Arvot ovat muokattavia. Syötä messutilanteessa asiakaskohtaiset luvut (näppäimistö-koodit alla).</p>
+        <div class="input">
+          <label>Tunnit vuodessa</label>
+          <input id="hours" type="number" value="8000" min="0" max="8760" step="100"/>
         </div>
-
-        <!-- Slide carousel: key messages -->
-        <div class="rounded-2xl p-0 border border-white/10 overflow-hidden">
-          <div id="slides" class="relative h-[320px] md:h-[380px]">
-            <div class="absolute inset-0 p-6 flex flex-col justify-center gap-3 slide">
-              <h3 class="text-2xl font-semibold">Miksi SIPART PS2?</h3>
-              <ul class="text-lg leading-relaxed text-slate-200 list-disc list-inside">
-                <li>Alhainen energian- ja paineilman kulutus</li>
-                <li>Laaja itse-diagnostiikka ja kunnonvalvonta</li>
-                <li>Modulaarinen – soveltuu läppä-, pallo- ja istukkaventtiileille</li>
-                <li>Helppo käyttöönotto – automaattiviritys</li>
-              </ul>
-            </div>
-            <div class="absolute inset-0 p-6 hidden flex-col justify-center gap-3 slide">
-              <h3 class="text-2xl font-semibold">Tyypillinen säästö</h3>
-              <p class="text-lg">Esimerkki: 200 venttiiliä, 8 000 h/a, sähkön hinta 0,10 €/kWh</p>
-              <div class="grid grid-cols-2 gap-4 mt-2">
-                <div class="rounded-xl bg-white/5 p-4">
-                  <p class="text-sm text-slate-300">Säästö paineilmakompressorin sähkössä</p>
-                  <p class="text-3xl font-bold">≈ <span id="euroSaved">0</span> €/a</p>
-                </div>
-                <div class="rounded-xl bg-white/5 p-4">
-                  <p class="text-sm text-slate-300">CO₂-vähennys (scope 2)</p>
-                  <p class="text-3xl font-bold">≈ <span id="co2Saved">0</span> kg/a</p>
-                </div>
-              </div>
-              <p class="text-xs text-slate-400 mt-2">CO₂-laskennassa esimerkkikerroin 150 g/kWh.</p>
-            </div>
-            <div class="absolute inset-0 p-6 hidden flex-col justify-center gap-3 slide">
-              <h3 class="text-2xl font-semibold">Integraatio & protokollat</h3>
-              <p class="text-lg">HART | Profibus PA | Foundation Fieldbus | 4–20 mA</p>
-              <p class="text-slate-300">Kunnonvalvonnan tilat ja hälytykset ohjaukseen – parantaa käytettävyyttä.</p>
-            </div>
-            <div class="absolute inset-0 p-6 hidden flex-col justify-center gap-3 slide">
-              <h3 class="text-2xl font-semibold">Turvallisuus & testattavuus</h3>
-              <p class="text-lg">Partial Stroke Test (PST) -ominaisuus saatavilla – mahdollistaa venttiilin jumiutumisen havaitsemisen.</p>
-              <p class="text-slate-300">Valmius SIL-sovelluksiin kokoonpanosta riippuen.</p>
-            </div>
-          </div>
-          <div class="flex items-center justify-between px-4 py-2 bg-white/5 text-xs text-slate-300">
-            <div>Automaattinen kierto • Paina <kbd class="px-1 py-0.5 rounded bg-white/10">Space</kbd> tauko/jatka</div>
-            <div class="flex gap-1" id="dots"></div>
-          </div>
+        <div class="input">
+          <label>Sähkön hinta (€/kWh)</label>
+          <input id="price" type="number" value="0.12" min="0" max="5" step="0.01"/>
         </div>
-      </section>
+        <div class="input">
+          <label>Kompressorin ominaissähkö (kWh/Nm³)</label>
+          <input id="se" type="number" value="0.10" min="0.01" max="1" step="0.01"/>
+        </div>
+        <div class="input">
+          <label>SIPART PS2 (Nl/min)</label>
+          <input id="ps2" type="number" value="2.0" min="0.1" max="50" step="0.1"/>
+        </div>
+        <div class="input">
+          <label>Kilpailija A (Nl/min)</label>
+          <input id="a" type="number" value="5.0" min="0.1" max="50" step="0.1"/>
+        </div>
+        <div class="input">
+          <label>Kilpailija B (Nl/min)</label>
+          <input id="b" type="number" value="7.5" min="0.1" max="50" step="0.1"/>
+        </div>
+      </div>
+    </section>
 
-      <!-- Footer notes -->
-      <footer class="mt-6 text-[13px] text-slate-400 flex flex-wrap items-center justify-between gap-3">
-        <div>© Näyttöesimerkki. Päivitä arvot ennen messuja. Kaikki luvut esimerkinomaisia.</div>
-        <div>Näppäinyhdistelmät: <span class="font-medium text-slate-200">E</span>=energia, <span class="font-medium text-slate-200">A</span>=kilpailija A, <span class="font-medium text-slate-200">B</span>=kilpailija B, <span class="font-medium text-slate-200">P</span>=PS2 arvo, <span class="font-medium text-slate-200">R</span>=reset</div>
-      </footer>
-    </div>
+    <footer>
+      <div>Yksinkertaistettu stand-alone versio (ei CDN-riippuvuuksia). Luvut esimerkinomaisia.</div>
+      <div>Vinkit: H = Esitystila päälle/pois.</div>
+    </footer>
+  </div>
 
-    <script>
-      // --- Editable defaults (esimerkit) ---
-      const data = {
-        ps2NlMin: 2.0,    // SIPART PS2 tyypillinen kulutus (esimerkkiluku)
-        compANlMin: 5.0,  // Kilpailija A (esimerkkiluku)
-        compBNlMin: 7.5,  // Kilpailija B (esimerkkiluku)
-        valves: 200,
-        hoursPerYear: 8000,
-        kWhPerNm3Air: 0.1, // Kompressorin ominaissähkö (kWh / Nm³) ~ ohjearvo
-        electricityPrice: 0.12, // €/kWh
-        co2Factor: 0.150 // kg/kWh
-      }
+<script>
+  // State
+  const data = {
+    valves: 200,
+    hours: 8000,
+    price: 0.12,
+    se: 0.10,
+    ps2: 2.0,
+    a: 5.0,
+    b: 7.5
+  };
 
-      // --- Helpers ---
-      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-      const animateNumber = (el, to, dur=1000, unit="") => {
-        const from = Number(el.textContent.replace(/[^0-9.-]/g, "")) || 0;
-        const start = performance.now();
-        const step = now => {
-          const t = clamp((now - start) / dur, 0, 1);
-          const val = from + (to - from) * (1 - Math.pow(1 - t, 3)); // easeOutCubic
-          el.textContent = Math.round(val).toLocaleString("fi-FI");
-          if (t < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      };
+  // Helpers
+  const $ = sel => document.querySelector(sel);
+  const clamp = (v,min,max)=> Math.max(min, Math.min(max, v));
+  function fmtEUR(n){ return n.toLocaleString('fi-FI',{style:'currency',currency:'EUR',maximumFractionDigits:0}); }
+  function fmt(n){ return Math.round(n).toLocaleString('fi-FI'); }
 
-      function recalc() {
-        // Lasketaan kulutuksesta säästöjä
-        const avgNlMin = (data.compANlMin + data.compBNlMin) / 2;
-        const savedNlMinPerValve = Math.max(0, avgNlMin - data.ps2NlMin);
-        const savedNm3hPerValve = (savedNlMinPerValve * 60) / 1000;
-        const savedKWhPerValveYear = savedNm3hPerValve * data.hoursPerYear * data.kWhPerNm3Air;
-        const totalSavedKWh = savedKWhPerValveYear * data.valves;
+  function recalc(){
+    const avg = (Number($('#a').value)||0 + Number($('#b').value)||0)/2;
+    const ps2 = Number($('#ps2').value)||0;
+    const savedNlMinPerValve = Math.max(0, avg-ps2);
+    const savedNm3hPerValve = (savedNlMinPerValve*60)/1000;
+    const totalSavedKWh = savedNm3hPerValve * (Number($('#hours').value)||0) * (Number($('#se').value)||0) * (Number($('#valves').value)||0);
+    const euros = totalSavedKWh * (Number($('#price').value)||0);
 
-        // Eurot ja CO2
-        const euros = totalSavedKWh * data.electricityPrice;
-        const co2 = totalSavedKWh * data.co2Factor * 1000; // kg
+    $('#kwhYear').textContent = fmt(totalSavedKWh);
+    $('#euroYear').textContent = fmtEUR(euros);
 
-        // Prosenttisäästö vs. CompA keskiarvoon nähden
-        const percent = avgNlMin > 0 ? ((avgNlMin - data.ps2NlMin) / avgNlMin) * 100 : 0;
+    // Bars
+    const maxNl = Math.max(ps2, Number($('#a').value)||0, Number($('#b').value)||0, 1);
+    $('#ps2Val').textContent = ps2.toFixed(1); $('#aVal').textContent = (Number($('#a').value)||0).toFixed(1); $('#bVal').textContent = (Number($('#b').value)||0).toFixed(1);
+    $('#ps2Bar').style.width = (ps2/maxNl*100)+"%";
+    $('#aBar').style.width = ((Number($('#a').value)||0)/maxNl*100)+"%";
+    $('#bBar').style.width = ((Number($('#b').value)||0)/maxNl*100)+"%";
+  }
 
-        // Payback: oletetaan asennoittimen lisähintaero 150€ / venttiili (esimerkki)
-        const deltaCostPerValve = 150; 
-        const paybackYears = deltaCostPerValve / (savedKWhPerValveYear * data.electricityPrice || 1);
-        const paybackMonths = paybackYears * 12;
+  // Bind
+  ['valves','hours','price','se','ps2','a','b'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('input', recalc);
+    el.addEventListener('change', recalc);
+  });
 
-        // Päivitä UI (animoiden)
-        animateNumber(document.getElementById('counterSaved'), totalSavedKWh);
-        animateNumber(document.getElementById('euroYear'), euros);
-        animateNumber(document.getElementById('euroSaved'), euros);
-        animateNumber(document.getElementById('co2Saved'), co2);
-        document.getElementById('percentSaved').textContent = Math.max(0, Math.round(percent));
-        document.getElementById('paybackMonths').textContent = isFinite(paybackMonths) ? Math.max(1, Math.round(paybackMonths)) : '–';
-        // store annuals for ticker
-        data.annualKWh = totalSavedKWh;
-        data.annualEuros = euros;
+  // Presentation mode (hide controls)
+  let presentation = false;
+  function setPresentation(b){
+    presentation = !!b;
+    document.getElementById('controls').classList.toggle('hidden', presentation);
+    document.getElementById('btnPresent').textContent = 'Esitystila: ' + (presentation ? 'päällä' : 'pois');
+  }
+  document.getElementById('btnPresent').addEventListener('click', ()=> setPresentation(!presentation));
+  window.addEventListener('keydown', e=>{ if(e.key==='h' || e.key==='H') setPresentation(!presentation); });
 
-        // Bars
-        const maxNl = Math.max(data.ps2NlMin, data.compANlMin, data.compBNlMin);
-        const ps2Pct = (data.ps2NlMin / maxNl) * 100;
-        const aPct = (data.compANlMin / maxNl) * 100;
-        const bPct = (data.compBNlMin / maxNl) * 100;
-        document.getElementById('ps2Bar').style.width = ps2Pct + '%';
-        document.getElementById('compABar').style.width = aPct + '%';
-        document.getElementById('compBBar').style.width = bPct + '%';
-        document.getElementById('ps2Val').textContent = data.ps2NlMin.toFixed(2);
-        document.getElementById('compAVal').textContent = data.compANlMin.toFixed(2);
-        document.getElementById('compBVal').textContent = data.compBNlMin.toFixed(2);
-      }
-
-      // --- Bind inputs for live calculator ---
-      function setVal(id, v){ const el = document.getElementById(id); if(el) el.value = v; }
-      function bindNumber(id, setter){
-        const el = document.getElementById(id);
-        if(!el) return;
-        const handler = ()=>{ const v = parseFloat(el.value); if(!isNaN(v)) { setter(v); recalc(); }};
-        el.addEventListener('input', handler);
-        el.addEventListener('change', handler);
-      }
-
-      function syncInputs(){
-        setVal('inpValves', data.valves);
-        setVal('inpHours', data.hoursPerYear);
-        setVal('inpPrice', data.electricityPrice);
-        setVal('inpSE', data.kWhPerNm3Air);
-        setVal('inpPS2', data.ps2NlMin);
-        setVal('inpA', data.compANlMin);
-        setVal('inpB', data.compBNlMin);
-        const qty = document.getElementById('qtyBig'); if(qty) qty.textContent = data.valves.toLocaleString('fi-FI');
-      }
-
-      bindNumber('inpValves', v=>{ data.valves = clamp(v,1,5000); const qty = document.getElementById('qtyBig'); if(qty) qty.textContent = Math.round(data.valves).toLocaleString('fi-FI'); });
-      bindNumber('inpHours', v=> data.hoursPerYear = clamp(v,0,8760));
-      bindNumber('inpPrice', v=> data.electricityPrice = clamp(v,0,5));
-      bindNumber('inpSE', v=> data.kWhPerNm3Air = clamp(v,0.01,1));
-      bindNumber('inpPS2', v=> data.ps2NlMin = clamp(v,0.1,50));
-      bindNumber('inpA', v=> data.compANlMin = clamp(v,0.1,50));
-      bindNumber('inpB', v=> data.compBNlMin = clamp(v,0.1,50));
-
-      const minusBtn = document.getElementById('minusQty');
-      const plusBtn = document.getElementById('plusQty');
-      if(minusBtn){ minusBtn.addEventListener('click', ()=>{ data.valves = clamp(Math.round(data.valves-10),1,5000); syncInputs(); recalc(); }); }
-      if(plusBtn){ plusBtn.addEventListener('click', ()=>{ data.valves = clamp(Math.round(data.valves+10),1,5000); syncInputs(); recalc(); }); }
-
-      // --- Slides ---
-      const slides = Array.from(document.querySelectorAll('#slides .slide'));
-      const dotsWrap = document.getElementById('dots');
-      let idx = 0, paused = false, timer = null;
-
-      function renderDots(){
-        dotsWrap.innerHTML = '';
-        slides.forEach((_, i)=>{
-          const b = document.createElement('button');
-          b.className = 'w-2.5 h-2.5 rounded-full ' + (i===idx? 'bg-white' : 'bg-white/30');
-          b.addEventListener('click', ()=>{ idx = i; showSlide();});
-          dotsWrap.appendChild(b);
-        });
-      }
-
-      function showSlide(){
-        slides.forEach((el, i)=>{ el.classList.toggle('hidden', i!==idx); });
-        renderDots();
-      }
-
-      function nextSlide(){ idx = (idx + 1) % slides.length; showSlide(); }
-      function startAuto(){ if (timer) clearInterval(timer); timer = setInterval(()=>{ if(!paused) nextSlide(); }, 8000); }
-
-      // --- Keyboard quick-edit for live demo ---
-      // E: edit energy/euros inputs quickly via prompt, P/A/B to edit Nl/min
-      window.addEventListener('keydown', (e)=>{
-        if(e.key===' '){ paused = !paused; e.preventDefault(); return; }
-        if(['E','e'].includes(e.key)){
-          const price = parseFloat(prompt('Sähkön hinta €/kWh', data.electricityPrice));
-          if(!isNaN(price)) data.electricityPrice = clamp(price, 0, 5);
-          const factor = parseFloat(prompt('Kompressorin ominaissähkö (kWh/Nm³)', data.kWhPerNm3Air));
-          if(!isNaN(factor)) data.kWhPerNm3Air = clamp(factor, 0.01, 1);
-          const valves = parseInt(prompt('Venttiilien lukumäärä', data.valves));
-          if(!isNaN(valves)) data.valves = clamp(valves, 1, 5000);
-          recalc();
-        }
-        if(['P','p'].includes(e.key)){
-          const v = parseFloat(prompt('PS2 kulutus (Nl/min)', data.ps2NlMin));
-          if(!isNaN(v)) data.ps2NlMin = clamp(v, 0.1, 50);
-          recalc();
-        }
-        if(['A','a'].includes(e.key)){
-          const v = parseFloat(prompt('Kilpailija A kulutus (Nl/min)', data.compANlMin));
-          if(!isNaN(v)) data.compANlMin = clamp(v, 0.1, 50);
-          recalc();
-        }
-        if(['B','b'].includes(e.key)){
-          const v = parseFloat(prompt('Kilpailija B kulutus (Nl/min)', data.compBNlMin));
-          if(!isNaN(v)) data.compBNlMin = clamp(v, 0.1, 50);
-          recalc();
-        }
-        if(['R','r'].includes(e.key)){
-          Object.assign(data, { ps2NlMin: 2.0, compANlMin: 5.0, compBNlMin: 7.5, valves: 200, hoursPerYear: 8000, kWhPerNm3Air: 0.1, electricityPrice: 0.10, co2Factor: 0.150 });
-          recalc();
-        }
-      });
-
-      // Init
-      recalc();
-      showSlide();
-      startAuto();
-
-      // --- Presentation mode toggle ---
-      let presentation = false;
-      function setPresentation(b){
-        presentation = !!b;
-        const ctrls = document.getElementById('controls');
-        if(ctrls) ctrls.classList.toggle('hidden', presentation);
-        const btn = document.getElementById('btnPresent');
-        if(btn) btn.textContent = 'Esitystila: ' + (presentation ? 'päällä' : 'pois');
-      }
-      const btn = document.getElementById('btnPresent');
-      if(btn) btn.addEventListener('click', ()=> setPresentation(!presentation));
-      window.addEventListener('keydown', (e)=>{ if(['H','h'].includes(e.key)){ setPresentation(!presentation); }});
-    </script>
-  </body>
+  recalc();
+</script>
+</body>
 </html>
