@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="fi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Metsävaratiedot • Villen koodailut</title>
+    <link rel="icon" href="favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-fAOOiEZhsB1edwFZqKoDR7W82dManIeZDV4SSQdlqzTeWY5Avzkdxl3pNGdisz8I" crossorigin="anonymous"></script>
+    <style>
+      .bg-hero {
+        background-image:
+          radial-gradient(1200px 500px at 10% -10%, rgba(14,165,233,.18) 0%, rgba(14,165,233,0) 60%),
+          radial-gradient(1000px 600px at 110% 0%, rgba(251,191,36,.18) 0%, rgba(251,191,36,0) 60%),
+          linear-gradient(135deg, rgba(15,23,42,0.94), rgba(2,6,23,0.92)),
+          url('bg.jpg');
+        background-size: cover;
+        background-position: center 20%;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
+      .glass {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        background: rgba(15,23,42,0.55);
+        border: 1px solid rgba(148,163,184,0.2);
+      }
+      .card {
+        transition: transform .2s ease, border-color .2s ease, background .2s ease;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255,255,255,0.25);
+      }
+      .btn {
+        transition: transform .15s ease, box-shadow .15s ease;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(59,130,246,.25);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+      .scroll-area {
+        max-height: 18rem;
+        overflow-y: auto;
+      }
+      .scroll-area::-webkit-scrollbar {
+        width: 8px;
+      }
+      .scroll-area::-webkit-scrollbar-thumb {
+        background: rgba(148,163,184,0.4);
+        border-radius: 9999px;
+      }
+      @media (max-width: 640px) {
+        .scroll-area { max-height: 14rem; }
+      }
+    </style>
+  </head>
+  <body class="bg-hero text-slate-100 min-h-screen">
+    <div class="min-h-screen">
+      <nav class="bg-slate-900/60 backdrop-blur border-b border-white/10">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap gap-3 items-center text-sm text-slate-200">
+          <a href="index.html" class="hover:underline flex items-center gap-2"><span aria-hidden="true">←</span> Etusivu</a>
+          <span class="text-slate-500">|</span>
+          <span>Metsävaratiedot</span>
+          <span class="ml-auto text-xs text-slate-400">Lähde: Luonnonvarakeskus (Luke) PXWeb-rajapinta</span>
+        </div>
+      </nav>
+
+      <main class="max-w-6xl mx-auto px-4 py-10 space-y-8">
+        <header class="space-y-4">
+          <h1 class="text-4xl font-extrabold tracking-tight">Metsävaratietojen haku ja analysointi</h1>
+          <p class="text-slate-300 max-w-3xl">
+            Työkalun avulla voit hakea ajantasaisia metsävaratietoja Luonnonvarakeskuksen avoimesta PXWeb-rajapinnasta, rajata näkymää inventointien, alueiden ja muuttujien perusteella sekä visualisoida ja vertailla tuloksia.
+          </p>
+        </header>
+
+        <section class="grid lg:grid-cols-[360px,1fr] gap-6">
+          <aside class="glass rounded-3xl p-6 space-y-6 border border-white/10">
+            <div class="space-y-2">
+              <h2 class="text-lg font-semibold">1. Valitse aineisto</h2>
+              <p class="text-sm text-slate-300">Tarjoamme kaksi valmiiksi kuratoitua Luke-aineistoa. Vaihda aineistoa tarpeesi mukaan.</p>
+              <label class="text-xs uppercase tracking-wide text-sky-300">Aineisto</label>
+              <select id="dataset-select" class="w-full bg-slate-900/60 border border-white/15 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/60">
+              </select>
+              <p id="dataset-description" class="text-xs text-slate-400 leading-relaxed"></p>
+            </div>
+
+            <div class="space-y-2">
+              <h2 class="text-lg font-semibold">2. Rajaa muuttujilla</h2>
+              <p class="text-sm text-slate-300">Valitse kiinnostavat inventoinnit, alueet ja luokat. Oletusvalinnat näyttävät tuoreimmat tulokset keskeisiltä alueilta.</p>
+              <div id="filters" class="space-y-5"></div>
+            </div>
+
+            <button id="fetch-btn" class="btn w-full mt-4 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold rounded-2xl py-3 flex items-center justify-center gap-2">
+              <span id="fetch-text">Hae metsävaratiedot</span>
+              <svg id="fetch-spinner" class="h-5 w-5 animate-spin hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
+                <path d="M21 12a9 9 0 0 0-9-9" stroke-linecap="round"></path>
+              </svg>
+            </button>
+            <p id="status-message" class="text-sm text-amber-300 hidden"></p>
+          </aside>
+
+          <section class="space-y-6">
+            <article class="glass rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5">
+              <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 class="text-2xl font-semibold">Tulokset ja yhteenveto</h2>
+                  <p class="text-sm text-slate-300">Yhteenveto päivittyy hakuvalintojesi mukaan. Arvot esitetään aineiston ilmoittamissa yksiköissä.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button id="download-btn" class="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs sm:text-sm hidden">Lataa CSV</button>
+                </div>
+              </header>
+
+              <div id="summary" class="space-y-3 text-sm text-slate-200"></div>
+            </article>
+
+            <article class="glass rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5">
+              <header class="flex flex-col gap-2">
+                <h3 class="text-xl font-semibold">Visualisointi</h3>
+                <p class="text-sm text-slate-300">Kaavio näyttää valitun aineiston kymmenen suurinta arvoa aggregoituna keskeisen muuttujan mukaan.</p>
+              </header>
+              <div class="bg-slate-950/50 border border-white/5 rounded-2xl p-4">
+                <canvas id="result-chart" height="320" role="img" aria-label="Metsävarojen vertailukaavio"></canvas>
+              </div>
+            </article>
+
+            <article class="glass rounded-3xl p-4 sm:p-6 border border-white/10 space-y-4 overflow-hidden">
+              <header class="flex flex-col gap-1">
+                <h3 class="text-xl font-semibold">Rivitason tiedot</h3>
+                <p class="text-sm text-slate-300">Kaikki haetut havainnot metatietoineen.</p>
+              </header>
+              <div class="overflow-x-auto border border-white/10 rounded-2xl">
+                <table class="min-w-full text-left text-sm text-slate-100" id="result-table">
+                  <thead class="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
+                    <tr id="table-head"></tr>
+                  </thead>
+                  <tbody id="table-body" class="divide-y divide-white/5"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="filter-template">
+      <section class="space-y-3 glass rounded-2xl border border-white/10 p-4">
+        <header class="flex items-start justify-between gap-2">
+          <div>
+            <h3 class="font-semibold text-slate-100"></h3>
+            <p class="text-xs text-slate-400"></p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="text-xs text-sky-300 hover:text-sky-200" data-action="select-all">Valitse kaikki</button>
+            <button type="button" class="text-xs text-slate-400 hover:text-slate-200" data-action="clear">Tyhjennä</button>
+          </div>
+        </header>
+        <div class="scroll-area pr-1">
+          <div class="grid gap-2" data-options></div>
+        </div>
+      </section>
+    </template>
+
+    <script>
+      const DATASETS = [
+        {
+          id: "1.01_Metsatalousmaa.px",
+          name: "Maaluokat metsätalousmaalla",
+          description: "Metsätalousmaan pinta-alat inventoinneittain, maakunnittain ja maaluokittain (1000 ha).",
+          unit: "1000 ha",
+          decimals: 0,
+          defaults: {
+            inventointi: "latest",
+            maakunta: ["1", "1.1", "1.2", "1.1.1", "1.1.2"],
+            maaluokka: ["Metsätalousmaa - Metsämaa", "Metsätalousmaa - Kitumaa", "Metsätalousmaa - Joutomaa"]
+          },
+          analysisDimension: "maakunta"
+        },
+        {
+          id: "1.16_Puuston_tilavuus_metsa_ja_kitumaalla_pu.px",
+          name: "Puuston tilavuus metsä- ja kitumaalla",
+          description: "Puulajeittainen puuston tilavuus inventoinneittain ja alueittain (milj. m³ ja %).",
+          unit: "milj. m³",
+          decimals: 1,
+          defaults: {
+            inventointi: "latest",
+            maakunta: ["1", "1.1", "1.2", "1.1.1", "1.1.2"],
+            puulaji: ["Mänty", "Kuusi", "Koivu", "Koko puusto"]
+          },
+          analysisDimension: "maakunta"
+        }
+      ];
+
+      const API_BASE = "https://statdb.luke.fi/PXWeb/api/v1/fi/LUKE/met/06%20Metsavarat/";
+
+      const datasetSelect = document.getElementById("dataset-select");
+      const datasetDescription = document.getElementById("dataset-description");
+      const filtersContainer = document.getElementById("filters");
+      const fetchBtn = document.getElementById("fetch-btn");
+      const fetchText = document.getElementById("fetch-text");
+      const fetchSpinner = document.getElementById("fetch-spinner");
+      const statusMessage = document.getElementById("status-message");
+      const tableHead = document.getElementById("table-head");
+      const tableBody = document.getElementById("table-body");
+      const summaryEl = document.getElementById("summary");
+      const downloadBtn = document.getElementById("download-btn");
+      const filterTemplate = document.getElementById("filter-template");
+      const chartCanvas = document.getElementById("result-chart");
+      let currentMetadata = null;
+      let currentDataset = DATASETS[0];
+      let currentChart = null;
+      let latestResult = null;
+
+      DATASETS.forEach(ds => {
+        const opt = document.createElement("option");
+        opt.value = ds.id;
+        opt.textContent = ds.name;
+        datasetSelect.appendChild(opt);
+      });
+
+      datasetSelect.addEventListener("change", async () => {
+        const selectedId = datasetSelect.value;
+        currentDataset = DATASETS.find(ds => ds.id === selectedId) ?? DATASETS[0];
+        datasetDescription.textContent = currentDataset.description;
+        await loadMetadata();
+      });
+
+      fetchBtn.addEventListener("click", async () => {
+        statusMessage.classList.add("hidden");
+        try {
+          const selections = collectSelections();
+          await fetchData(selections);
+        } catch (error) {
+          statusMessage.textContent = error.message || "Tuntematon virhe haussa.";
+          statusMessage.classList.remove("hidden");
+        }
+      });
+
+      downloadBtn.addEventListener("click", () => {
+        if (!latestResult) return;
+        const csv = buildCsv(latestResult, currentDataset);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const timestamp = new Date().toISOString().slice(0,10);
+        a.href = url;
+        a.download = `metsavarat_${currentDataset.id.replace(/[^a-z0-9]+/gi,"_")}_${timestamp}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      async function loadMetadata() {
+        showLoadingState(true);
+        statusMessage.classList.add("hidden");
+        tableHead.innerHTML = "";
+        tableBody.innerHTML = "";
+        summaryEl.innerHTML = "";
+        downloadBtn.classList.add("hidden");
+        latestResult = null;
+        try {
+          const res = await fetch(`${API_BASE}${currentDataset.id}?time=2020`);
+          if (!res.ok) throw new Error("Metatietojen haku epäonnistui (" + res.status + ").");
+          currentMetadata = await res.json();
+          renderFilters();
+        } catch (error) {
+          statusMessage.textContent = error.message ?? "Metatietojen lataaminen epäonnistui.";
+          statusMessage.classList.remove("hidden");
+        } finally {
+          showLoadingState(false);
+        }
+      }
+
+      function renderFilters() {
+        filtersContainer.innerHTML = "";
+        if (!currentMetadata?.variables) return;
+        currentMetadata.variables.forEach(variable => {
+          const section = filterTemplate.content.firstElementChild.cloneNode(true);
+          section.dataset.variable = variable.code;
+          const title = section.querySelector("h3");
+          const hint = section.querySelector("p");
+          title.textContent = formatVariableTitle(variable);
+          hint.textContent = buildVariableHint(variable);
+          const optionsRoot = section.querySelector("[data-options]");
+          const defaults = getDefaultSelections(variable);
+          const isCompact = variable.values.length > 12;
+          if (isCompact) {
+            optionsRoot.classList.add("grid-cols-1");
+          } else {
+            optionsRoot.classList.add("grid-cols-1", "sm:grid-cols-2");
+          }
+          variable.values.forEach((value, idx) => {
+            const labelText = variable.valueTexts?.[idx] ?? value;
+            const wrapper = document.createElement("label");
+            wrapper.className = "flex items-start gap-2 bg-slate-900/50 hover:bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-sm";
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.value = value;
+            input.name = `${variable.code}`;
+            input.className = "mt-1 h-4 w-4 rounded border-white/30 bg-slate-950 text-sky-400 focus:ring-sky-400";
+            if (defaults.includes(value)) {
+              input.checked = true;
+            }
+            const span = document.createElement("span");
+            span.innerHTML = labelText.replace(/\n/g, "<br>");
+            wrapper.appendChild(input);
+            wrapper.appendChild(span);
+            optionsRoot.appendChild(wrapper);
+          });
+
+          section.querySelector('[data-action="select-all"]').addEventListener("click", () => {
+            optionsRoot.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+          });
+          section.querySelector('[data-action="clear"]').addEventListener("click", () => {
+            optionsRoot.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+          });
+
+          filtersContainer.appendChild(section);
+        });
+      }
+
+      function formatVariableTitle(variable) {
+        const text = variable.text || variable.code;
+        return text.charAt(0).toUpperCase() + text.slice(1);
+      }
+
+      function buildVariableHint(variable) {
+        if (variable.time) return "Valitse inventointijaksot, oletuksena viimeisin.";
+        if (variable.code.toLowerCase().includes("maakunta")) {
+          return "Voit vertailla koko maan, suuralueiden ja maakuntien tasolla.";
+        }
+        return "Valitse yksi tai useampia arvoja.";
+      }
+
+      function getDefaultSelections(variable) {
+        const defaults = currentDataset.defaults?.[variable.code];
+        if (defaults === "latest") {
+          return [variable.values[variable.values.length - 1]];
+        }
+        if (Array.isArray(defaults)) {
+          return defaults.filter(value => variable.values.includes(value));
+        }
+        if (variable.time) {
+          return [variable.values[variable.values.length - 1]];
+        }
+        return variable.values.slice(0, Math.min(3, variable.values.length));
+      }
+
+      function collectSelections() {
+        if (!currentMetadata) throw new Error("Metatiedot puuttuvat, yritä uudelleen.");
+        const selections = [];
+        const missing = [];
+        currentMetadata.variables.forEach(variable => {
+          const section = filtersContainer.querySelector(`[data-variable="${variable.code}"]`);
+          if (!section) return;
+          const checked = Array.from(section.querySelectorAll('input[type="checkbox"]')).filter(cb => cb.checked).map(cb => cb.value);
+          if (checked.length === 0) {
+            missing.push(formatVariableTitle(variable));
+          } else {
+            selections.push({ code: variable.code, values: checked });
+          }
+        });
+        if (missing.length) {
+          throw new Error(`Valitse vähintään yksi arvo seuraavista: ${missing.join(", ")}.`);
+        }
+        return selections.map(sel => ({
+          code: sel.code,
+          selection: { filter: "item", values: sel.values }
+        }));
+      }
+
+      async function fetchData(selections) {
+        showLoadingState(true);
+        try {
+          const res = await fetch(`${API_BASE}${currentDataset.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: selections, response: { format: "JSON" } })
+          });
+          if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`Rajapinnan vastaus ${res.status}: ${errorText || "virhe"}`);
+          }
+          const result = await res.json();
+          latestResult = result;
+          renderResults(result);
+        } catch (error) {
+          summaryEl.innerHTML = "";
+          tableHead.innerHTML = "";
+          tableBody.innerHTML = "";
+          throw error;
+        } finally {
+          showLoadingState(false);
+        }
+      }
+
+      function renderResults(result) {
+        if (!result?.data?.length) {
+          summaryEl.innerHTML = "<p class=\"text-sm text-amber-200\">Rajauksen tuloksena ei löytynyt havaintoja.</p>";
+          tableHead.innerHTML = "";
+          tableBody.innerHTML = "";
+          downloadBtn.classList.add("hidden");
+          updateChart([]);
+          return;
+        }
+
+        const dimensionOrder = result.dimension?.id ?? [];
+        const dimensionMeta = dimensionOrder.map(code => ({
+          code,
+          label: result.dimension[code]?.label ?? code,
+          labels: result.dimension[code]?.category?.label ?? {}
+        }));
+
+        const rows = result.data.map(item => {
+          const cells = dimensionOrder.map((code, idx) => {
+            const value = item.key[idx];
+            const meta = dimensionMeta[idx];
+            return { code, raw: value, label: meta.labels?.[value] ?? value };
+          });
+          const numeric = parseFloat(item.values?.[0]?.replace?.(",", ".") ?? item.values?.[0]);
+          return { cells, numeric: Number.isFinite(numeric) ? numeric : null };
+        });
+
+        renderTable(dimensionMeta, rows);
+        renderSummary(dimensionMeta, rows);
+        downloadBtn.classList.remove("hidden");
+      }
+
+      function renderTable(dimensions, rows) {
+        tableHead.innerHTML = "";
+        tableBody.innerHTML = "";
+        dimensions.forEach(dim => {
+          const th = document.createElement("th");
+          th.scope = "col";
+          th.className = "px-4 py-3";
+          th.textContent = dim.label;
+          tableHead.appendChild(th);
+        });
+        const valueTh = document.createElement("th");
+        valueTh.scope = "col";
+        valueTh.className = "px-4 py-3 text-right";
+        valueTh.textContent = `Arvo (${currentDataset.unit})`;
+        tableHead.appendChild(valueTh);
+
+        rows.forEach((row, idx) => {
+          const tr = document.createElement("tr");
+          tr.className = idx % 2 === 0 ? "bg-white/0" : "bg-white/5";
+          row.cells.forEach(cell => {
+            const td = document.createElement("td");
+            td.className = "px-4 py-2.5 align-top";
+            td.textContent = cell.label;
+            tr.appendChild(td);
+          });
+          const valueTd = document.createElement("td");
+          valueTd.className = "px-4 py-2.5 text-right font-medium text-sky-200";
+          valueTd.textContent = formatNumber(row.numeric);
+          tr.appendChild(valueTd);
+          tableBody.appendChild(tr);
+        });
+      }
+
+      function renderSummary(dimensions, rows) {
+        const aggregatorCode = currentDataset.analysisDimension;
+        const aggregatorIndex = dimensions.findIndex(dim => dim.code === aggregatorCode);
+        const timeIndex = dimensions.findIndex(dim => (currentMetadata?.variables ?? []).some(v => v.code === dim.code && v.time));
+        const aggregatorLabels = aggregatorIndex >= 0 ? dimensions[aggregatorIndex].labels : null;
+
+        const totals = new Map();
+        const categoryTotals = new Map();
+        const totalSum = rows.reduce((acc, row) => {
+          if (!Number.isFinite(row.numeric)) return acc;
+          const aggregatorKey = aggregatorIndex >= 0 ? row.cells[aggregatorIndex].raw : "kaikki";
+          const categoryKey = row.cells[row.cells.length - 1]?.raw ?? "arvo";
+          totals.set(aggregatorKey, (totals.get(aggregatorKey) ?? 0) + row.numeric);
+          categoryTotals.set(categoryKey, (categoryTotals.get(categoryKey) ?? 0) + row.numeric);
+          return acc + row.numeric;
+        }, 0);
+
+        const aggregatorList = Array.from(totals.entries()).map(([key, value]) => ({
+          key,
+          label: aggregatorLabels?.[key] ?? key,
+          value
+        })).sort((a, b) => b.value - a.value);
+
+        const categoryList = Array.from(categoryTotals.entries()).map(([key, value]) => {
+          const dim = dimensions[dimensions.length - 1];
+          return {
+            key,
+            label: dim?.labels?.[key] ?? key,
+            value
+          };
+        }).sort((a, b) => b.value - a.value);
+
+        const timeSelections = timeIndex >= 0 ? dedupe(rows.map(r => r.cells[timeIndex]?.label)) : [];
+
+        summaryEl.innerHTML = "";
+        const summaryBlocks = [];
+
+        if (aggregatorList.length) {
+          const top = aggregatorList[0];
+          const share = totalSum ? (top.value / totalSum) * 100 : 0;
+          summaryBlocks.push(`
+            <div class="rounded-2xl bg-slate-900/60 border border-white/10 p-4">
+              <div class="text-xs uppercase tracking-wide text-slate-400">Suurin arvo</div>
+              <div class="text-lg font-semibold text-sky-200">${escapeHtml(top.label)}</div>
+              <p class="text-sm text-slate-300">${formatNumber(top.value)} ${currentDataset.unit} (${share.toFixed(1)} % valitusta kokonaisuudesta).</p>
+            </div>
+          `);
+        }
+
+        if (categoryList.length > 1) {
+          const totalCards = categoryList.slice(0, 3).map(item => `
+            <li class="flex justify-between gap-4 border-b border-white/5 pb-1 last:border-0 last:pb-0">
+              <span class="text-slate-300">${escapeHtml(item.label)}</span>
+              <span class="text-slate-100 font-medium">${formatNumber(item.value)}</span>
+            </li>
+          `).join("");
+          summaryBlocks.push(`
+            <div class="rounded-2xl bg-slate-900/60 border border-white/10 p-4">
+              <div class="text-xs uppercase tracking-wide text-slate-400">Kooste luokittain</div>
+              <ul class="space-y-2 text-sm">${totalCards}</ul>
+            </div>
+          `);
+        }
+
+        if (timeSelections.length) {
+          summaryBlocks.push(`
+            <div class="rounded-2xl bg-slate-900/60 border border-white/10 p-4">
+              <div class="text-xs uppercase tracking-wide text-slate-400">Inventointijaksot</div>
+              <p class="text-sm text-slate-300">${timeSelections.join(", ")}</p>
+            </div>
+          `);
+        }
+
+        if (!summaryBlocks.length) {
+          summaryBlocks.push(`<p class="text-sm text-slate-300">Valitse lisää muuttujia saadaksesi yhteenvetoja.</p>`);
+        }
+
+        summaryEl.innerHTML = `<div class="grid gap-4 md:grid-cols-2">${summaryBlocks.join("")}</div>`;
+
+        updateChart(aggregatorList);
+      }
+
+      function updateChart(aggregatorList) {
+        const topItems = aggregatorList.slice(0, 10);
+        const labels = topItems.map(item => item.label);
+        const values = topItems.map(item => item.value);
+        const ctx = chartCanvas.getContext("2d");
+        if (currentChart) {
+          currentChart.destroy();
+          currentChart = null;
+        }
+        if (!topItems.length) {
+          ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+          return;
+        }
+        const gradient = ctx.createLinearGradient(0, 0, 0, chartCanvas.height);
+        gradient.addColorStop(0, "rgba(56, 189, 248, 0.9)");
+        gradient.addColorStop(1, "rgba(59, 130, 246, 0.4)");
+        currentChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: `${currentDataset.name} (${currentDataset.unit})`,
+                data: values,
+                backgroundColor: gradient,
+                borderRadius: 12,
+                maxBarThickness: 48
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                ticks: { color: "rgba(226,232,240,0.8)", maxRotation: 45, minRotation: 0 },
+                grid: { display: false }
+              },
+              y: {
+                ticks: {
+                  color: "rgba(148,163,184,0.8)",
+                  callback: value => formatNumber(value)
+                },
+                grid: { color: "rgba(148,163,184,0.15)", drawBorder: false }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: context => `${formatNumber(context.parsed.y)} ${currentDataset.unit}`
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function buildCsv(result, dataset) {
+        const dimensionOrder = result.dimension?.id ?? [];
+        const dimensionMeta = dimensionOrder.map(code => ({
+          code,
+          label: result.dimension[code]?.label ?? code,
+          labels: result.dimension[code]?.category?.label ?? {}
+        }));
+        const header = [...dimensionMeta.map(dim => dim.label), `Arvo (${dataset.unit})`];
+        const rows = result.data.map(item => {
+          const cells = item.key.map((value, idx) => {
+            const meta = dimensionMeta[idx];
+            return meta.labels?.[value] ?? value;
+          });
+          const numeric = parseFloat(item.values?.[0]?.replace?.(",", ".") ?? item.values?.[0]);
+          return [...cells, formatNumber(Number.isFinite(numeric) ? numeric : null, true)];
+        });
+        const lines = [header, ...rows].map(cols => cols.map(csvEscape).join(";"));
+        return lines.join("\n");
+      }
+
+      function csvEscape(value) {
+        if (value == null) return "";
+        const text = String(value).replace(/\r?\n/g, " ");
+        if (text.includes(";") || text.includes('"')) {
+          return '"' + text.replace(/"/g, '""') + '"';
+        }
+        return text;
+      }
+
+      function dedupe(items) {
+        return Array.from(new Set(items.filter(Boolean)));
+      }
+
+      function escapeHtml(text) {
+        return String(text ?? "").replace(/[&<>"']/g, c => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[c]);
+      }
+
+      function formatNumber(value, raw = false) {
+        if (!Number.isFinite(value)) return raw ? "" : "–";
+        if (raw) {
+          return new Intl.NumberFormat("en-US", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 6
+          }).format(value);
+        }
+        return new Intl.NumberFormat("fi-FI", {
+          minimumFractionDigits: currentDataset.decimals,
+          maximumFractionDigits: Math.max(currentDataset.decimals, 1)
+        }).format(value);
+      }
+
+      function showLoadingState(isLoading) {
+        fetchBtn.disabled = isLoading;
+        fetchText.textContent = isLoading ? "Haetaan…" : "Hae metsävaratiedot";
+        fetchSpinner.classList.toggle("hidden", !isLoading);
+      }
+
+      (async function init() {
+        datasetSelect.value = currentDataset.id;
+        datasetDescription.textContent = currentDataset.description;
+        await loadMetadata();
+      })();
+    </script>
+  </body>
+</html>
