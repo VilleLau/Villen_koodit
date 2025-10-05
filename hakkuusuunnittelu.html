@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hakkuusuunnittelu – Kalajoen pilotti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/maplibre-gl@3.2.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.2.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark light;
+      --bg-dark: #0b1120;
+      --panel-dark: rgba(15,23,42,0.86);
+      --text-light: #e2e8f0;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.15), transparent 55%),
+                  radial-gradient(circle at 80% 0%, rgba(59,130,246,0.18), transparent 60%),
+                  var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    header h1 {
+      font-size: clamp(1.2rem, 1.8vw + 1rem, 2.2rem);
+      margin: 0;
+      font-weight: 700;
+    }
+    header .user-info {
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(15,23,42,0.65);
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.25);
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(280px, 2fr) minmax(320px, 28rem);
+      gap: 1.2rem;
+      padding: 0 1.5rem 1.5rem;
+    }
+    #map {
+      width: 100%;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 25px 45px rgba(15,23,42,0.38);
+      min-height: 480px;
+    }
+    .panel {
+      background: var(--panel-dark);
+      border-radius: 1.25rem;
+      padding: 1.25rem;
+      border: 1px solid rgba(148,163,184,0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 18px 38px rgba(2,6,23,0.45);
+    }
+    .panel h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .panel section {
+      background: rgba(15,23,42,0.65);
+      border-radius: 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(148,163,184,0.18);
+    }
+    label span {
+      font-size: 0.8rem;
+      display: block;
+      color: rgba(226,232,240,0.85);
+    }
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148,163,184,0.25);
+      background: rgba(15,23,42,0.8);
+      color: #f8fafc;
+      font-size: 0.95rem;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    button {
+      border: none;
+      border-radius: 0.9rem;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    button.primary {
+      background: linear-gradient(120deg, #38bdf8, #3b82f6);
+      color: #0b1120;
+      box-shadow: 0 12px 30px rgba(56,189,248,0.3);
+    }
+    button.secondary {
+      background: rgba(30,41,59,0.9);
+      color: #e2e8f0;
+      border: 1px solid rgba(148,163,184,0.25);
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    .stand-card {
+      margin-top: 0.75rem;
+      border-radius: 0.9rem;
+      padding: 0.9rem;
+      background: rgba(30,41,59,0.65);
+      border: 1px solid rgba(148,163,184,0.18);
+    }
+    .stand-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+    }
+    .stand-card header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .species-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+    .species-card {
+      background: rgba(15,23,42,0.75);
+      border: 1px solid rgba(148,163,184,0.2);
+      border-radius: 0.8rem;
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+    .summary {
+      display: grid;
+      gap: 0.6rem;
+      font-size: 0.95rem;
+    }
+    .summary strong {
+      font-size: 1.15rem;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(56,189,248,0.15);
+      color: #bae6fd;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+    }
+    .login-card {
+      width: min(420px, 100%);
+      background: rgba(15,23,42,0.85);
+      border-radius: 1.2rem;
+      padding: 2rem;
+      border: 1px solid rgba(148,163,184,0.2);
+      box-shadow: 0 25px 48px rgba(2,6,23,0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 1.3rem;
+    }
+    .login-card h2 { margin: 0; font-size: 1.6rem; }
+    .login-card p { margin: 0; line-height: 1.4; color: rgba(226,232,240,0.78); }
+    .login-card form { display: flex; flex-direction: column; gap: 0.9rem; }
+    .login-card input { background: rgba(15,23,42,0.92); }
+    .badge {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(56,189,248,0.2);
+      color: #bae6fd;
+      font-weight: 600;
+    }
+    .controls-grid {
+      display: grid;
+      gap: 0.8rem;
+    }
+    .controls-grid .control {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+    }
+    .pill-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .pill-group button {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.7rem;
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(148,163,184,0.25);
+      border-radius: 999px;
+      color: #cbd5f5;
+    }
+    .pill-group button.active {
+      background: rgba(56,189,248,0.25);
+      border-color: rgba(56,189,248,0.7);
+      color: #e0f2fe;
+    }
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: rgba(15,23,42,0.92);
+      border: 1px solid rgba(56,189,248,0.35);
+      color: #e0f2fe;
+      padding: 0.85rem 1rem;
+      border-radius: 0.9rem;
+      box-shadow: 0 20px 40px rgba(2,6,23,0.4);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      z-index: 30;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      #map {
+        min-height: 380px;
+      }
+    }
+    @media (max-width: 640px) {
+      header { flex-direction: column; align-items: flex-start; }
+      header .user-info { align-self: stretch; justify-content: space-between; }
+      body { background-attachment: fixed; }
+      .panel { padding: 1rem; }
+      .panel section { padding: 0.85rem; }
+      .stand-card { padding: 0.75rem; }
+      .species-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true">
+    <div class="login-card">
+      <div>
+        <span class="badge">Sisäinen pilotti</span>
+        <h2>Kirjaudu hakkuusuunnitteluun</h2>
+        <p>Kalajoen pilottialue. Käytä testitunnusta jatkaaksesi: käyttäjä <strong>kalajoki</strong>, salasana <strong>metsä2024</strong>.</p>
+      </div>
+      <form id="login-form">
+        <label>
+          <span>Käyttäjätunnus</span>
+          <input type="text" id="username" autocomplete="username" required />
+        </label>
+        <label>
+          <span>Salasana</span>
+          <input type="password" id="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="primary">Kirjaudu</button>
+      </form>
+      <small style="opacity:0.7; line-height:1.4;">Tämä demoversio käyttää paikallista kirjautumista. Lopulliseen toteutukseen liitetään yrityksen kertakirjautuminen.</small>
+    </div>
+  </div>
+
+  <header>
+    <h1>Kalajoen hakkuusuunnittelun pilotti</h1>
+    <div class="user-info" id="user-info" hidden>
+      <span id="user-name">–</span>
+      <span class="tag">Beta</span>
+      <button id="logout" class="secondary" style="padding:0.4rem 0.8rem; font-size:0.85rem;">Kirjaudu ulos</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="map" aria-label="Metsäkartta Kalajoelta"></div>
+    <aside class="panel">
+      <div>
+        <h2>Alue &amp; asetukset</h2>
+        <section>
+          <label>
+            <span>Valitse kiinteistö</span>
+            <select id="property-select">
+              <option value="">– Valitse kohde kartalta tai listasta –</option>
+            </select>
+          </label>
+          <div class="controls-grid" style="margin-top:0.8rem;">
+            <div class="control">
+              <label for="pine-price">Mänty €/m³</label>
+              <input id="pine-price" type="number" min="0" step="1" value="56" />
+            </div>
+            <div class="control">
+              <label for="spruce-price">Kuusi €/m³</label>
+              <input id="spruce-price" type="number" min="0" step="1" value="59" />
+            </div>
+            <div class="control">
+              <label for="birch-price">Koivu €/m³</label>
+              <input id="birch-price" type="number" min="0" step="1" value="45" />
+            </div>
+            <div class="control">
+              <label for="pine-priority">Männyn painotus <span id="pine-priority-value">1.0</span></label>
+              <input id="pine-priority" type="range" min="0" max="2" step="0.1" value="1" />
+            </div>
+            <div class="control">
+              <label for="spruce-priority">Kuusen painotus <span id="spruce-priority-value">1.0</span></label>
+              <input id="spruce-priority" type="range" min="0" max="2" step="0.1" value="1" />
+            </div>
+            <div class="control">
+              <label for="birch-priority">Koivun painotus <span id="birch-priority-value">1.0</span></label>
+              <input id="birch-priority" type="range" min="0" max="2" step="0.1" value="1" />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div>
+        <h2>Kasvulohkot</h2>
+        <div id="stands-container"></div>
+      </div>
+
+      <div>
+        <h2>Optimointi ja raportointi</h2>
+        <section class="summary" id="summary">
+          <div>
+            <strong>Kokonaisvolyymi:</strong>
+            <span id="summary-volume">–</span>
+          </div>
+          <div>
+            <strong>Optimoitu arvo:</strong>
+            <span id="summary-value">–</span>
+          </div>
+          <div>
+            <strong>Minimivaatimukset:</strong>
+            <span id="summary-constraints">–</span>
+          </div>
+          <div>
+            <strong>Huomiot:</strong>
+            <span id="summary-notes">Valitse kiinteistö ja käynnistä optimointi.</span>
+          </div>
+        </section>
+        <div class="pill-group" style="margin-top:0.75rem;">
+          <button id="optimize" class="primary" style="flex:1;">Optimoi tuotto</button>
+          <button id="generate-pdf" class="secondary">Lataa PDF</button>
+          <button id="send-email" class="secondary">Luo sähköposti</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    const TEST_USER = { username: "kalajoki", password: "metsä2024", name: "Kalajoen pilotti" };
+    const SESSION_KEY = "hakkuusuunnittelu_session";
+
+    const propertyData = [
+      {
+        id: "734-401-3-45",
+        name: "Siiponjoen pohjoinen",
+        areaHa: 45.3,
+        centroid: [24.213, 64.311],
+        stands: [
+          {
+            id: "SJ-01",
+            areaHa: 12.4,
+            developmentClass: "varttunut",
+            species: {
+              pine: { volume: 145, minHarvest: 60, lengths: [ { size: "4.5 m", min: 20 }, { size: "5.0 m", min: 20 } ] },
+              spruce: { volume: 62, minHarvest: 30, lengths: [ { size: "4.2 m", min: 15 } ] },
+              birch: { volume: 24, minHarvest: 0, lengths: [ { size: "3.0 m", min: 10 } ] }
+            }
+          },
+          {
+            id: "SJ-02",
+            areaHa: 9.8,
+            developmentClass: "uudistuskypsä",
+            species: {
+              pine: { volume: 110, minHarvest: 50, lengths: [ { size: "4.8 m", min: 25 }, { size: "5.2 m", min: 20 } ] },
+              spruce: { volume: 38, minHarvest: 25, lengths: [ { size: "4.0 m", min: 15 } ] },
+              birch: { volume: 18, minHarvest: 0, lengths: [ { size: "2.8 m", min: 0 } ] }
+            }
+          },
+          {
+            id: "SJ-03",
+            areaHa: 6.1,
+            developmentClass: "ensiharvennus",
+            species: {
+              pine: { volume: 48, minHarvest: 30, lengths: [ { size: "4.3 m", min: 10 } ] },
+              spruce: { volume: 22, minHarvest: 18, lengths: [ { size: "3.8 m", min: 12 } ] },
+              birch: { volume: 12, minHarvest: 10, lengths: [ { size: "2.6 m", min: 5 } ] }
+            }
+          }
+        ]
+      },
+      {
+        id: "734-409-8-12",
+        name: "Rahjan saaristo",
+        areaHa: 28.6,
+        centroid: [24.396, 64.409],
+        stands: [
+          {
+            id: "RH-01",
+            areaHa: 8.4,
+            developmentClass: "varttunut",
+            species: {
+              pine: { volume: 72, minHarvest: 36, lengths: [ { size: "4.4 m", min: 18 } ] },
+              spruce: { volume: 95, minHarvest: 60, lengths: [ { size: "4.9 m", min: 30 }, { size: "5.1 m", min: 25 } ] },
+              birch: { volume: 28, minHarvest: 12, lengths: [ { size: "3.1 m", min: 12 } ] }
+            }
+          },
+          {
+            id: "RH-02",
+            areaHa: 6.2,
+            developmentClass: "nuori",
+            species: {
+              pine: { volume: 32, minHarvest: 20, lengths: [ { size: "3.8 m", min: 10 } ] },
+              spruce: { volume: 41, minHarvest: 30, lengths: [ { size: "4.2 m", min: 18 } ] },
+              birch: { volume: 33, minHarvest: 16, lengths: [ { size: "2.6 m", min: 12 } ] }
+            }
+          }
+        ]
+      },
+      {
+        id: "734-416-5-7",
+        name: "Plassin etelä",
+        areaHa: 33.9,
+        centroid: [23.994, 64.270],
+        stands: [
+          {
+            id: "PL-01",
+            areaHa: 11.2,
+            developmentClass: "uudistuskypsä",
+            species: {
+              pine: { volume: 128, minHarvest: 80, lengths: [ { size: "5.0 m", min: 40 } ] },
+              spruce: { volume: 65, minHarvest: 40, lengths: [ { size: "4.6 m", min: 24 } ] },
+              birch: { volume: 18, minHarvest: 8, lengths: [ { size: "3.0 m", min: 8 } ] }
+            }
+          },
+          {
+            id: "PL-02",
+            areaHa: 7.6,
+            developmentClass: "ensiharvennus",
+            species: {
+              pine: { volume: 56, minHarvest: 36, lengths: [ { size: "4.1 m", min: 12 } ] },
+              spruce: { volume: 26, minHarvest: 18, lengths: [ { size: "3.9 m", min: 10 } ] },
+              birch: { volume: 22, minHarvest: 14, lengths: [ { size: "2.4 m", min: 10 } ] }
+            }
+          }
+        ]
+      }
+    ];
+
+    const propertyFeatures = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "id": "734-401-3-45", "name": "Siiponjoen pohjoinen" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[24.2034,64.3152],[24.2195,64.3152],[24.2208,64.305],[24.2045,64.303],[24.1988,64.3104],[24.2034,64.3152]]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "id": "734-409-8-12", "name": "Rahjan saaristo" },
+          "geometry": {
+            "type": "MultiPolygon",
+            "coordinates": [
+              [[[24.391,64.4123],[24.401,64.4123],[24.404,64.4051],[24.388,64.4045],[24.391,64.4123]]],
+              [[[24.374,64.4188],[24.383,64.4188],[24.386,64.4141],[24.377,64.4135],[24.374,64.4188]]]
+            ]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "id": "734-416-5-7", "name": "Plassin etelä" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[23.988,64.274],[24.002,64.274],[24.005,64.267],[23.992,64.265],[23.985,64.2705],[23.988,64.274]]]
+          }
+        }
+      ]
+    };
+
+    const map = new maplibregl.Map({
+      container: "map",
+      style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+      center: [24.25, 64.35],
+      zoom: 8.5,
+      pitch: 30,
+      attributionControl: false
+    });
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+
+    map.on("load", () => {
+      map.addSource("properties", {
+        type: "geojson",
+        data: propertyFeatures
+      });
+
+      map.addLayer({
+        id: "property-fill",
+        type: "fill",
+        source: "properties",
+        minzoom: 11,
+        paint: {
+          "fill-color": "rgba(56,189,248,0.22)",
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0.08, 13, 0.25, 14, 0.38]
+        }
+      });
+
+      map.addLayer({
+        id: "property-outline",
+        type: "line",
+        source: "properties",
+        minzoom: 11,
+        paint: {
+          "line-color": "rgba(56,189,248,0.6)",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 11, 1, 13, 2.2]
+        }
+      });
+
+      map.addLayer({
+        id: "property-highlight",
+        type: "line",
+        source: "properties",
+        minzoom: 11,
+        paint: {
+          "line-color": "rgba(59,130,246,0.95)",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 11, 2.2, 13, 3.6]
+        },
+        filter: ["==", ["get", "id"], "__none__"]
+      });
+    });
+
+    map.on("click", "property-fill", (e) => {
+      const feature = e.features?.[0];
+      if (!feature) return;
+      const property = propertyData.find((p) => p.id === feature.properties.id);
+      if (!property) return;
+      selectProperty(property.id, true);
+    });
+
+    map.on("mouseenter", "property-fill", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "property-fill", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
+    function flyToProperty(property) {
+      if (!property?.centroid) return;
+      map.flyTo({ center: property.centroid, zoom: 12.5, essential: true });
+    }
+
+    const propertySelect = document.getElementById("property-select");
+    const standsContainer = document.getElementById("stands-container");
+    const summaryVolume = document.getElementById("summary-volume");
+    const summaryValue = document.getElementById("summary-value");
+    const summaryConstraints = document.getElementById("summary-constraints");
+    const summaryNotes = document.getElementById("summary-notes");
+    const priorityDisplays = {
+      pine: document.getElementById("pine-priority-value"),
+      spruce: document.getElementById("spruce-priority-value"),
+      birch: document.getElementById("birch-priority-value")
+    };
+
+    const rangeInputs = ["pine", "spruce", "birch"].map((species) => {
+      const input = document.getElementById(`${species}-priority`);
+      input.addEventListener("input", () => {
+        priorityDisplays[species].textContent = Number(input.value).toFixed(1);
+      });
+      return input;
+    });
+
+    propertyData.forEach((property) => {
+      const option = document.createElement("option");
+      option.value = property.id;
+      option.textContent = `${property.name} (${property.id})`;
+      propertySelect.appendChild(option);
+    });
+
+    propertySelect.addEventListener("change", (event) => {
+      const propertyId = event.target.value;
+      if (!propertyId) return;
+      selectProperty(propertyId, true);
+    });
+
+    function selectProperty(propertyId, focus = false) {
+      const property = propertyData.find((p) => p.id === propertyId);
+      if (!property) return;
+      propertySelect.value = propertyId;
+      renderStands(property);
+      updateSummary(property);
+      if (map.getLayer("property-highlight")) {
+        map.setFilter("property-highlight", ["==", ["get", "id"], propertyId]);
+      }
+      if (focus) {
+        flyToProperty(property);
+      }
+    }
+
+    function renderStands(property) {
+      standsContainer.innerHTML = "";
+      property.stands.forEach((stand) => {
+        const card = document.createElement("article");
+        card.className = "stand-card";
+        card.innerHTML = `
+          <header>
+            <h3>${stand.id}</h3>
+            <span class="tag">${stand.developmentClass}</span>
+          </header>
+          <div style="font-size:0.85rem; opacity:0.8;">${stand.areaHa.toFixed(1)} ha • Kokonaisvolyymi ${(Object.values(stand.species).reduce((sum, s) => sum + s.volume, 0)).toFixed(0)} m³</div>
+          <div class="species-grid"></div>
+        `;
+        const speciesGrid = card.querySelector(".species-grid");
+        Object.entries(stand.species).forEach(([key, details]) => {
+          const speciesCard = document.createElement("div");
+          speciesCard.className = "species-card";
+          const title = key === "pine" ? "Mänty" : key === "spruce" ? "Kuusi" : "Koivu";
+          speciesCard.innerHTML = `
+            <strong>${title}</strong><br />
+            ${details.volume} m³ käytettävissä<br />
+            <span style="opacity:0.7;">Minimikertymä ${details.minHarvest} m³</span>
+            <div style="margin-top:0.5rem; font-size:0.8rem; opacity:0.8;">
+              Katkaisupituudet:<br />${details.lengths.map((l) => `• ${l.size} (min ${l.min} m³)`).join("<br />")}
+            </div>
+          `;
+          speciesGrid.appendChild(speciesCard);
+        });
+        standsContainer.appendChild(card);
+      });
+    }
+
+    function updateSummary(property, plan) {
+      const totalVolume = property.stands.reduce((acc, stand) => {
+        return acc + Object.values(stand.species).reduce((sum, s) => sum + s.volume, 0);
+      }, 0);
+      summaryVolume.textContent = `${totalVolume.toFixed(0)} m³`;
+
+      if (!plan) {
+        summaryValue.textContent = "–";
+        summaryConstraints.textContent = "–";
+        summaryNotes.textContent = "Säädä hinnat ja painotukset, paina Optimoi tuotto.";
+        return;
+      }
+
+      summaryValue.textContent = `${plan.totalValue.toLocaleString("fi-FI", { maximumFractionDigits: 0 })} €`;
+      summaryConstraints.textContent = plan.constraints.join(", ");
+      summaryNotes.textContent = plan.notes.length ? plan.notes.join(" ") : "Kaikki minimivaatimukset täyttyvät.";
+    }
+
+    function gatherSettings() {
+      return {
+        prices: {
+          pine: Number(document.getElementById("pine-price").value || 0),
+          spruce: Number(document.getElementById("spruce-price").value || 0),
+          birch: Number(document.getElementById("birch-price").value || 0)
+        },
+        priorities: {
+          pine: Number(document.getElementById("pine-priority").value || 1),
+          spruce: Number(document.getElementById("spruce-priority").value || 1),
+          birch: Number(document.getElementById("birch-priority").value || 1)
+        }
+      };
+    }
+
+    function optimize(property, settings) {
+      const plan = {
+        propertyId: property.id,
+        totalValue: 0,
+        totalVolume: 0,
+        stands: [],
+        constraints: [],
+        notes: []
+      };
+
+      property.stands.forEach((stand) => {
+        const standPlan = { id: stand.id, species: {} };
+        Object.entries(stand.species).forEach(([key, details]) => {
+          const priority = settings.priorities[key] ?? 1;
+          const price = settings.prices[key] ?? 0;
+          const weightedDemand = details.volume * Math.min(priority, 1.8);
+          let harvestVolume = Math.max(details.minHarvest, Math.round(weightedDemand));
+          harvestVolume = Math.min(harvestVolume, details.volume);
+          const meetsMin = harvestVolume >= details.minHarvest;
+          if (!meetsMin) {
+            plan.notes.push(`${stand.id}: ${speciesName(key)} ei täytä minimikertymää.`);
+          }
+          const revenue = harvestVolume * price;
+          plan.totalValue += revenue;
+          plan.totalVolume += harvestVolume;
+          standPlan.species[key] = { harvestVolume, revenue };
+          if (details.minHarvest > 0) {
+            plan.constraints.push(`${speciesName(key)} ≥ ${details.minHarvest} m³`);
+          }
+        });
+        plan.stands.push(standPlan);
+      });
+
+      plan.constraints = Array.from(new Set(plan.constraints));
+      return plan;
+    }
+
+    function speciesName(key) {
+      switch (key) {
+        case "pine": return "Mänty";
+        case "spruce": return "Kuusi";
+        case "birch": return "Koivu";
+        default: return key;
+      }
+    }
+
+    function renderToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    let lastPlan = null;
+
+    document.getElementById("optimize").addEventListener("click", () => {
+      const propertyId = propertySelect.value;
+      if (!propertyId) {
+        renderToast("Valitse ensin kiinteistö");
+        return;
+      }
+      const property = propertyData.find((p) => p.id === propertyId);
+      if (!property) return;
+      const settings = gatherSettings();
+      lastPlan = optimize(property, settings);
+      updateSummary(property, lastPlan);
+      renderToast("Optimointi suoritettu");
+    });
+
+    document.getElementById("generate-pdf").addEventListener("click", () => {
+      if (!lastPlan) {
+        renderToast("Aja optimointi ennen raportin luontia");
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const property = propertyData.find((p) => p.id === lastPlan.propertyId);
+      doc.setFontSize(16);
+      doc.text("Hakkuusuunnitelman yhteenveto", 14, 18);
+      doc.setFontSize(11);
+      doc.text(`Kiinteistö: ${property.name} (${property.id})`, 14, 28);
+      doc.text(`Kokonaisvolyymi: ${lastPlan.totalVolume.toFixed(0)} m³`, 14, 36);
+      doc.text(`Optimoitu arvo: ${lastPlan.totalValue.toFixed(0)} €`, 14, 44);
+      doc.text("Minimivaatimukset:", 14, 54);
+      lastPlan.constraints.forEach((c, index) => {
+        doc.text(`• ${c}`, 18, 64 + index * 8);
+      });
+      let offset = 64 + lastPlan.constraints.length * 8 + 8;
+      doc.text("Lohkokohtaiset tulokset:", 14, offset);
+      offset += 8;
+      lastPlan.stands.forEach((stand) => {
+        doc.text(`${stand.id}`, 14, offset);
+        offset += 6;
+        Object.entries(stand.species).forEach(([key, result]) => {
+          doc.text(`- ${speciesName(key)}: ${result.harvestVolume} m³ (${result.revenue.toFixed(0)} €)`, 18, offset);
+          offset += 6;
+        });
+        offset += 4;
+      });
+      doc.save(`hakkuusuunnitelma_${property.id}.pdf`);
+      renderToast("PDF ladattu");
+    });
+
+    document.getElementById("send-email").addEventListener("click", () => {
+      if (!lastPlan) {
+        renderToast("Aja optimointi ennen sähköpostia");
+        return;
+      }
+      const property = propertyData.find((p) => p.id === lastPlan.propertyId);
+      const subject = encodeURIComponent(`Hakkuusuunnitelma ${property.name}`);
+      const bodyLines = [
+        `Kiinteistö: ${property.name} (${property.id})`,
+        `Kokonaisvolyymi: ${lastPlan.totalVolume.toFixed(0)} m³`,
+        `Optimoitu arvo: ${lastPlan.totalValue.toFixed(0)} €`,
+        "",
+        "Lohkokohtaiset kertymät:",
+        ...lastPlan.stands.flatMap((stand) => {
+          const rows = [`${stand.id}:`];
+          Object.entries(stand.species).forEach(([key, result]) => {
+            rows.push(`  - ${speciesName(key)} ${result.harvestVolume} m³ / ${result.revenue.toFixed(0)} €`);
+          });
+          return rows;
+        })
+      ];
+      const mailto = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+      window.location.href = mailto;
+    });
+
+    function restoreSession() {
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+        if (session?.username === TEST_USER.username) {
+          completeLogin(session);
+        }
+      } catch (error) {
+        console.warn("Session parse failed", error);
+      }
+    }
+
+    function completeLogin(session) {
+      document.getElementById("login-overlay").style.display = "none";
+      const info = document.getElementById("user-info");
+      info.hidden = false;
+      document.getElementById("user-name").textContent = session.displayName || TEST_USER.name;
+      renderToast("Tervetuloa takaisin");
+    }
+
+    document.getElementById("login-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      if (username === TEST_USER.username && password === TEST_USER.password) {
+        const session = { username, displayName: "Kalajoen pilotti", timestamp: new Date().toISOString() };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        completeLogin(session);
+      } else {
+        renderToast("Virheellinen käyttäjätunnus tai salasana");
+      }
+    });
+
+    document.getElementById("logout").addEventListener("click", () => {
+      localStorage.removeItem(SESSION_KEY);
+      window.location.reload();
+    });
+
+    restoreSession();
+  </script>
+</body>
+</html>
