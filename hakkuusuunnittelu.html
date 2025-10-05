@@ -160,6 +160,12 @@
       padding: 0.75rem;
       font-size: 0.9rem;
     }
+    .species-card ul {
+      margin: 0.45rem 0 0;
+      padding-left: 1.15rem;
+      font-size: 0.8rem;
+      opacity: 0.78;
+    }
     .summary {
       display: grid;
       gap: 0.6rem;
@@ -213,15 +219,86 @@
       color: #bae6fd;
       font-weight: 600;
     }
-    .controls-grid {
-      display: grid;
-      gap: 0.8rem;
+    .controls-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
     }
-    .controls-grid .control {
+    .controls-row button {
+      flex: 1 1 140px;
+    }
+    button.small {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.7rem;
+    }
+    .settings-toggle {
+      margin-top: 0.9rem;
+      width: 100%;
+    }
+    .assortment-card {
+      margin-top: 0.85rem;
+      padding: 0.85rem;
+      border-radius: 0.9rem;
+      background: rgba(15,23,42,0.72);
+      border: 1px solid rgba(148,163,184,0.22);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .assortment-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+    .assortment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.65rem;
+    }
+    .assortment-grid label {
+      font-size: 0.8rem;
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
-      font-size: 0.85rem;
+    }
+    .assortment-grid input[type="range"] {
+      margin-top: 0.4rem;
+    }
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: rgba(226,232,240,0.85);
+    }
+    .species-toggle {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: rgba(226,232,240,0.82);
+    }
+    .species-toggle label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(30,41,59,0.7);
+      padding: 0.25rem 0.55rem;
+      border-radius: 0.7rem;
+      border: 1px solid rgba(148,163,184,0.25);
+    }
+    .summary-expanded {
+      display: grid;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+    }
+    .summary-expanded ul {
+      margin: 0.35rem 0 0;
+      padding-left: 1.2rem;
+      opacity: 0.85;
     }
     .pill-group {
       display: flex;
@@ -324,31 +401,29 @@
               <option value="">– Valitse kohde kartalta tai listasta –</option>
             </select>
           </label>
-          <div class="controls-grid" style="margin-top:0.8rem;">
-            <div class="control">
-              <label for="pine-price">Mänty €/m³</label>
-              <input id="pine-price" type="number" min="0" step="1" value="56" />
-            </div>
-            <div class="control">
-              <label for="spruce-price">Kuusi €/m³</label>
-              <input id="spruce-price" type="number" min="0" step="1" value="59" />
-            </div>
-            <div class="control">
-              <label for="birch-price">Koivu €/m³</label>
-              <input id="birch-price" type="number" min="0" step="1" value="45" />
-            </div>
-            <div class="control">
-              <label for="pine-priority">Männyn painotus <span id="pine-priority-value">1.0</span></label>
-              <input id="pine-priority" type="range" min="0" max="2" step="0.1" value="1" />
-            </div>
-            <div class="control">
-              <label for="spruce-priority">Kuusen painotus <span id="spruce-priority-value">1.0</span></label>
-              <input id="spruce-priority" type="range" min="0" max="2" step="0.1" value="1" />
-            </div>
-            <div class="control">
-              <label for="birch-priority">Koivun painotus <span id="birch-priority-value">1.0</span></label>
-              <input id="birch-priority" type="range" min="0" max="2" step="0.1" value="1" />
-            </div>
+          <div class="controls-row">
+            <button id="refresh-property" class="secondary small" type="button">Päivitä rajapinnasta</button>
+            <button id="api-settings" class="secondary small" type="button">API-asetukset</button>
+          </div>
+          <button id="toggle-settings" class="secondary settings-toggle" type="button">Näytä kooste</button>
+        </section>
+        <section id="settings-panel">
+          <h3 style="margin:0; font-size:1.05rem;">Hinnoittelu ja katkaisupituudet</h3>
+          <p style="margin:0.35rem 0 0; font-size:0.85rem; opacity:0.8;">Säädä puutavaralajeittain hinnat, katkaisupituudet ja painotus. Kuitu on oletuksena pois käytöstä.</p>
+          <div id="assortment-controls"></div>
+          <div class="controls-row" style="margin-top:1rem;">
+            <button id="save-settings" class="primary small" type="button" style="flex:0 1 auto;">Tallenna oletukset</button>
+            <button id="reset-settings" class="secondary small" type="button" style="flex:0 1 auto;">Palauta oletukset</button>
+          </div>
+        </section>
+        <section id="summary-expanded" class="summary-expanded" hidden>
+          <div>
+            <strong>Kooste</strong>
+            <p style="margin:0.35rem 0 0; opacity:0.75; font-size:0.85rem;">Asetukset piilotettu. Näytä asetukset muokataksesi hintoja ja pituuksia.</p>
+          </div>
+          <div>
+            <span class="tag">Viimeisin optimointi</span>
+            <ul id="assortment-summary-list"></ul>
           </div>
         </section>
       </div>
@@ -393,21 +468,198 @@
     const TEST_USER = { username: "kalajoki", password: "metsä2024", name: "Kalajoen pilotti" };
     const SESSION_KEY = "hakkuusuunnittelu_session";
 
-    const propertyData = [
+    const SETTINGS_KEY = "hakkuusuunnittelu_assortment_settings";
+    const API_KEY_STORAGE = "hakkuusuunnittelu_metsakeskus_api";
+    const METSAKESKUS_API_BASE = "https://avoin.api.metsakeskus.fi/forest-resource/v1";
+
+    const SPECIES = [
+      { key: "spruce", label: "Kuusi" },
+      { key: "pine", label: "Mänty" },
+      { key: "birch", label: "Koivu" }
+    ];
+
+    const ASSORTMENT_META = {
+      tukki: { label: "Tukki", defaultPrice: 70, defaultPriority: 130, defaultLengths: ["4.8 m", "5.1 m"], defaultEnabled: true, defaultSpecies: { spruce: true, pine: true, birch: false } },
+      pikkutukki: { label: "Pikkutukki", defaultPrice: 62, defaultPriority: 115, defaultLengths: ["4.3 m", "4.5 m"], defaultEnabled: true, defaultSpecies: { spruce: true, pine: true, birch: false } },
+      kuitu: { label: "Kuitu", defaultPrice: 32, defaultPriority: 80, defaultLengths: ["3.0 m"], defaultEnabled: false, defaultSpecies: { spruce: true, pine: true, birch: true } },
+      parru: { label: "Parru", defaultPrice: 48, defaultPriority: 95, defaultLengths: ["3.6 m", "4.0 m"], defaultEnabled: true, defaultSpecies: { spruce: true, pine: true, birch: true } },
+      energiapuu: { label: "Energiapuu", defaultPrice: 28, defaultPriority: 70, defaultLengths: ["Kokopuu"], defaultEnabled: true, defaultSpecies: { spruce: true, pine: true, birch: true } },
+      hakkuutahde: { label: "Hakkuutähde", defaultPrice: 12, defaultPriority: 50, defaultLengths: ["Hakkuutähde"], defaultEnabled: true, defaultSpecies: { spruce: true, pine: true, birch: true } }
+    };
+
+        let propertyData = [
+      {
+        id: "217-409-158-1",
+        name: "ITÄMETSÄ, Kannus",
+        areaHa: 62.8,
+        centroid: [24.068, 63.904],
+        geometry: {
+          type: "Polygon",
+          coordinates: [[[24.0521,63.9094],[24.0876,63.9094],[24.0948,63.8962],[24.0665,63.8938],[24.0509,63.901],[24.0521,63.9094]]]
+        },
+        stands: [
+          {
+            id: "IM-01",
+            areaHa: 21.5,
+            developmentClass: "uudistuskypsä",
+            species: {
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 110, minHarvest: 70, lengths: ["4.9 m", "5.2 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 26, minHarvest: 12, lengths: ["4.3 m"], enabledByDefault: true },
+                  kuitu: { volume: 28, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 16, minHarvest: 8, lengths: ["3.8 m"], enabledByDefault: true },
+                  energiapuu: { volume: 12, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 9, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 78, minHarvest: 45, lengths: ["4.8 m", "5.0 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 20, minHarvest: 10, lengths: ["4.2 m"], enabledByDefault: true },
+                  kuitu: { volume: 18, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 15, minHarvest: 6, lengths: ["3.6 m"], enabledByDefault: true },
+                  energiapuu: { volume: 10, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 6, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 20, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 5, lengths: ["3.6 m"], enabledByDefault: true },
+                  energiapuu: { volume: 14, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 7, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
+            }
+          },
+          {
+            id: "IM-02",
+            areaHa: 18.3,
+            developmentClass: "varttunut",
+            species: {
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 74, minHarvest: 44, lengths: ["4.8 m", "5.0 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 22, minHarvest: 10, lengths: ["4.1 m"], enabledByDefault: true },
+                  kuitu: { volume: 18, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 6, lengths: ["3.7 m"], enabledByDefault: true },
+                  energiapuu: { volume: 10, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 6, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 60, minHarvest: 36, lengths: ["4.6 m", "4.9 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 18, minHarvest: 9, lengths: ["4.0 m"], enabledByDefault: true },
+                  kuitu: { volume: 14, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 11, minHarvest: 5, lengths: ["3.5 m"], enabledByDefault: true },
+                  energiapuu: { volume: 8, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 5, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 16, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 10, minHarvest: 4, lengths: ["3.4 m"], enabledByDefault: true },
+                  energiapuu: { volume: 12, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 5, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
+            }
+          },
+          {
+            id: "IM-03",
+            areaHa: 12.0,
+            developmentClass: "ensiharvennus",
+            species: {
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 30, minHarvest: 18, lengths: ["4.6 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 18, minHarvest: 8, lengths: ["4.0 m"], enabledByDefault: true },
+                  kuitu: { volume: 14, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 10, minHarvest: 4, lengths: ["3.5 m"], enabledByDefault: true },
+                  energiapuu: { volume: 12, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 8, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 36, minHarvest: 20, lengths: ["4.7 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 22, minHarvest: 10, lengths: ["4.0 m"], enabledByDefault: true },
+                  kuitu: { volume: 12, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 5, lengths: ["3.4 m"], enabledByDefault: true },
+                  energiapuu: { volume: 9, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 5, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 9, minHarvest: 0, lengths: ["2.6 m"], enabledByDefault: false },
+                  parru: { volume: 8, minHarvest: 3, lengths: ["3.2 m"], enabledByDefault: true },
+                  energiapuu: { volume: 10, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
+            }
+          }
+        ]
+      },
       {
         id: "734-401-3-45",
         name: "Siiponjoen pohjoinen",
         areaHa: 45.3,
         centroid: [24.213, 64.311],
+        geometry: {
+          type: "Polygon",
+          coordinates: [[[24.2034,64.3152],[24.2195,64.3152],[24.2208,64.305],[24.2045,64.303],[24.1988,64.3104],[24.2034,64.3152]]]
+        },
         stands: [
           {
             id: "SJ-01",
             areaHa: 12.4,
             developmentClass: "varttunut",
             species: {
-              pine: { volume: 145, minHarvest: 60, lengths: [ { size: "4.5 m", min: 20 }, { size: "5.0 m", min: 20 } ] },
-              spruce: { volume: 62, minHarvest: 30, lengths: [ { size: "4.2 m", min: 15 } ] },
-              birch: { volume: 24, minHarvest: 0, lengths: [ { size: "3.0 m", min: 10 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 62, minHarvest: 32, lengths: ["4.9 m", "5.1 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 18, minHarvest: 10, lengths: ["4.3 m"], enabledByDefault: true },
+                  kuitu: { volume: 21, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 14, minHarvest: 6, lengths: ["3.7 m"], enabledByDefault: true },
+                  energiapuu: { volume: 9, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 6, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 88, minHarvest: 50, lengths: ["4.8 m", "5.0 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 24, minHarvest: 12, lengths: ["4.2 m"], enabledByDefault: true },
+                  kuitu: { volume: 12, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 18, minHarvest: 8, lengths: ["3.6 m"], enabledByDefault: true },
+                  energiapuu: { volume: 10, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 5, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 14, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 9, minHarvest: 4, lengths: ["3.6 m"], enabledByDefault: true },
+                  energiapuu: { volume: 7, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           },
           {
@@ -415,9 +667,37 @@
             areaHa: 9.8,
             developmentClass: "uudistuskypsä",
             species: {
-              pine: { volume: 110, minHarvest: 50, lengths: [ { size: "4.8 m", min: 25 }, { size: "5.2 m", min: 20 } ] },
-              spruce: { volume: 38, minHarvest: 25, lengths: [ { size: "4.0 m", min: 15 } ] },
-              birch: { volume: 18, minHarvest: 0, lengths: [ { size: "2.8 m", min: 0 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 46, minHarvest: 26, lengths: ["4.7 m", "5.0 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 14, minHarvest: 8, lengths: ["4.1 m"], enabledByDefault: true },
+                  kuitu: { volume: 16, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 11, minHarvest: 5, lengths: ["3.5 m"], enabledByDefault: true },
+                  energiapuu: { volume: 8, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 5, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 74, minHarvest: 42, lengths: ["4.9 m", "5.1 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 20, minHarvest: 10, lengths: ["4.2 m"], enabledByDefault: true },
+                  kuitu: { volume: 15, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 14, minHarvest: 6, lengths: ["3.5 m"], enabledByDefault: true },
+                  energiapuu: { volume: 9, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 10, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 7, minHarvest: 3, lengths: ["3.2 m"], enabledByDefault: true },
+                  energiapuu: { volume: 6, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           },
           {
@@ -425,9 +705,37 @@
             areaHa: 6.1,
             developmentClass: "ensiharvennus",
             species: {
-              pine: { volume: 48, minHarvest: 30, lengths: [ { size: "4.3 m", min: 10 } ] },
-              spruce: { volume: 22, minHarvest: 18, lengths: [ { size: "3.8 m", min: 12 } ] },
-              birch: { volume: 12, minHarvest: 10, lengths: [ { size: "2.6 m", min: 5 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 18, minHarvest: 10, lengths: ["4.4 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 12, minHarvest: 6, lengths: ["4.0 m"], enabledByDefault: true },
+                  kuitu: { volume: 10, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 8, minHarvest: 3, lengths: ["3.4 m"], enabledByDefault: true },
+                  energiapuu: { volume: 6, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 42, minHarvest: 24, lengths: ["4.7 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 16, minHarvest: 8, lengths: ["3.9 m"], enabledByDefault: true },
+                  kuitu: { volume: 10, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 11, minHarvest: 4, lengths: ["3.3 m"], enabledByDefault: true },
+                  energiapuu: { volume: 7, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 8, minHarvest: 0, lengths: ["2.6 m"], enabledByDefault: false },
+                  parru: { volume: 6, minHarvest: 2, lengths: ["3.1 m"], enabledByDefault: true },
+                  energiapuu: { volume: 5, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 2, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           }
         ]
@@ -437,15 +745,50 @@
         name: "Rahjan saaristo",
         areaHa: 28.6,
         centroid: [24.396, 64.409],
+        geometry: {
+          type: "MultiPolygon",
+          coordinates: [
+            [[[24.391,64.4123],[24.401,64.4123],[24.404,64.4051],[24.388,64.4045],[24.391,64.4123]]],
+            [[[24.374,64.4188],[24.383,64.4188],[24.386,64.4141],[24.377,64.4135],[24.374,64.4188]]]
+          ]
+        },
         stands: [
           {
             id: "RH-01",
             areaHa: 8.4,
             developmentClass: "varttunut",
             species: {
-              pine: { volume: 72, minHarvest: 36, lengths: [ { size: "4.4 m", min: 18 } ] },
-              spruce: { volume: 95, minHarvest: 60, lengths: [ { size: "4.9 m", min: 30 }, { size: "5.1 m", min: 25 } ] },
-              birch: { volume: 28, minHarvest: 12, lengths: [ { size: "3.1 m", min: 12 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 95, minHarvest: 60, lengths: ["4.9 m", "5.1 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 24, minHarvest: 12, lengths: ["4.2 m"], enabledByDefault: true },
+                  kuitu: { volume: 20, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 14, minHarvest: 6, lengths: ["3.6 m"], enabledByDefault: true },
+                  energiapuu: { volume: 9, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 6, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 72, minHarvest: 36, lengths: ["4.6 m", "4.9 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 21, minHarvest: 10, lengths: ["4.0 m"], enabledByDefault: true },
+                  kuitu: { volume: 14, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 5, lengths: ["3.4 m"], enabledByDefault: true },
+                  energiapuu: { volume: 7, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 18, minHarvest: 0, lengths: ["2.9 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 5, lengths: ["3.4 m"], enabledByDefault: true },
+                  energiapuu: { volume: 9, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           },
           {
@@ -453,9 +796,37 @@
             areaHa: 6.2,
             developmentClass: "nuori",
             species: {
-              pine: { volume: 32, minHarvest: 20, lengths: [ { size: "3.8 m", min: 10 } ] },
-              spruce: { volume: 41, minHarvest: 30, lengths: [ { size: "4.2 m", min: 18 } ] },
-              birch: { volume: 33, minHarvest: 16, lengths: [ { size: "2.6 m", min: 12 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 28, minHarvest: 16, lengths: ["4.5 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 14, minHarvest: 6, lengths: ["3.9 m"], enabledByDefault: true },
+                  kuitu: { volume: 18, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 10, minHarvest: 4, lengths: ["3.3 m"], enabledByDefault: true },
+                  energiapuu: { volume: 7, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 32, minHarvest: 20, lengths: ["4.4 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 16, minHarvest: 8, lengths: ["3.8 m"], enabledByDefault: true },
+                  kuitu: { volume: 12, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 9, minHarvest: 4, lengths: ["3.2 m"], enabledByDefault: true },
+                  energiapuu: { volume: 6, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 15, minHarvest: 0, lengths: ["2.7 m"], enabledByDefault: false },
+                  parru: { volume: 9, minHarvest: 3, lengths: ["3.1 m"], enabledByDefault: true },
+                  energiapuu: { volume: 8, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           }
         ]
@@ -465,15 +836,47 @@
         name: "Plassin etelä",
         areaHa: 33.9,
         centroid: [23.994, 64.270],
+        geometry: {
+          type: "Polygon",
+          coordinates: [[[23.988,64.274],[24.002,64.274],[24.005,64.267],[23.992,64.265],[23.985,64.2705],[23.988,64.274]]]
+        },
         stands: [
           {
             id: "PL-01",
             areaHa: 11.2,
             developmentClass: "uudistuskypsä",
             species: {
-              pine: { volume: 128, minHarvest: 80, lengths: [ { size: "5.0 m", min: 40 } ] },
-              spruce: { volume: 65, minHarvest: 40, lengths: [ { size: "4.6 m", min: 24 } ] },
-              birch: { volume: 18, minHarvest: 8, lengths: [ { size: "3.0 m", min: 8 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 65, minHarvest: 40, lengths: ["4.8 m", "5.0 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 18, minHarvest: 9, lengths: ["4.0 m"], enabledByDefault: true },
+                  kuitu: { volume: 16, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 5, lengths: ["3.4 m"], enabledByDefault: true },
+                  energiapuu: { volume: 8, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 128, minHarvest: 80, lengths: ["5.0 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 34, minHarvest: 15, lengths: ["4.2 m"], enabledByDefault: true },
+                  kuitu: { volume: 18, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 22, minHarvest: 10, lengths: ["3.6 m"], enabledByDefault: true },
+                  energiapuu: { volume: 14, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 7, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 12, minHarvest: 0, lengths: ["3.0 m"], enabledByDefault: false },
+                  parru: { volume: 8, minHarvest: 3, lengths: ["3.2 m"], enabledByDefault: true },
+                  energiapuu: { volume: 6, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           },
           {
@@ -481,47 +884,64 @@
             areaHa: 7.6,
             developmentClass: "ensiharvennus",
             species: {
-              pine: { volume: 56, minHarvest: 36, lengths: [ { size: "4.1 m", min: 12 } ] },
-              spruce: { volume: 26, minHarvest: 18, lengths: [ { size: "3.9 m", min: 10 } ] },
-              birch: { volume: 22, minHarvest: 14, lengths: [ { size: "2.4 m", min: 10 } ] }
+              spruce: {
+                label: "Kuusi",
+                assortments: {
+                  tukki: { volume: 22, minHarvest: 12, lengths: ["4.4 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 14, minHarvest: 6, lengths: ["3.9 m"], enabledByDefault: true },
+                  kuitu: { volume: 12, minHarvest: 0, lengths: ["2.9 m"], enabledByDefault: false },
+                  parru: { volume: 9, minHarvest: 4, lengths: ["3.3 m"], enabledByDefault: true },
+                  energiapuu: { volume: 7, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              pine: {
+                label: "Mänty",
+                assortments: {
+                  tukki: { volume: 56, minHarvest: 36, lengths: ["4.6 m"], enabledByDefault: true },
+                  pikkutukki: { volume: 20, minHarvest: 10, lengths: ["3.8 m"], enabledByDefault: true },
+                  kuitu: { volume: 14, minHarvest: 0, lengths: ["2.9 m"], enabledByDefault: false },
+                  parru: { volume: 12, minHarvest: 5, lengths: ["3.2 m"], enabledByDefault: true },
+                  energiapuu: { volume: 8, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 4, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              },
+              birch: {
+                label: "Koivu",
+                assortments: {
+                  kuitu: { volume: 11, minHarvest: 0, lengths: ["2.8 m"], enabledByDefault: false },
+                  parru: { volume: 7, minHarvest: 2, lengths: ["3.1 m"], enabledByDefault: true },
+                  energiapuu: { volume: 6, minHarvest: 0, lengths: ["Kokopuu"], enabledByDefault: true },
+                  hakkuutahde: { volume: 3, minHarvest: 0, lengths: ["Hakkuutähde"], enabledByDefault: true }
+                }
+              }
             }
           }
         ]
       }
     ];
 
-    const propertyFeatures = {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "properties": { "id": "734-401-3-45", "name": "Siiponjoen pohjoinen" },
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": [[[24.2034,64.3152],[24.2195,64.3152],[24.2208,64.305],[24.2045,64.303],[24.1988,64.3104],[24.2034,64.3152]]]
-          }
-        },
-        {
-          "type": "Feature",
-          "properties": { "id": "734-409-8-12", "name": "Rahjan saaristo" },
-          "geometry": {
-            "type": "MultiPolygon",
-            "coordinates": [
-              [[[24.391,64.4123],[24.401,64.4123],[24.404,64.4051],[24.388,64.4045],[24.391,64.4123]]],
-              [[[24.374,64.4188],[24.383,64.4188],[24.386,64.4141],[24.377,64.4135],[24.374,64.4188]]]
-            ]
-          }
-        },
-        {
-          "type": "Feature",
-          "properties": { "id": "734-416-5-7", "name": "Plassin etelä" },
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": [[[23.988,64.274],[24.002,64.274],[24.005,64.267],[23.992,64.265],[23.985,64.2705],[23.988,64.274]]]
-          }
-        }
-      ]
+    const FALLBACK_REMOTE_DATA = {
+      "217-409-158-1": JSON.parse(JSON.stringify(propertyData.find((p) => p.id === "217-409-158-1")))
     };
+
+
+
+
+    function buildPropertyFeatures(properties) {
+      return {
+        type: "FeatureCollection",
+        features: properties
+          .filter((property) => property.geometry)
+          .map((property) => ({
+            type: "Feature",
+            properties: { id: property.id, name: property.name },
+            geometry: property.geometry
+          }))
+      };
+    }
+
+    let propertyFeatures = buildPropertyFeatures(propertyData);
 
     const map = new maplibregl.Map({
       container: "map",
@@ -601,25 +1021,42 @@
     const summaryValue = document.getElementById("summary-value");
     const summaryConstraints = document.getElementById("summary-constraints");
     const summaryNotes = document.getElementById("summary-notes");
-    const priorityDisplays = {
-      pine: document.getElementById("pine-priority-value"),
-      spruce: document.getElementById("spruce-priority-value"),
-      birch: document.getElementById("birch-priority-value")
-    };
+    const summaryExpanded = document.getElementById("summary-expanded");
+    const assortmentSummaryList = document.getElementById("assortment-summary-list");
+    const settingsPanel = document.getElementById("settings-panel");
+    const toggleSettingsButton = document.getElementById("toggle-settings");
+    const saveSettingsButton = document.getElementById("save-settings");
+    const resetSettingsButton = document.getElementById("reset-settings");
+    const refreshButton = document.getElementById("refresh-property");
+    const apiSettingsButton = document.getElementById("api-settings");
 
-    const rangeInputs = ["pine", "spruce", "birch"].map((species) => {
-      const input = document.getElementById(`${species}-priority`);
-      input.addEventListener("input", () => {
-        priorityDisplays[species].textContent = Number(input.value).toFixed(1);
-      });
-      return input;
+    let settingsCollapsed = false;
+    let lastPlan = null;
+    let currentSettings = loadStoredSettings();
+
+    renderAssortmentControls(currentSettings);
+    populatePropertySelect();
+
+    toggleSettingsButton.addEventListener("click", () => {
+      settingsCollapsed = !settingsCollapsed;
+      settingsPanel.hidden = settingsCollapsed;
+      summaryExpanded.hidden = !settingsCollapsed;
+      toggleSettingsButton.textContent = settingsCollapsed ? "Näytä asetukset" : "Näytä kooste";
+      if (settingsCollapsed) {
+        renderSummaryDetail(lastPlan);
+      }
     });
 
-    propertyData.forEach((property) => {
-      const option = document.createElement("option");
-      option.value = property.id;
-      option.textContent = `${property.name} (${property.id})`;
-      propertySelect.appendChild(option);
+    saveSettingsButton.addEventListener("click", () => {
+      currentSettings = gatherSettings();
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+      renderToast("Asetukset tallennettu");
+    });
+
+    resetSettingsButton.addEventListener("click", () => {
+      currentSettings = loadDefaultSettings();
+      renderAssortmentControls(currentSettings);
+      renderToast("Oletusasetukset palautettu");
     });
 
     propertySelect.addEventListener("change", (event) => {
@@ -628,12 +1065,190 @@
       selectProperty(propertyId, true);
     });
 
+    refreshButton.addEventListener("click", () => {
+      const currentId = propertySelect.value || prompt("Anna kiinteistötunnus (esim. 217-409-158-1)");
+      if (!currentId) return;
+      refreshPropertyFromApi(currentId.trim());
+    });
+
+    apiSettingsButton.addEventListener("click", configureApiKey);
+    function populatePropertySelect(selectedId = "") {
+      const previous = propertySelect.value;
+      propertySelect.innerHTML = '<option value="">– Valitse kohde kartalta tai listasta –</option>';
+      propertyData
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name, "fi"))
+        .forEach((property) => {
+          const option = document.createElement("option");
+          option.value = property.id;
+          option.textContent = `${property.name} (${property.id})`;
+          propertySelect.appendChild(option);
+        });
+      const target = selectedId || previous;
+      if (target && propertyData.some((property) => property.id === target)) {
+        propertySelect.value = target;
+      }
+    }
+
+    function loadDefaultSettings() {
+      const defaults = {};
+      Object.entries(ASSORTMENT_META).forEach(([key, meta]) => {
+        defaults[key] = {
+          enabled: meta.defaultEnabled !== false,
+          price: meta.defaultPrice ?? 0,
+          priority: meta.defaultPriority ?? 100,
+          lengths: Array.isArray(meta.defaultLengths) ? [...meta.defaultLengths] : [],
+          species: SPECIES.reduce((acc, species) => {
+            acc[species.key] = meta.defaultSpecies ? Boolean(meta.defaultSpecies[species.key]) : true;
+            return acc;
+          }, {})
+        };
+      });
+      return defaults;
+    }
+
+    function loadStoredSettings() {
+      const defaults = loadDefaultSettings();
+      try {
+        const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+        if (stored && typeof stored === "object") {
+          Object.entries(defaults).forEach(([key, base]) => {
+            if (!stored[key]) return;
+            defaults[key] = {
+              enabled: stored[key].enabled ?? base.enabled,
+              price: Number(stored[key].price ?? base.price),
+              priority: Number(stored[key].priority ?? base.priority),
+              lengths: Array.isArray(stored[key].lengths) ? stored[key].lengths : base.lengths,
+              species: { ...base.species, ...(stored[key].species || {}) }
+            };
+          });
+        }
+      } catch (error) {
+        console.warn("Failed to parse stored settings", error);
+      }
+      return defaults;
+    }
+
+    function renderAssortmentControls(settings) {
+      const container = document.getElementById("assortment-controls");
+      const markup = Object.entries(ASSORTMENT_META)
+        .map(([key, meta]) => {
+          const config = settings[key] || loadDefaultSettings()[key];
+          const lengths = Array.isArray(config.lengths) ? config.lengths.join(", ") : "";
+          const speciesToggles = SPECIES.map((species) => `
+            <label>
+              <input type="checkbox" id="${key}-species-${species.key}" ${config.species?.[species.key] ? "checked" : ""} />
+              ${species.label}
+            </label>`).join("");
+          return `
+            <article class="assortment-card" data-assortment="${key}">
+              <div class="assortment-header">
+                <h4 style="margin:0; font-size:1rem;">${meta.label}</h4>
+                <label class="switch">
+                  <input type="checkbox" id="${key}-enabled" ${config.enabled ? "checked" : ""} />
+                  <span>Käytössä</span>
+                </label>
+              </div>
+              <div class="assortment-grid">
+                <label>Hinta €/m³
+                  <input id="${key}-price" type="number" min="0" step="1" value="${config.price}" />
+                </label>
+                <label>Katkaisupituudet
+                  <input id="${key}-lengths" type="text" value="${lengths}" placeholder="esim. 4.8 m, 5.1 m" />
+                </label>
+                <label>Painotus <span id="${key}-priority-display">${config.priority}%</span>
+                  <input id="${key}-priority" type="range" min="0" max="200" step="5" value="${config.priority}" />
+                </label>
+              </div>
+              <div class="species-toggle">
+                <span style="opacity:0.75;">Puulajit:</span>
+                ${speciesToggles}
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+      container.innerHTML = markup;
+      Object.keys(ASSORTMENT_META).forEach((key) => {
+        const slider = document.getElementById(`${key}-priority`);
+        const display = document.getElementById(`${key}-priority-display`);
+        if (slider && display) {
+          display.textContent = `${slider.value}%`;
+          slider.addEventListener("input", () => {
+            display.textContent = `${slider.value}%`;
+          });
+        }
+      });
+    }
+
+    function gatherSettings() {
+      const settings = {};
+      Object.keys(ASSORTMENT_META).forEach((key) => {
+        const enabledInput = document.getElementById(`${key}-enabled`);
+        if (!enabledInput) return;
+        const price = Number(document.getElementById(`${key}-price`).value || 0);
+        const lengthsValue = document.getElementById(`${key}-lengths`).value || "";
+        const priority = Number(document.getElementById(`${key}-priority`).value || 0);
+        const speciesSelection = {};
+        SPECIES.forEach((species) => {
+          const checkbox = document.getElementById(`${key}-species-${species.key}`);
+          speciesSelection[species.key] = checkbox ? checkbox.checked : false;
+        });
+        const lengths = lengthsValue
+          .split(/[,;]/)
+          .map((token) => token.trim())
+          .filter(Boolean);
+        settings[key] = {
+          enabled: enabledInput.checked,
+          price,
+          lengths,
+          priority,
+          species: speciesSelection
+        };
+      });
+      return settings;
+    }
+
+    function standTotalVolume(stand) {
+      return Object.values(stand.species || {}).reduce((speciesSum, species) => {
+        return speciesSum + Object.values(species.assortments || {}).reduce((assortmentSum, assortment) => {
+          return assortmentSum + (assortment.volume || 0);
+        }, 0);
+      }, 0);
+    }
+
+    function propertyTotalVolume(property) {
+      return property.stands.reduce((total, stand) => total + standTotalVolume(stand), 0);
+    }
+
+    function renderSummaryDetail(plan) {
+      if (!assortmentSummaryList) return;
+      if (!plan) {
+        assortmentSummaryList.innerHTML = "<li>Optimoi tuotto nähdäksesi koonnin.</li>";
+        return;
+      }
+      const rows = Object.keys(ASSORTMENT_META)
+        .map((key) => {
+          const totals = plan.assortmentTotals?.[key];
+          if (!totals || totals.volume <= 0) return null;
+          const label = assortmentLabel(key);
+          const valueText = totals.value.toLocaleString("fi-FI", { maximumFractionDigits: 0 });
+          return `<li>${label}: ${totals.volume.toFixed(0)} m³ (${valueText} €)</li>`;
+        })
+        .filter(Boolean);
+      assortmentSummaryList.innerHTML = rows.length ? rows.join("\n") : "<li>Ei kertymiä valituilla asetuksilla.</li>";
+    }
+
     function selectProperty(propertyId, focus = false) {
       const property = propertyData.find((p) => p.id === propertyId);
       if (!property) return;
+      const plan = lastPlan?.propertyId === propertyId ? lastPlan : null;
+      if (!plan) {
+        lastPlan = null;
+      }
       propertySelect.value = propertyId;
       renderStands(property);
-      updateSummary(property);
+      updateSummary(property, plan);
       if (map.getLayer("property-highlight")) {
         map.setFilter("property-highlight", ["==", ["get", "id"], propertyId]);
       }
@@ -647,26 +1262,34 @@
       property.stands.forEach((stand) => {
         const card = document.createElement("article");
         card.className = "stand-card";
+        const totalVolume = standTotalVolume(stand);
         card.innerHTML = `
           <header>
             <h3>${stand.id}</h3>
             <span class="tag">${stand.developmentClass}</span>
           </header>
-          <div style="font-size:0.85rem; opacity:0.8;">${stand.areaHa.toFixed(1)} ha • Kokonaisvolyymi ${(Object.values(stand.species).reduce((sum, s) => sum + s.volume, 0)).toFixed(0)} m³</div>
+          <div style="font-size:0.85rem; opacity:0.8;">${stand.areaHa.toFixed(1)} ha • Kokonaisvolyymi ${totalVolume.toFixed(0)} m³</div>
           <div class="species-grid"></div>
         `;
         const speciesGrid = card.querySelector(".species-grid");
-        Object.entries(stand.species).forEach(([key, details]) => {
+        Object.entries(stand.species || {}).forEach(([speciesKey, speciesDetails]) => {
+          const assortments = Object.entries(speciesDetails.assortments || {}).filter(([, details]) => (details?.volume || 0) > 0);
+          if (!assortments.length) return;
           const speciesCard = document.createElement("div");
           speciesCard.className = "species-card";
-          const title = key === "pine" ? "Mänty" : key === "spruce" ? "Kuusi" : "Koivu";
+          const speciesLabel = speciesDetails.label || speciesName(speciesKey);
+          const items = assortments
+            .map(([assortKey, details]) => {
+              const label = assortmentLabel(assortKey);
+              const minText = details.minHarvest ? ` • min ${details.minHarvest} m³` : "";
+              const defaultState = details.enabledByDefault === false ? " (oletuksena pois)" : "";
+              const lengthText = Array.isArray(details.lengths) && details.lengths.length ? details.lengths.join(", ") : "–";
+              return `<li>${label}${defaultState}: ${details.volume} m³${minText}<br /><span style="opacity:0.75;">Pituudet: ${lengthText}</span></li>`;
+            })
+            .join("");
           speciesCard.innerHTML = `
-            <strong>${title}</strong><br />
-            ${details.volume} m³ käytettävissä<br />
-            <span style="opacity:0.7;">Minimikertymä ${details.minHarvest} m³</span>
-            <div style="margin-top:0.5rem; font-size:0.8rem; opacity:0.8;">
-              Katkaisupituudet:<br />${details.lengths.map((l) => `• ${l.size} (min ${l.min} m³)`).join("<br />")}
-            </div>
+            <strong>${speciesLabel}</strong>
+            <ul>${items}</ul>
           `;
           speciesGrid.appendChild(speciesCard);
         });
@@ -675,36 +1298,19 @@
     }
 
     function updateSummary(property, plan) {
-      const totalVolume = property.stands.reduce((acc, stand) => {
-        return acc + Object.values(stand.species).reduce((sum, s) => sum + s.volume, 0);
-      }, 0);
+      const totalVolume = propertyTotalVolume(property);
       summaryVolume.textContent = `${totalVolume.toFixed(0)} m³`;
-
       if (!plan) {
         summaryValue.textContent = "–";
-        summaryConstraints.textContent = "–";
-        summaryNotes.textContent = "Säädä hinnat ja painotukset, paina Optimoi tuotto.";
+        summaryConstraints.textContent = "Ei sitovia minimirajoja";
+        summaryNotes.textContent = "Säädä asetuksia ja paina Optimoi tuotto.";
+        renderSummaryDetail(null);
         return;
       }
-
       summaryValue.textContent = `${plan.totalValue.toLocaleString("fi-FI", { maximumFractionDigits: 0 })} €`;
-      summaryConstraints.textContent = plan.constraints.join(", ");
+      summaryConstraints.textContent = plan.constraints.length ? plan.constraints.join(" • ") : "Ei sitovia minimirajoja";
       summaryNotes.textContent = plan.notes.length ? plan.notes.join(" ") : "Kaikki minimivaatimukset täyttyvät.";
-    }
-
-    function gatherSettings() {
-      return {
-        prices: {
-          pine: Number(document.getElementById("pine-price").value || 0),
-          spruce: Number(document.getElementById("spruce-price").value || 0),
-          birch: Number(document.getElementById("birch-price").value || 0)
-        },
-        priorities: {
-          pine: Number(document.getElementById("pine-priority").value || 1),
-          spruce: Number(document.getElementById("spruce-priority").value || 1),
-          birch: Number(document.getElementById("birch-priority").value || 1)
-        }
-      };
+      renderSummaryDetail(plan);
     }
 
     function optimize(property, settings) {
@@ -714,53 +1320,185 @@
         totalVolume: 0,
         stands: [],
         constraints: [],
-        notes: []
+        notes: [],
+        assortmentTotals: {}
       };
 
       property.stands.forEach((stand) => {
         const standPlan = { id: stand.id, species: {} };
-        Object.entries(stand.species).forEach(([key, details]) => {
-          const priority = settings.priorities[key] ?? 1;
-          const price = settings.prices[key] ?? 0;
-          const weightedDemand = details.volume * Math.min(priority, 1.8);
-          let harvestVolume = Math.max(details.minHarvest, Math.round(weightedDemand));
-          harvestVolume = Math.min(harvestVolume, details.volume);
-          const meetsMin = harvestVolume >= details.minHarvest;
-          if (!meetsMin) {
-            plan.notes.push(`${stand.id}: ${speciesName(key)} ei täytä minimikertymää.`);
-          }
-          const revenue = harvestVolume * price;
-          plan.totalValue += revenue;
-          plan.totalVolume += harvestVolume;
-          standPlan.species[key] = { harvestVolume, revenue };
-          if (details.minHarvest > 0) {
-            plan.constraints.push(`${speciesName(key)} ≥ ${details.minHarvest} m³`);
+        Object.entries(stand.species || {}).forEach(([speciesKey, speciesDetails]) => {
+          const speciesLabel = speciesDetails.label || speciesName(speciesKey);
+          const speciesPlan = { label: speciesLabel, assortments: {} };
+          Object.entries(speciesDetails.assortments || {}).forEach(([assortKey, details]) => {
+            const config = settings[assortKey];
+            const meta = ASSORTMENT_META[assortKey];
+            if (!details || !config) return;
+            if (!config.enabled || !config.species[speciesKey]) {
+              if ((details.minHarvest || 0) > 0) {
+                plan.notes.push(`${stand.id}: ${speciesLabel} ${meta?.label || assortKey} ei käytössä (min ${details.minHarvest} m³).`);
+              }
+              if ((details.minHarvest || 0) > 0 || details.enabledByDefault !== false) {
+                speciesPlan.assortments[assortKey] = {
+                  label: meta?.label || assortKey,
+                  enabled: false,
+                  harvestVolume: 0,
+                  revenue: 0,
+                  minRequired: details.minHarvest || 0
+                };
+              }
+              return;
+            }
+            const priorityFactor = Math.max(config.priority || 0, 0) / 100;
+            const requested = Math.round(details.volume * priorityFactor);
+            let harvestVolume = Math.max(details.minHarvest || 0, requested);
+            harvestVolume = Math.min(harvestVolume, details.volume);
+            const meetsMin = harvestVolume >= (details.minHarvest || 0);
+            if (!meetsMin) {
+              plan.notes.push(`${stand.id}: ${speciesLabel} ${meta?.label || assortKey} ei täytä minimikertymää (${harvestVolume.toFixed(0)} m³ < ${details.minHarvest} m³).`);
+            }
+            const price = config.price || 0;
+            const revenue = harvestVolume * price;
+            plan.totalValue += revenue;
+            plan.totalVolume += harvestVolume;
+            speciesPlan.assortments[assortKey] = {
+              label: meta?.label || assortKey,
+              enabled: true,
+              harvestVolume,
+              revenue,
+              minRequired: details.minHarvest || 0,
+              lengths: config.lengths
+            };
+            if ((details.minHarvest || 0) > 0) {
+              plan.constraints.push(`${speciesLabel} ${meta?.label || assortKey} ≥ ${details.minHarvest} m³`);
+            }
+            if (!plan.assortmentTotals[assortKey]) {
+              plan.assortmentTotals[assortKey] = { volume: 0, value: 0 };
+            }
+            plan.assortmentTotals[assortKey].volume += harvestVolume;
+            plan.assortmentTotals[assortKey].value += revenue;
+          });
+          if (Object.keys(speciesPlan.assortments).length) {
+            standPlan.species[speciesKey] = speciesPlan;
           }
         });
         plan.stands.push(standPlan);
       });
 
       plan.constraints = Array.from(new Set(plan.constraints));
+      plan.notes = Array.from(new Set(plan.notes));
       return plan;
     }
 
     function speciesName(key) {
-      switch (key) {
-        case "pine": return "Mänty";
-        case "spruce": return "Kuusi";
-        case "birch": return "Koivu";
-        default: return key;
+      const match = SPECIES.find((item) => item.key === key);
+      return match ? match.label : key;
+    }
+
+    function assortmentLabel(key) {
+      return ASSORTMENT_META[key]?.label || key;
+    }
+
+    async function refreshPropertyFromApi(propertyId) {
+      const apiKey = getStoredApiKey();
+      if (!apiKey) {
+        renderToast("Aseta API-avain ennen hakua");
+        configureApiKey();
+        return;
+      }
+      const originalText = refreshButton.textContent;
+      refreshButton.disabled = true;
+      refreshButton.textContent = "Ladataan...";
+      summaryNotes.textContent = "Haetaan kiinteistön tietoja rajapinnasta...";
+      try {
+        const response = await fetch(`${METSAKESKUS_API_BASE}/properties/${encodeURIComponent(propertyId)}`, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`API response ${response.status}`);
+        }
+        const data = await response.json();
+        const normalized = normalizeRemoteProperty(propertyId, data);
+        if (!normalized) {
+          throw new Error("Odottamaton rajapintavastaus");
+        }
+        upsertPropertyData(normalized);
+        renderToast("Kiinteistön tiedot päivitetty");
+      } catch (error) {
+        console.error("Property fetch failed", error);
+        const fallback = FALLBACK_REMOTE_DATA[propertyId];
+        if (fallback) {
+          upsertPropertyData(JSON.parse(JSON.stringify(fallback)));
+          renderToast("Käytetään esimerkkidataa (rajapintakutsu epäonnistui)");
+        } else {
+          summaryNotes.textContent = "Rajapintaa ei voitu hakea. Tarkista API-avain ja yhteys.";
+          renderToast("Rajapinnan haku epäonnistui");
+        }
+      } finally {
+        refreshButton.disabled = false;
+        refreshButton.textContent = originalText;
       }
     }
 
+    function configureApiKey() {
+      const current = getStoredApiKey();
+      const value = prompt("Syötä Metsäkeskuksen API-avain", current || "");
+      if (value === null) return;
+      const trimmed = value.trim();
+      if (trimmed) {
+        localStorage.setItem(API_KEY_STORAGE, trimmed);
+        renderToast("API-avain tallennettu");
+      } else {
+        localStorage.removeItem(API_KEY_STORAGE);
+        renderToast("API-avain poistettu");
+      }
+    }
+
+    function getStoredApiKey() {
+      return localStorage.getItem(API_KEY_STORAGE) || "";
+    }
+
+    function normalizeRemoteProperty(propertyId, data) {
+      if (!data || typeof data !== "object") return null;
+      if (data.stands && Array.isArray(data.stands) && data.stands[0]?.species?.spruce?.assortments) {
+        return {
+          id: data.id || propertyId,
+          name: data.name || propertyId,
+          areaHa: data.areaHa || data.area || 0,
+          centroid: data.centroid || data.center || null,
+          geometry: data.geometry || null,
+          stands: data.stands
+        };
+      }
+      return null;
+    }
+
+    function upsertPropertyData(property) {
+      const clone = JSON.parse(JSON.stringify(property));
+      const index = propertyData.findIndex((item) => item.id === clone.id);
+      if (index >= 0) {
+        propertyData[index] = clone;
+      } else {
+        propertyData.push(clone);
+      }
+      populatePropertySelect(clone.id);
+      refreshMapFeatures();
+      selectProperty(clone.id, true);
+    }
+
+    function refreshMapFeatures() {
+      propertyFeatures = buildPropertyFeatures(propertyData);
+      if (map.getSource("properties")) {
+        map.getSource("properties").setData(propertyFeatures);
+      }
+    }
     function renderToast(message) {
       const toast = document.getElementById("toast");
       toast.textContent = message;
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 2800);
     }
-
-    let lastPlan = null;
 
     document.getElementById("optimize").addEventListener("click", () => {
       const propertyId = propertySelect.value;
@@ -770,9 +1508,12 @@
       }
       const property = propertyData.find((p) => p.id === propertyId);
       if (!property) return;
-      const settings = gatherSettings();
-      lastPlan = optimize(property, settings);
+      currentSettings = gatherSettings();
+      lastPlan = optimize(property, currentSettings);
       updateSummary(property, lastPlan);
+      if (settingsCollapsed) {
+        renderSummaryDetail(lastPlan);
+      }
       renderToast("Optimointi suoritettu");
     });
 
@@ -800,11 +1541,17 @@
       lastPlan.stands.forEach((stand) => {
         doc.text(`${stand.id}`, 14, offset);
         offset += 6;
-        Object.entries(stand.species).forEach(([key, result]) => {
-          doc.text(`- ${speciesName(key)}: ${result.harvestVolume} m³ (${result.revenue.toFixed(0)} €)`, 18, offset);
+        Object.values(stand.species).forEach((species) => {
+          doc.text(`${species.label}`, 18, offset);
           offset += 6;
+          Object.values(species.assortments).forEach((assortment) => {
+            const status = assortment.enabled ? "" : " (ei käytössä)";
+            doc.text(`- ${assortment.label}${status}: ${assortment.harvestVolume.toFixed(0)} m³ (${assortment.revenue.toFixed(0)} €)`, 22, offset);
+            offset += 6;
+          });
+          offset += 4;
         });
-        offset += 4;
+        offset += 2;
       });
       doc.save(`hakkuusuunnitelma_${property.id}.pdf`);
       renderToast("PDF ladattu");
@@ -825,8 +1572,12 @@
         "Lohkokohtaiset kertymät:",
         ...lastPlan.stands.flatMap((stand) => {
           const rows = [`${stand.id}:`];
-          Object.entries(stand.species).forEach(([key, result]) => {
-            rows.push(`  - ${speciesName(key)} ${result.harvestVolume} m³ / ${result.revenue.toFixed(0)} €`);
+          Object.values(stand.species).forEach((species) => {
+            rows.push(`  ${species.label}:`);
+            Object.values(species.assortments).forEach((assortment) => {
+              const status = assortment.enabled ? "" : " (ei käytössä)";
+              rows.push(`    - ${assortment.label}${status} ${assortment.harvestVolume.toFixed(0)} m³ / ${assortment.revenue.toFixed(0)} €`);
+            });
           });
           return rows;
         })
