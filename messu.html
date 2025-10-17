@@ -10,26 +10,26 @@
         #logo { position: absolute; top: 20px; right: 20px; width: 150px; height: auto; z-index: 10; }
         #otsikko { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: #005A9C; color: white; padding: 10px 20px; font-size: 24px; border-radius: 5px; z-index: 10; }
         
-        /* Tarkistetut hotspotit: Komponentit ikonien päälle (siirretty alaspäin tekstien alta), palvelut tekstien päälle */
-        .hotspot { position: absolute; background: transparent; border: none; cursor: pointer; transition: transform 0.3s ease; z-index: 5; touch-action: manipulation; pointer-events: auto; user-select: none; }
-        .hotspot:active, .hotspot:hover { transform: scale(1.05); }
-        
-        /* Komponentit: Ikonien kohdistus (perustuen kuvaan: ikonit tekstien alla) */
-        #taajuus { top: 22%; left: 10%; width: 10%; height: 10%; } /* Salama-ikoni vasen ylä */
-        #sahko { top: 27%; left: 22%; width: 10%; height: 10%; } /* Moottori-ikoni vasen kesk */
-        #kytkin { top: 32%; left: 18%; width: 8%; height: 8%; } /* Kytkin-ikoni vasen ala */
-        #vaihde { top: 37%; left: 28%; width: 10%; height: 10%; } /* Vaihde-ikoni kesk vasen */
-        #pumppu { top: 48%; left: 42%; width: 8%; height: 10%; } /* Pumppu-ikoni (suoraan keltaisen alla, ei tekstissä) */
-        #puhallin { top: 53%; left: 52%; width: 10%; height: 10%; } /* Puhallin-ikoni oikea kesk */
-        #venttiili { top: 58%; left: 48%; width: 8%; height: 8%; } /* Venttiili-ikoni ala kesk */
-        #instrument { top: 65%; left: 72%; width: 8%; height: 6%; } /* Aaltoputki-ikoni (suoraan keltaisen alla, ei tekstissä) */
-        
-        /* Palvelut: Tekstien päälle (ei ikoneja, joten keltaisten kohdalle) */
-        #suunnittelu { bottom: 20%; left: 2%; width: 13%; height: 8%; }
-        #toimitus { bottom: 20%; left: 16%; width: 13%; height: 8%; }
-        #asennus { bottom: 20%; left: 28%; width: 18%; height: 8%; } /* ASEMMUS-tekstin päälle */
-        #huolto { bottom: 20%; left: 48%; width: 15%; height: 8%; }
-        #laakeri { bottom: 20%; left: 65%; width: 15%; height: 8%; }
+/* Tarkistetut hotspotit: Komponentit ikonien päälle (säädetty päällekkäisyys huomioiden, left lähellä toisiaan keskellä) */
+.hotspot { position: absolute; background: transparent; border: none; cursor: pointer; transition: transform 0.3s ease; z-index: 5; touch-action: manipulation; pointer-events: auto; user-select: none; }
+.hotspot:active, .hotspot:hover { transform: scale(1.05); }
+
+/* Komponentit: Ikonien kohdistus (left-arvot samankaltaisempia keskellä oleville) */
+#taajuus { top: 22%; left: 10%; width: 10%; height: 10%; } /* Salama-ikoni vasen ylä */
+#sahko { top: 27%; left: 22%; width: 10%; height: 10%; } /* Moottori-ikoni vasen kesk */
+#kytkin { top: 32%; left: 18%; width: 8%; height: 8%; } /* Kytkin-ikoni vasen ala */
+#vaihde { top: 37%; left: 35%; width: 9%; height: 9%; } /* Vaihde-ikoni kesk ylä (lähempänä pumppua) */
+#pumppu { top: 48%; left: 38%; width: 8%; height: 10%; } /* Pumppu-ikoni kesk (lähellä vaihdetta/puhallinta) */
+#puhallin { top: 53%; left: 42%; width: 9%; height: 9%; } /* Puhallin-ikoni kesk oikea (lähellä pumppua) */
+#venttiili { top: 58%; left: 45%; width: 8%; height: 8%; } /* Venttiili-ikoni ala kesk (lähellä puhallinta) */
+#instrument { top: 65%; left: 70%; width: 8%; height: 6%; } /* Aaltoputki-ikoni oikea ala */
+
+/* Palvelut: Tekstien päälle (ei muutosta, keltaisten kohdalle) */
+#suunnittelu { bottom: 20%; left: 2%; width: 13%; height: 8%; }
+#toimitus { bottom: 20%; left: 16%; width: 13%; height: 8%; }
+#asennus { bottom: 20%; left: 28%; width: 18%; height: 8%; }
+#huolto { bottom: 20%; left: 48%; width: 15%; height: 8%; }
+#laakeri { bottom: 20%; left: 65%; width: 15%; height: 8%; }
         
         /* Modal (sama kuin ennen) */
         .modal { display: none; position: fixed; z-index: 20; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); animation: zoomIn 0.3s ease; }
