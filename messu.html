@@ -5,43 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jukkola Systems - Drive Train</title>
     <style>
-        body { margin: 0; font-family: Calibri, Arial, sans-serif; background: #fff; overflow: hidden; touch-action: manipulation; }
+        body { margin: 0; font-family: Calibri, Arial, sans-serif; background: #fff; overflow: hidden; touch-action: manipulation; user-select: none; }
         #etusivu { position: relative; width: 100vw; height: 100vh; background: url('drive_train.jpg') center/cover no-repeat; cursor: pointer; }
         #logo { position: absolute; top: 20px; right: 20px; width: 150px; height: auto; z-index: 10; }
         #otsikko { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: #005A9C; color: white; padding: 10px 20px; font-size: 24px; border-radius: 5px; z-index: 10; }
         
-        /* Hotspotit: Läpinäkyvät alueet – SÄÄDÄ KOOKOORDINAATTEJA KUVASTASI (prosentteina näytön koosta) */
-        .hotspot { position: absolute; background: transparent; border: none; cursor: pointer; transition: transform 0.3s ease; z-index: 5; touch-action: manipulation; }
-        .hotspot:active, .hotspot:hover { transform: scale(1.05); } /* Efekti klikkauksessa/kosketuksessa */
+        /* Tarkistetut hotspotit: Komponentit ikonien päälle (siirretty alaspäin tekstien alta), palvelut tekstien päälle */
+        .hotspot { position: absolute; background: transparent; border: none; cursor: pointer; transition: transform 0.3s ease; z-index: 5; touch-action: manipulation; pointer-events: auto; user-select: none; }
+        .hotspot:active, .hotspot:hover { transform: scale(1.05); }
         
-        /* Arvioidut paikat – säädä esim. #pumppu { top: 50%; left: 40%; width: 10%; height: 15%; } */
-        #taajuus { top: 20%; left: 10%; width: 15%; height: 15%; }
-        #sahko { top: 25%; left: 25%; width: 10%; height: 10%; }
-        #kytkin { top: 30%; left: 20%; width: 8%; height: 8%; }
-        #vaihde { top: 35%; left: 30%; width: 12%; height: 12%; }
-        #pumppu { top: 50%; left: 40%; width: 10%; height: 15%; }
-        #puhallin { top: 55%; left: 50%; width: 10%; height: 10%; }
-        #venttiili { top: 60%; left: 45%; width: 8%; height: 8%; }
-        #instrument { top: 65%; left: 35%; width: 12%; height: 10%; }
-        #suunnittelu { bottom: 20%; left: 5%; width: 12%; height: 8%; }
-        #toimitus { bottom: 20%; left: 18%; width: 12%; height: 8%; }
-        #asennus { bottom: 20%; left: 31%; width: 15%; height: 8%; }
+        /* Komponentit: Ikonien kohdistus (perustuen kuvaan: ikonit tekstien alla) */
+        #taajuus { top: 22%; left: 10%; width: 10%; height: 10%; } /* Salama-ikoni vasen ylä */
+        #sahko { top: 27%; left: 22%; width: 10%; height: 10%; } /* Moottori-ikoni vasen kesk */
+        #kytkin { top: 32%; left: 18%; width: 8%; height: 8%; } /* Kytkin-ikoni vasen ala */
+        #vaihde { top: 37%; left: 28%; width: 10%; height: 10%; } /* Vaihde-ikoni kesk vasen */
+        #pumppu { top: 48%; left: 42%; width: 8%; height: 10%; } /* Pumppu-ikoni (suoraan keltaisen alla, ei tekstissä) */
+        #puhallin { top: 53%; left: 52%; width: 10%; height: 10%; } /* Puhallin-ikoni oikea kesk */
+        #venttiili { top: 58%; left: 48%; width: 8%; height: 8%; } /* Venttiili-ikoni ala kesk */
+        #instrument { top: 65%; left: 72%; width: 8%; height: 6%; } /* Aaltoputki-ikoni (suoraan keltaisen alla, ei tekstissä) */
+        
+        /* Palvelut: Tekstien päälle (ei ikoneja, joten keltaisten kohdalle) */
+        #suunnittelu { bottom: 20%; left: 2%; width: 13%; height: 8%; }
+        #toimitus { bottom: 20%; left: 16%; width: 13%; height: 8%; }
+        #asennus { bottom: 20%; left: 28%; width: 18%; height: 8%; } /* ASEMMUS-tekstin päälle */
         #huolto { bottom: 20%; left: 48%; width: 15%; height: 8%; }
         #laakeri { bottom: 20%; left: 65%; width: 15%; height: 8%; }
         
-        /* Modal: Nouseva zoom-ikkuna */
+        /* Modal (sama kuin ennen) */
         .modal { display: none; position: fixed; z-index: 20; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); animation: zoomIn 0.3s ease; }
         .modal-content { position: relative; background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 10px; animation: modalSlide 0.3s ease; max-height: 90vh; overflow-y: auto; }
         @keyframes zoomIn { from { transform: scale(0.5); } to { transform: scale(1); } }
         @keyframes modalSlide { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .close { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #005A9C; z-index: 25; }
+        .close { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #005A9C; z-index: 25; pointer-events: auto; }
         .otsikko-modal { background: #005A9C; color: white; padding: 10px; margin: -20px -20px 20px -20px; border-radius: 5px 5px 0 0; }
         .teksti { color: #333; line-height: 1.5; margin-bottom: 15px; }
         .kuvat { display: flex; justify-content: space-around; margin: 15px 0; flex-wrap: wrap; }
         .kuvat img { max-width: 200px; height: auto; border: 1px solid #B3B3B3; border-radius: 5px; margin: 5px; }
         .linkki { color: #005A9C; text-decoration: none; font-weight: bold; }
         .linkki:hover { text-decoration: underline; }
-        .palaa { background: #B3B3B3; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; width: 100%; }
+        .palaa { background: #B3B3B3; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; width: 100%; pointer-events: auto; }
         .logo-modal { position: absolute; top: 20px; right: 20px; width: 100px; height: auto; }
     </style>
 </head>
@@ -66,7 +68,7 @@
         <button class="hotspot" id="laakeri" onclick="openModal('laakeri')"></button>
     </div>
 
-    <!-- Kaikki modaalit valmiina – tallenna kuvat kansioon -->
+    <!-- Kaikki modaalit (kopioitu aiemmasta vastauksesta, päivitetty sisällöt) -->
     <div id="taajuus-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('taajuus')">&times;</span>
@@ -74,7 +76,7 @@
             <h2 class="otsikko-modal">Taajuusmuuttajat</h2>
             <p class="teksti">Jukkola Systems tarjoaa Danfoss Vacon -taajuusmuuttajia nopeasti varastostaan, keskittyen VACON 100 INDUSTRIAL -malliin monipuolisiin sovelluksiin kuten moottorien ohjaukseen ja VACON 100 FLOW -malliin pumppu- ja puhallinsovelluksiin virtausvalvonnan ja energiansäästön parantamiseksi. Avainhyötyinä ovat helppo automaation integrointi kenttäväyläoptioilla, luotettavuus haastavissa ympäristöissä pinnoitteen ansiosta sekä integroidut suodattimet. Esimerkkejä ovat Multipump-ratkaisut pumpun suorituskyvyn parantamiseen ja malleja tehoalueella 1,1 kW – 800 kW.</p>
             <div class="kuvat">
-                <img src="taajuus1.jpg" alt="Vacon-malli"> <!-- Tallenna esim. https://www.danfoss.com/fi-fi/about-danfoss/our-businesses/drives/products/vacon-drives/ -->
+                <img src="taajuus1.jpg" alt="Vacon-malli">
             </div>
             <a href="https://www.jukkolasystems.fi/taajuusmuuttajat" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/taajuusmuuttajat</a>
             <button class="palaa" onclick="closeModal('taajuus')">Palaa</button>
@@ -86,7 +88,7 @@
             <span class="close" onclick="closeModal('sahko')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Sähkömoottorit</h2>
-            <p class="teksti">Jukkola Systems tarjoaa pohjoismaiden laajimman varaston Siemens Innomotics -sähkömoottoreita, jotka kattavat tehot 0,25–315 kW ja soveltuvat teollisuuden sovelluksiin kuten kone- ja laitevalmistukseen, prosessiteollisuuteen sekä energiantuotantoon. Avainhyötyinä ovat korkea laatu ja luotettavuus, nopeat toimitukset varastosta, ATEX-hyväksytyt räjähdyssuojatut mallit (Ex db eb IIC T4) sekä mahdollisuus moottorien modifiointeihin ja 24/7 asennus- ja huoltopalveluihin. Esimerkkejä malleista ovat valurautarunkoiset Simotics SD -pienjänniteoikosulkumoottorit sekä Simotics XP -räjähdyssuojatut moottorit öljy- ja kaasuteollisuuteen sekä kemikaaliteollisuuteen.</p>
+            <p class="teksti">Jukkola Systems on pohjoismaiden johtava Siemens Innomotics sähkömoottorien jälleenmyyjä ja varastoija, joka tarjoaa laajan valikoiman oikosulkumoottoreita teholtaan 0,25–315 kW saakka erilaisiin teollisuus sovelluksiin, kuten kone- ja laitevalmistukseen sekä prosessiteollisuuteen. Yritys on ainoa Suomessa SIMOLOG EX-partner, joka mahdollistaa moottorien modifioinnit, mukaan lukien räjähdysvaarallisiin tiloihin tarkoitetut ATEX-moottorit (Ex db eb IIC T4). Tarjolla on myös 24/7 asennus- ja huoltopalvelut koko Suomessa. Avainhyötyinä ovat nopeat pikatoimitukset varastosta jopa 315 kW moottoreille, mukaan lukien ATEX-hyväksytyt mallit, korkea laatu ja luotettavuus teollisuusympäristöissä, kestävät pölyä, värähtelyjä ja aggressiivisia olosuhteita, modifiointimahdollisuudet (esim. lämpötilaseuranta, rullalaakerit) ja 24/7 päivystys asennuksille ja huolloille, tehokkuusvaatimusten täyttäminen (IE3/IE4) ja yhteensopivuus taajuusmuuttajien kanssa.</p>
             <div class="kuvat">
                 <img src="sahko1.png" alt="Simotics-taulukko"> <!-- https://www.jukkolasystems.fi/wp-content/uploads/Simotics-taulukko-1024x591.png -->
                 <img src="sahko2.png" alt="Simotics XP"> <!-- https://www.jukkolasystems.fi/wp-content/uploads/Simotics-XP-taulukko-1024x590.png -->
@@ -101,9 +103,9 @@
             <span class="close" onclick="closeModal('kytkin')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Akselikytkimet</h2>
-            <p class="teksti">Flender on saksalainen yli 125-vuotias voimansiirtoteknologian valmistaja, joka tarjoaa kattavan valikoiman akselikytkimiä, mukaan lukien joustavat, jäykät, erittäin joustavat, hydrodynaamiset ja erikoiskytkimet kaikissa kokoluokissa ja teholuokissa teollisuuden käyttökohteisiin. Avainhyötyjä ovat kestävyys ja luotettavuus, modulaarinen rakenne helpottamaan huoltoa, iskuvaimennus ja akselien epäkeskisyyden kompensointi pienillä voimilla, sekä nopea varaosien saatavuus ja yksinkertainen asennus. Esimerkkejä malleista ovat N-Eupex (joustava sakarakytkin, nimellismomentti 28–71 000 Nm, soveltuu pumppuihin ja puhaltimiin), N-ARPEX (välyksetön teräslamellikytkin, momentti 350 Nm – 2 000 000 Nm), ZAPEX (hammaskytkin, momentti 1 300 Nm – 7 200 000 Nm), RUPEX (joustava tappikytkin, momentti 200 Nm – 1 690 000 Nm) ja ELPEX (joustava rengaskytkin, momentti 24 Nm – 14 500 Nm).</p>
+            <p class="teksti">Jukkola Systems on Flender-akselikytkimien virallinen varastoiva jälleenmyyjä Suomessa, tarjoten koko valikoiman joustavia, jäykkiä, hydrodynaamisia ja erikoiskytkimiä kaikkiin teollisuuden käyttökohteisiin. Flender on saksalainen yli 125-vuotias voimansiirtoteknologian valmistaja, joka tunnetaan maailmanlaajuisesti vaihteistoista, kytkimistä ja tuulivoimaratkaisuista. Yritys varastoi erityisesti N-Eupex-joustavia sakarakytkimiä Kokkolassa nopeaa toimitusta varten. Avainhyötyinä ovat kestävä ja luotettava rakenne, joka vaimentaa iskuja ja suojaa moottoria sekä työkoneita käynnistyksissä ja pysäytyksissä, modulaarinen rakenne mahdollistaa helpon asennuksen, huollon ja joustoelementtien vaihdon ilman koneiden siirtämistä, laaja soveltuvuus erilaisiin kuormituksiin ja lämpötiloihin (-50 °C – +100 °C), ATEX-hyväksyntä räjähdysvaarallisiin tiloihin sekä nopea varaosien saatavuus.</p>
             <div class="kuvat">
-                <img src="kytkin1.jpg" alt="Flender N-Eupex"> <!-- Tallenna esim. https://www.siemens.com/global/en/products/drives/flender-couplings.html -->
+                <img src="kytkin1.jpg" alt="Flender N-Eupex">
             </div>
             <a href="https://www.jukkolasystems.fi/akselikytkimet" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/akselikytkimet</a>
             <button class="palaa" onclick="closeModal('kytkin')">Palaa</button>
@@ -115,9 +117,9 @@
             <span class="close" onclick="closeModal('vaihde')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Vaihdemoottorit</h2>
-            <p class="teksti">Olemme SIEMENS SIMOGEAR vaihdemoottoreiden virallinen jälleenmyyjä ja huoltopartneri, ja tarjoamme laajan valikoiman vaihdemoottoreita, jotka on suunniteltu optimaalista käytettävyyttä ja maksimaalista joustavuutta varten. SIMOGEAR-vaihdemoottorit kattavat tehoalueen 0,09 kW – 55 kW ja mahdollistavat jopa 19 500 Nm:n vääntömomentin erilaisilla vaihteilla, kuten kierre-, suunta-akseli-, kierrekartio- ja kierukkavaihteilla, ja ne ovat yhteensopivia monien muiden vaihdemoottorien kanssa sekä integroitavissa helposti koneisiin. Avainhyötyinä ovat 1:1 yhteensopivuus markkinastandardin kanssa sekä palvelut kuten asennukset, huollot ja ATEX-vaihteiden korjaukset, myös vanhoille MOTOX-malleille ja muille merkeille. Esimerkkejä malleista ovat SIMOGEAR-vaihdemoottorit ja MOTOX-mallisarjan korvaavat varaosat.</p>
+            <p class="teksti">Jukkola Systems on SIEMENS SIMOGEAR vaihdemoottoreiden virallinen jälleenmyyjä ja huoltopartneri, joka tarjoaa laajan valikoiman vaihdemoottoreita optimaalista käytettävyyttä ja joustavuutta varten. SIMOGEAR-vaihdemoottorit kattavat tehoalueen 0,09 kW – 55 kW ja tarjoavat jopa 19 500 Nm vääntömomenttia erilaisilla vaihteilla, kuten kierre-, suunta-akseli-, kierrekartio- ja kierukkavaihteilla. Sarja on 1:1 yhteensopiva markkinastandardien kanssa, joten se integroidaan helposti uusiin tai olemassa oleviin koneisiin, ja yritys tarjoaa myös vanhan MOTOX-mallin varaosia sekä FLENDER-teollisuusvaihteita. Avainhyötyinä ovat optimaalinen käytettävyys ja maksimaalinen joustavuus suunnittelussa, laaja teho- ja vääntömomenttivalikoima (0,09–55 kW, jopa 19 500 Nm) erilaisilla vaihdetypeillä, yhteensopivuus muiden toimittajien kanssa ja helppo integrointi standardien mukaisesti, virallinen huolto ja asennuspalvelu kaikille merkeille, mukaan lukien ATEX-hyväksytyt vaihteet.</p>
             <div class="kuvat">
-                <img src="vaihde1.jpg" alt="SIMOGEAR"> <!-- Tallenna Siemens-sivulta -->
+                <img src="vaihde1.jpg" alt="SIMOGEAR">
             </div>
             <a href="https://www.jukkolasystems.fi/vaihdemoottorit" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/vaihdemoottorit</a>
             <button class="palaa" onclick="closeModal('vaihde')">Palaa</button>
@@ -129,10 +131,10 @@
             <span class="close" onclick="closeModal('pumppu')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Pumput</h2>
-            <p class="teksti">Jukkola Systems edustaa KSB-pumppuvalmistajaa, jonka laajasta valikoimasta löytyy pumppuja erilaisiin teollisuuden tarpeisiin, kuten energiateollisuuteen, kunnalliseen vesi- ja jätevesijärjestelmiin, kemian-, metsä-, elintarvike-, kaivos- ja lumetusjärjestelmiin. Avainhyötyinä korostuvat pumppujen sovittaminen prosessin vaatimuksiin (kuten NPSHa, väliaine, lämpötila, tuotto ja nostokorkeus) sekä energiatehokkuus, ja malleja on saatavilla erilaisina asennuksina (inline, blokki, peti) ja materiaaleina (esim. EN-GJL-250, CF8M). Esimerkkejä malleista ovat ETNY-sarja kuumille lämmönsiirtoöljyille ja vesille (max T=350°C öljyllä), ETA-sarja kaukolämpöön ja puhdasvesipumppaukseen, KWP-sarja prosessivaatimuksiin, MegaCPK aggressiivisille väliaineille, RDLO ja Omega split casing -pumput suurille tuotoille, sekä uppopumput kuten Amacan tulvavesipumppaukseen ja Amarex jätevedenpumppaukseen.</p>
+            <p class="teksti">Jukkola Systems Oy edustaa KSB-pumppuvalmistajaa, jonka toiminta on jatkunut 150 vuotta ja yhteistyö Jukkolan kanssa vuodesta 2007. Asiantuntijat auttavat pumppujen valinnassa huomioiden prosessivaatimukset kuten NPSHa, väliaine, lämpötila, tuotto ja nostokorkeus, painottaen energiatehokkuutta. KSB:n pumput soveltuvat monille toimialoille, kuten energiateollisuuteen, vesihuoltoon, kemian-, metsä-, elintarvike-, kaivos- ja lumetusjärjestelmiin. Avainhyötyinä ovat laaja pumppuvalikoima erilaisiin prosessivaatimuksiin, mukaan lukien modifioitavat materiaalit ja tiivisteratkaisut, korkea energiatehokkuus ja soveltuvuus vaativiin olosuhteisiin, kuten kuumille öljyille ja vesille ilman erillistä jäähdytystä, vähentynyt laakerikuormitus suurissa tuotoissa ja hyvät hyötysuhteet split casing -pumppuissa.</p>
             <div class="kuvat">
-                <img src="pumppu1.jpg" alt="Etanorm"> <!-- https://www.ksb.com/fi-fi/lc/tuotteet/pumppu/kuiva-asenteinen-pumppu/etanorm-syt/E44B -->
-                <img src="pumppu2.jpg" alt="Etanorm"> <!-- https://www.ksb.com/fi-fi/lc/etanorm/E04B -->
+                <img src="pumppu1.jpg" alt="Etanorm">
+                <img src="pumppu2.jpg" alt="MegaCPK">
             </div>
             <a href="https://www.jukkolasystems.fi/pumput" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/pumput</a>
             <button class="palaa" onclick="closeModal('pumppu')">Palaa</button>
@@ -144,10 +146,10 @@
             <span class="close" onclick="closeModal('puhallin')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Puhaltimet</h2>
-            <p class="teksti">Jukkola Systems Oy tarjoaa laadukkaita BarkerBille-valmistamia keskipakopuhaltimia ja aksiaalipuhaltimia teollisuuteen, jotka valmistetaan Tanskassa teräksestä tai erikoismateriaaleista kestämään lämpöä ja kulutusta. Tuotteet räätälöidään asiakkaan tarpeisiin yli 50 vuoden kokemuksella, ja valikoimassa on mm. 24 erilaista keskipakopuhallintyyppiä, jotka sopivat myös ATEX-tiloihin; lisäksi tarjotaan äänenvaimentimia ja lisävarusteita kuten huoltoluukkuja ja CIP-puhdistusjärjestelmiä. Avainedut sisältävät teknisen huippuosaamisen, räätälöinnin, ajanmukaiset toimitukset, helpon käsittelyn sekä palvelut kuten huollot, korjaukset ja asennukset kaikille puhallinmerkeille. Esimerkkejä malleista ovat Industrial Line (kustannustehokas, energiatehokas, suoravetoisia tai kytkimellä varustettuja) ja Heavy Duty Line (lujatekoisia vaativiin ympäristöihin, hihnavetoisia tai suoravetoisia).</p>
+            <p class="teksti">Jukkola Systems Oy on BarkerBillen puhaltimien jälleenmyyjä Suomessa, tarjoaa laadukkaita aksiaali- ja keskipakopuhaltimia sekä äänenvaimentimia teollisuuteen. Puhaltimet valmistetaan Tanskassa teräksestä tai erikoismateriaaleista, räätälöidään asiakkaan tarpeisiin yli 50 vuoden kokemuksella ja sopivat myös ATEX-tiloihin. Ne optimoidaan tehokkaiksi ja energiansäästäviksi, ja palveluihin kuuluvat huollot, korjaukset sekä asennukset kaikille merkeille. Avainhyötyinä ovat tekninen huippuosaaminen ja räätälöinti asiakkaan tarpeisiin, mukaan lukien 3D-piirustukset tarjousvaiheessa, ajanmukaiset toimitukset, helppo käsittely ja tekninen tuki, kustannustehokkuus, energiatehokkuus ja kestävyys vaativiin 24/7-käyttökohteisiin, kuten ATEX-ympäristöihin.</p>
             <div class="kuvat">
-                <img src="puhallin1.jpg" alt="Keskipakopuhallin"> <!-- https://www.jukkolasystems.fi/wp-content/uploads/2023/10/puhallin-1.jpg -->
-                <img src="puhallin2.jpg" alt="Aksiaalipuhallin"> <!-- https://www.jukkolasystems.fi/wp-content/uploads/2023/10/aksiaalipuhallin.jpg -->
+                <img src="puhallin1.jpg" alt="Keskipakopuhallin">
+                <img src="puhallin2.jpg" alt="Aksiaalipuhallin">
             </div>
             <a href="https://www.jukkolasystems.fi/puhaltimet" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/puhaltimet</a>
             <button class="palaa" onclick="closeModal('puhallin')">Palaa</button>
@@ -159,9 +161,9 @@
             <span class="close" onclick="closeModal('venttiili')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Venttiilit</h2>
-            <p class="teksti">KSB-venttiilit ja PFA-vuoratut venttiilit ovat Jukkola Systemsin tarjoamia teollisuusventtiilejä, jotka valmistetaan KSB-yrityksen toimesta, maailman johtavana venttiilien ja pumppujen valmistajana vuodesta 1871 lähtien. Jukkola Systems toimii KSB:n edustajana Pohjanmaan maakunnista Keski-Suomeen ja Savoon, tarjoten laajan valikoiman sulku- ja säätöventtiilejä prosessiteollisuuteen, kemianteollisuuteen sekä energiantuotantoon, mukaan lukien myös yhteistyökumppaneiden venttiileitä, toimilaitteita ja lisäsovelluksia. Avainhyötyinä ovat edistyksellinen teknologia, joka takaa luotettavan suorituskyvyn ja kestävyyden haastavissa olosuhteissa, monipuoliset sovellukset nesteen virtauksen hallintaan ja paineen säätelyyn, jatkuva innovaatio, kestävyys, asiantunteva tuki sekä laaja varastointi Kokkolassa ja Keravalla.</p>
+            <p class="teksti">KSB on yksi maailman johtavista teollisuusventtiilien ja -pumppujen valmistajista vuodesta 1871 lähtien, ja Jukkola Systems toimii sen edustajana Pohjanmaalta Keski-Suomeen ja Savoon. Yhteistyö tarjoaa monipuolisia ja räätälöityjä venttiiliratkaisuja prosessiteollisuudelle, kemianteollisuudelle ja energiantuotannolle. Asiakkaat saavat huippuluokan venttiiliteknologiaa sekä asiantuntevaa neuvontaa ja tukea. Avainhyötyinä ovat teknologian edelläkävijä: luotettava suorituskyky ja kestävyys haastavissa olosuhteissa, monipuoliset sovellukset: sopivat ratkaisut nesteen virtauksen hallintaan, paineen säätelyyn ja virtauksen ohjaukseen eri teollisuudenhaasteisiin, innovaatiota ja kestävyyttä: jatkuva kehitys varmistaa ajan tasalla olevan teknologian, pitkäikäiset materiaalit ja säästöt ympäristölle sekä kustannuksille.</p>
             <div class="kuvat">
-                <img src="venttiili1.jpg" alt="KSB Venttiili"> <!-- https://www.ksb.com/fi-fi/venttiilit -->
+                <img src="venttiili1.jpg" alt="KSB Venttiili">
             </div>
             <a href="https://www.jukkolasystems.fi/venttiilit" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/venttiilit</a>
             <button class="palaa" onclick="closeModal('venttiili')">Palaa</button>
@@ -173,9 +175,9 @@
             <span class="close" onclick="closeModal('instrument')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Instrumentointi</h2>
-            <p class="teksti">Jukkola Systems tarjoaa Siemens-kenttälaitteita prosessi-instrumentointiin, mukaan lukien virtausmittarit jätevedelle ja puhtaalle vedelle (DN25-150), MAG5000- ja MAG6000-vahvistimet, painemittarit (600mbar–16bar), insinööriventtiilit, lämpötilamittarit ja pintamittarit. Avainhyötyjä ovat korkea laatu, älykkäät toiminnot ennakoivaan vianhavainnointiin, saumaton integraatio automaatiojärjestelmiin sekä kattavat tuki- ja huoltopalvelut, jotka parantavat prosessiautomaation tehokkuutta ja luotettavuutta. Esimerkkejä malleista ovat SITRANS P -painelähettimet, SITRANS F -virtausmittarit, SITRANS T -lämpötilamittarit sekä SIPART PS2- ja PS100-asennoittimet.</p>
+            <p class="teksti">Jukkola Systems on Siemensin kenttälaitteiden virallinen jälleenmyyjä Suomessa, ja varastosta löytyy heti toimitukseen virtausmittareita jätevedelle ja puhtaalle vedelle (DN25-150), MAG5000 ja MAG6000 vahvistimia, painemittareita (600mbar–16bar), insinööriventtiilejä, lämpötilamittausantureita sekä pintamittareita. Siemensin kenttälaitteet kattavat painemittauksen (SITRANS P), virtausmittauksen (SITRANS F), pinnankorkeuden mittauksen (kosketuksessa olevat ja -tommat tuotteet sekä pintakytkimet), lämpötilamittauksen (SITRANS T) ja asennoittimet (SIPART PS2 ja PS100). Laitteet on suunniteltu parantamaan prosessiautomaation tehokkuutta ja luotettavuutta älykkäillä toiminnoilla, kuten ennakoivalla vianhavainnoinnilla ja saumattomalla integraatiolla automaatiojärjestelmiin. Avainhyötyinä ovat korkea laatu ja kestävyys: laitteet ovat luotettavia, tarkkoja ja pitkäikäisiä, mikä vähentää huolto- ja korjauskustannuksia, innovatiiviset ominaisuudet: sisältävät älykästä diagnostiikkaa, itsekalibrointia, häiriönkestävyyttä ja langatonta tiedonsiirtoa, mahdollistavat ennakoivan vianhavainnoinnin ja parantavat prosessien tehokkuutta.</p>
             <div class="kuvat">
-                <img src="instrument1.jpg" alt="SITRANS"> <!-- Tallenna Siemens-sivulta -->
+                <img src="instrument1.jpg" alt="SITRANS">
             </div>
             <a href="https://www.jukkolasystems.fi/kenttalaitteet" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/kenttalaitteet</a>
             <button class="palaa" onclick="closeModal('instrument')">Palaa</button>
@@ -187,9 +189,9 @@
             <span class="close" onclick="closeModal('suunnittelu')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Suunnittelu</h2>
-            <p class="teksti">Jukkola Systems tarjoaa kokonaisvaltaisia suunnittelupalveluita teollisuuden ja kuntasektorin tarpeisiin, osana Drive Train -konseptia, joka kattaa laitteet sähkönsyötöstä virtaavaan nesteeseen tai ilmaan. Palvelu tuo asiakkaille yksinkertaisuutta ja helppoutta suunnittelusta toteutukseen, yhteistyössä laadukkaiden kumppaneiden kuten Siemens, KSB ja Danfoss kanssa. Avainhyötyinä ovat innovointi, energiasäästöt sekä asiakkaan prosessin kehittäminen yhdessä.</p>
+            <p class="teksti">Jukkola Systems tarjoaa kokonaisvaltaista suunnittelua teollisuuden ja kuntasektorin tarpeisiin, painottaen innovointia ja energiasäästöjä. He kehittävät asiakkaiden prosesseja yhteistyössä, tuoden vaihtoehtoja tuotteiden valintaan. Drive Train -konsepti kattaa suunnittelun sähkönsyötöstä virtaavaan nesteeseen tai ilmaan, tuoden yksinkertaisuutta ja helppoutta. Avainhyötyinä ovat parantaa kilpailukykyä, tehokkuutta ja kestävää kehitystä; mahdollistaa räätälöidyt ratkaisut laadukkaiden kumppaneiden kuten Siemens ja KSB kanssa.</p>
             <div class="kuvat">
-                <img src="suunnittelu1.jpg" alt="Suunnittelu"> <!-- Käytä drive_train.jpg pienempänä -->
+                <img src="suunnittelu1.jpg" alt="Suunnittelu">
             </div>
             <a href="https://www.jukkolasystems.fi" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi</a>
             <button class="palaa" onclick="closeModal('suunnittelu')">Palaa</button>
@@ -201,9 +203,9 @@
             <span class="close" onclick="closeModal('toimitus')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Toimitus</h2>
-            <p class="teksti">Jukkola Systems toimittaa laadukkaita tuotteita, kuten venttiileitä, moottoreita, taajuusmuuttajia ja varaosia, kattavasta varastosta yhteistyössä kumppaneiden kuten KSB, Siemens ja Vacon kanssa. Toimitus on osa kokonaisvaltaista palvelua suunnittelusta toteutukseen, varmistaen laadukkaan kokonaisuuden pakettiratkaisuissa. Avainhyötyinä ovat luotettavuus, tehokkuus ja asiakkaiden kilpailukyvyn kehittäminen energiasäästöillä.</p>
+            <p class="teksti">Yritys toimittaa kattavasti laitteita, kuten venttiileitä, moottoreita, taajuusmuuttajia ja varaosia, varastoimalla niitä laajasti. He tekevät tiivistä yhteistyötä kumppaneiden kuten KSB, Siemens, Danfoss ja Vacon kanssa laadukkaiden kokonaisuuksien tuottamiseksi. Toimitus kattaa pakettiratkaisut suunnittelusta toteutukseen. Avainhyötyinä ovat varmistaa saatavuuden ja luotettavuuden; tukee energiasäästöjä ja tehokkuutta monipuolisella tuotevalikoimalla.</p>
             <div class="kuvat">
-                <img src="toimitus1.jpg" alt="Toimitus"> <!-- Käytä tuotteen kuvaa -->
+                <img src="toimitus1.jpg" alt="Toimitus">
             </div>
             <a href="https://www.jukkolasystems.fi" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi</a>
             <button class="palaa" onclick="closeModal('toimitus')">Palaa</button>
@@ -215,9 +217,9 @@
             <span class="close" onclick="closeModal('asennus')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Asennus ja käyttöönotto</h2>
-            <p class="teksti">Jukkola Systems tarjoaa kokonaisvaltaisia asennus- ja muutostöitä suunnittelusta toteutukseen, Drive Train -konseptin mukaisesti. Palvelu kattaa asennukset teollisuudessa ja kuntasektorilla, hyödyntäen osaavaa henkilökuntaa yli 20 hengen tiimissä. Avainhyötyinä ovat helppous, innovointi ja kestävä kehitys, joka parantaa tehokkuutta ja energiasäästöjä.</p>
+            <p class="teksti">Jukkola Systems hoitaa asennus- ja muutostyöt kokonaisvaltaisesti suunnittelusta toteutukseen, työllistäen yli 20 henkeä useissa toimipisteissä. He tarjoavat Drive Train -konseptin kautta yksinkertaisia ratkaisuja laitteiden käyttöönottoon. Asiakaslähtöisyys ohjaa prosessia yhteistyössä asiakkaan kanssa. Avainhyötyinä ovat helpottaa käyttöönottoa ja vähentää monimutkaisuutta; parantaa prosessien tehokkuutta ja luotettavuutta.</p>
             <div class="kuvat">
-                <img src="asennus1.jpg" alt="Asennus"> <!-- Tallenna projektikuva sivulta -->
+                <img src="asennus1.jpg" alt="Asennus">
             </div>
             <a href="https://www.jukkolasystems.fi/projektit" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/projektit</a>
             <button class="palaa" onclick="closeModal('asennus')">Palaa</button>
@@ -229,9 +231,9 @@
             <span class="close" onclick="closeModal('huolto')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Huolto ja kunnossapito</h2>
-            <p class="teksti">Jukkola Systemsin huolto- ja kunnossapito-osaaminen on laaja ja kattaa vuoden jokaisen päivän, varmistaen luotettavuuden kaikissa tilanteissa. Palvelu tukee teollisuuden ja asiakkaiden prosesseja, hyödyntäen laadukkaita kumppaneita ja kattavaa varastoa varaosille. Avainhyötyinä ovat jatkuva saatavuus, tehokkuuden ylläpito ja energiasäästöt.</p>
+            <p class="teksti">Jukkola Systemsin huolto- ja kunnossapito-osaaminen on laaja, ja palvelu on saatavilla vuoden jokaisena päivänä. Yritys varmistaa asiakkaiden luotettavuuden kaikissa tilanteissa, tukien teollisuuden ja kuntasektorin tarpeita. Palvelu kattaa varaosat ja laitteet kumppaneilta kuten BarkerBille. Avainhyötyinä ovat minimoi seisokit ja varmistaa jatkuvuuden; tukee kestävää kehitystä ja energiasäästöjä.</p>
             <div class="kuvat">
-                <img src="huolto1.jpg" alt="Huolto"> <!-- Käytä huoltokuvaa -->
+                <img src="huolto1.jpg" alt="Huolto">
             </div>
             <a href="https://www.jukkolasystems.fi" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi</a>
             <button class="palaa" onclick="closeModal('huolto')">Palaa</button>
@@ -245,7 +247,7 @@
             <h2 class="otsikko-modal">Laakeridiagnostiikka</h2>
             <p class="teksti">Värähtelymittaus ja laakeridiagnostiikka mahdollistavat pyörivien laitteiden kunnon seurannan Prufteknik Vibexpert -analysaattoreilla, havaiten viat varhaisessa vaiheessa. Avainhyötyinä ovat hallittu huollon suunnittelu ja yllättävien rikkojen välttäminen, pidentäen laitteiden käyttöikää. Mittaukset suoritetaan jaksotetusti kriittisyyden mukaan.</p>
             <div class="kuvat">
-                <img src="laakeri1.jpg" alt="Vibexpert"> <!-- Tallenna sivulta -->
+                <img src="laakeri1.jpg" alt="Vibexpert">
             </div>
             <a href="https://www.jukkolasystems.fi/kunnonvalvonta" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/kunnonvalvonta</a>
             <button class="palaa" onclick="closeModal('laakeri')">Palaa</button>
@@ -254,21 +256,25 @@
 
     <script>
         function openModal(id) {
-            console.log('Hotspot clicked: ' + id); // Debug: Tarkista F12 > Console
+            console.log('Hotspot clicked: ' + id); // Debug: F12 > Console
             document.getElementById(id + '-modal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
         function closeModal(id) {
             document.getElementById(id + '-modal').style.display = 'none';
-            document.body.style.overflow = 'hidden'; // Pidä hidden koko näytöllä
+            document.body.style.overflow = 'hidden';
         }
-        // Automaattinen fullscreen latauksessa
         window.onload = function() {
-            if (document.fullscreenElement) return;
-            document.documentElement.requestFullscreen().catch(err => console.log('Fullscreen failed:', err));
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log('Fullscreen failed:', err));
+            }
         };
-        // Sulje modal ESC:llä
-        window.onkeydown = function(event) { if (event.key == 'Escape') { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); } }
+        window.onkeydown = function(event) { if (event.key == 'Escape') { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); } };
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
     </script>
 </body>
 </html>
