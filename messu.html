@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukkola Systems - Drive Train</title>
+    <style>
+        body { margin: 0; font-family: Calibri, Arial, sans-serif; background: #fff; overflow: hidden; }
+        #etusivu { position: relative; width: 100vw; height: 100vh; background: url('drive_train.jpg') center/cover no-repeat; cursor: pointer; }
+        #logo { position: absolute; top: 20px; right: 20px; width: 150px; height: auto; z-index: 10; }
+        #otsikko { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: #005A9C; color: white; padding: 10px 20px; font-size: 24px; border-radius: 5px; }
+        
+        /* Hotspotit: Läpinäkyvät alueet kuvan päällä – säädä koordinaatteja tarpeen mukaan */
+        .hotspot { position: absolute; background: transparent; border: none; cursor: pointer; transition: transform 0.3s ease; z-index: 5; }
+        .hotspot:hover { transform: scale(1.05); } /* Hover-efekti (toimii hiirellä, ei kosketuksella) */
+        
+        /* Esim. hotspotit – kopioi lisää jokaiselle (arvioitu %:lla kuvan koosta) */
+        #taajuus { top: 20%; left: 10%; width: 15%; height: 15%; }
+        #sahko { top: 25%; left: 25%; width: 10%; height: 10%; }
+        #kytkin { top: 30%; left: 20%; width: 8%; height: 8%; }
+        #vaihde { top: 35%; left: 30%; width: 12%; height: 12%; }
+        #pumppu { top: 50%; left: 40%; width: 10%; height: 15%; }
+        #puhallin { top: 55%; left: 50%; width: 10%; height: 10%; }
+        #venttiili { top: 60%; left: 45%; width: 8%; height: 8%; }
+        #instrument { top: 65%; left: 35%; width: 12%; height: 10%; }
+        #suunnittelu { bottom: 20%; left: 5%; width: 12%; height: 8%; }
+        #toimitus { bottom: 20%; left: 18%; width: 12%; height: 8%; }
+        #asennus { bottom: 20%; left: 31%; width: 15%; height: 8%; }
+        #huolto { bottom: 20%; left: 48%; width: 15%; height: 8%; }
+        #laakeri { bottom: 20%; left: 65%; width: 15%; height: 8%; }
+        
+        /* Modal: Nouseva zoom-ikkuna */
+        .modal { display: none; position: fixed; z-index: 20; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); animation: zoomIn 0.3s ease; }
+        .modal-content { position: relative; background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 10px; animation: modalSlide 0.3s ease; }
+        @keyframes zoomIn { from { transform: scale(0.5); } to { transform: scale(1); } }
+        @keyframes modalSlide { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .close { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #005A9C; }
+        .otsikko-modal { background: #005A9C; color: white; padding: 10px; margin: -20px -20px 20px -20px; border-radius: 5px 5px 0 0; }
+        .teksti { color: #333; line-height: 1.5; margin-bottom: 15px; }
+        .kuvat { display: flex; justify-content: space-around; margin: 15px 0; }
+        .kuvat img { max-width: 200px; height: auto; border: 1px solid #B3B3B3; border-radius: 5px; }
+        .linkki { color: #005A9C; text-decoration: none; font-weight: bold; }
+        .linkki:hover { text-decoration: underline; }
+        .palaa { background: #B3B3B3; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="etusivu">
+        <img id="logo" src="logo.jpg" alt="Jukkola Systems">
+        <div id="otsikko">Drive Train – Me toimitamme koko ketjun</div>
+        
+        <!-- Hotspotit: Lisää onclick jokaiselle -->
+        <button class="hotspot" id="taajuus" onclick="openModal('taajuus')"></button>
+        <button class="hotspot" id="sahko" onclick="openModal('sahko')"></button>
+        <button class="hotspot" id="kytkin" onclick="openModal('kytkin')"></button>
+        <button class="hotspot" id="vaihde" onclick="openModal('vaihde')"></button>
+        <button class="hotspot" id="pumppu" onclick="openModal('pumppu')"></button>
+        <button class="hotspot" id="puhallin" onclick="openModal('puhallin')"></button>
+        <button class="hotspot" id="venttiili" onclick="openModal('venttiili')"></button>
+        <button class="hotspot" id="instrument" onclick="openModal('instrument')"></button>
+        <button class="hotspot" id="suunnittelu" onclick="openModal('suunnittelu')"></button>
+        <button class="hotspot" id="toimitus" onclick="openModal('toimitus')"></button>
+        <button class="hotspot" id="asennus" onclick="openModal('asennus')"></button>
+        <button class="hotspot" id="huolto" onclick="openModal('huolto')"></button>
+        <button class="hotspot" id="laakeri" onclick="openModal('laakeri')"></button>
+    </div>
+
+    <!-- Modal-template: Kopioi jokaiselle (muokkaa id ja sisältö) -->
+    <div id="taajuus-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('taajuus')">&times;</span>
+            <img id="logo-modal" src="logo.jpg" alt="Jukkola Systems" style="position: absolute; top: 20px; right: 20px; width: 100px;">
+            <h2 class="otsikko-modal">Taajuusmuuttajat</h2>
+            <p class="teksti">Jukkola Systems tarjoaa Danfoss Vacon -taajuusmuuttajia nopeasti varastostaan, keskittyen VACON 100 INDUSTRIAL -malliin monipuolisiin sovelluksiin kuten moottorien ohjaukseen ja VACON 100 FLOW -malliin pumppu- ja puhallinsovelluksiin virtausvalvonnan ja energiansäästön parantamiseksi. Avainhyötyinä ovat helppo automaation integrointi kenttäväyläoptioilla, luotettavuus haastavissa ympäristöissä pinnoitteen ansiosta sekä integroidut suodattimet.</p>
+            <div class="kuvat">
+                <img src="taajuus1.jpg" alt="Vacon-malli"> <!-- Tallenna esim. Danfoss-sivulta -->
+            </div>
+            <a href="https://www.jukkolasystems.fi/taajuusmuuttajat" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/taajuusmuuttajat</a>
+            <button class="palaa" onclick="closeModal('taajuus')">Palaa</button>
+        </div>
+    </div>
+
+    <!-- Toista modal jokaiselle kategoriasta – esimerkki pumppu:lle -->
+    <div id="pumppu-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('pumppu')">&times;</span>
+            <img src="logo.jpg" alt="Jukkola Systems" style="position: absolute; top: 20px; right: 20px; width: 100px;">
+            <h2 class="otsikko-modal">Pumput</h2>
+            <p class="teksti">Jukkola Systems Oy edustaa KSB-pumppuvalmistajaa, joka tarjoaa laajan valikoiman pumppuja erilaisille toimialoille kuten energiateollisuudelle, kemianteollisuudelle ja jätevesijärjestelmille. Avainhyötyinä ovat räätälöity pumppuvalinta prosessivaatimusten mukaan sekä asiantuntijoiden apu mitoituksessa. Esimerkkejä malleista ovat ETNY-sarja kuumille lämmönsiirtoöljyille, MegaCPK aggressiivisille väliaineille sekä Amacan uppopumput tulvavesiin.</p>
+            <div class="kuvat">
+                <img src="pumppu1.jpg" alt="KSB Etanorm"> <!-- https://www.ksb.com/fi-fi/lc/tuotteet/pumppu/kuiva-asenteinen-pumppu/etanorm-syt/E44B -->
+                <img src="pumppu2.jpg" alt="KSB MegaCPK"> <!-- https://www.ksb.com/fi-fi/lc/tuotteet/pumppu/kuiva-asenteinen-pumppu/megacpk/M48A -->
+            </div>
+            <a href="https://www.jukkolasystems.fi/pumput" class="linkki" target="_blank">Lisätietoa: www.jukkolasystems.fi/pumput</a>
+            <button class="palaa" onclick="closeModal('pumppu')">Palaa</button>
+        </div>
+    </div>
+
+    <!-- Lisää muut modaalit vastaavasti: sahko, kytkin, vaihde, puhallin, venttiili, instrument, suunnittelu, toimitus, asennus, huolto, laakeri. Käytä edellisestä vastauksestani tekstejä ja URL:eja kuville. -->
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id + '-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Estä scroll
+        }
+        function closeModal(id) {
+            document.getElementById(id + '-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        // Sulje modal ESC:llä
+        window.onkeydown = function(event) { if (event.key == 'Escape') { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); } }
+    </script>
+</body>
+</html>
