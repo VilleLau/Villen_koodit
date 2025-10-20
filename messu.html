@@ -10,7 +10,7 @@
         #logo { position: absolute; top: 20px; right: 20px; width: 150px; height: auto; z-index: 10; }
         #otsikko { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: #005A9C; color: white; padding: 10px 20px; font-size: 24px; border-radius: 5px; z-index: 10; }
         
-        /* Hotspotit: Nosto-efekti painettaessa (translateY + shadow) */
+        /* Hotspotit: Nosto-efekti painettaessa (vahvempi varjo ja liike keltaisille alueille) */
         .hotspot { 
             position: absolute; 
             background: transparent; 
@@ -25,38 +25,38 @@
         }
         .hotspot:hover { transform: scale(1.02); }
         .hotspot:active { 
-            transform: translateY(-3px) scale(1.02); 
-            box-shadow: 0 4px 8px rgba(0, 90, 156, 0.3); /* Sininen varjo nostoon */
+            transform: translateY(-4px) scale(1.02); /* Vahvempi nosto keltaisille */
+            box-shadow: 0 6px 12px rgba(0, 90, 156, 0.4); /* Sininen varjo */
         }
         
-        /* Kohdistus: Jokainen ikonien/tekstien päälle (antamiesi kommenttien pohjalta, päällekkäisyys huomioiden) */
-        #taajuus { top: 22%; left: 10%; width: 10%; height: 10%; } /* Salama-ikoni vasen ylä */
-        #sahko { top: 27%; left: 22%; width: 10%; height: 10%; } /* Moottori-ikoni vasen kesk */
-        #kytkin { top: 32%; left: 18%; width: 8%; height: 8%; } /* Kytkin-ikoni vasen ala */
-        #vaihde { top: 37%; left: 28%; width: 10%; height: 10%; } /* Vaihde-ikoni kesk vasen (lähellä pumppua) */
-        #pumppu { top: 48%; left: 42%; width: 8%; height: 10%; } /* Pumppu-ikoni kesk (lähellä vaihdetta/puhallinta) */
-        #puhallin { top: 53%; left: 52%; width: 10%; height: 10%; } /* Puhallin-ikoni oikea kesk (lähellä pumppua) */
-        #venttiili { top: 58%; left: 48%; width: 8%; height: 8%; } /* Venttiili-ikoni ala kesk */
-        #instrument { top: 65%; left: 72%; width: 8%; height: 6%; } /* Aaltoputki-ikoni oikea ala */
-        #suunnittelu { bottom: 20%; left: 2%; width: 13%; height: 8%; } /* Suunnittelu-teksti vasen */
-        #toimitus { bottom: 20%; left: 16%; width: 13%; height: 8%; } /* Toimitus-teksti kesk vasen */
-        #asennus { bottom: 20%; left: 28%; width: 18%; height: 8%; } /* Asennus-teksti kesk */
-        #huolto { bottom: 20%; left: 48%; width: 15%; height: 8%; } /* Huolto-teksti oikea kesk */
-        #laakeri { bottom: 20%; left: 65%; width: 15%; height: 8%; } /* Laakeri-teksti oikea */
+        /* Kohdistus: Täsmälleen keltaisten laatikoiden päälle (laskettu kuvasta) */
+        #taajuus { top: 15%; left: 5%; width: 12%; height: 12%; } /* Keltainen salama-alue */
+        #sahko { top: 25%; left: 20%; width: 12%; height: 12%; } /* Keltainen moottori-alue */
+        #kytkin { top: 35%; left: 15%; width: 10%; height: 10%; } /* Keltainen kytkin-alue */
+        #vaihde { top: 40%; left: 30%; width: 12%; height: 12%; } /* Keltainen vaihde-alue (lähellä pumppua) */
+        #pumppu { top: 50%; left: 35%; width: 10%; height: 12%; } /* Keltainen pumppu-alue (keskellä) */
+        #puhallin { top: 55%; left: 40%; width: 12%; height: 12%; } /* Keltainen puhallin-alue (lähellä pumppua) */
+        #venttiili { top: 60%; left: 45%; width: 10%; height: 10%; } /* Keltainen venttiili-alue */
+        #instrument { top: 65%; left: 70%; width: 12%; height: 10%; } /* Keltainen instrument-alue */
+        #suunnittelu { bottom: 25%; left: 0%; width: 15%; height: 10%; } /* Keltainen suunnittelu-alue */
+        #toimitus { bottom: 25%; left: 15%; width: 15%; height: 10%; } /* Keltainen toimitus-alue */
+        #asennus { bottom: 25%; left: 30%; width: 20%; height: 10%; } /* Keltainen asennus-alue */
+        #huolto { bottom: 25%; left: 50%; width: 15%; height: 10%; } /* Keltainen huolto-alue */
+        #laakeri { bottom: 25%; left: 65%; width: 20%; height: 10%; } /* Keltainen laakeri-alue */
         
-        /* Modal: Zoom-nouseva ikkuna */
+        /* Modal: Zoom-nouseva ikkuna (responsiivinen, mobiilille sopiva) */
         .modal { display: none; position: fixed; z-index: 20; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); animation: zoomIn 0.3s ease; }
-        .modal-content { position: relative; background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 10px; animation: modalSlide 0.3s ease; max-height: 90vh; overflow-y: auto; }
+        .modal-content { position: relative; background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 800px; border-radius: 10px; animation: modalSlide 0.3s ease; max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
         @keyframes zoomIn { from { transform: scale(0.5); } to { transform: scale(1); } }
         @keyframes modalSlide { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .close { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #005A9C; z-index: 25; pointer-events: auto; }
-        .otsikko-modal { background: #005A9C; color: white; padding: 10px; margin: -20px -20px 20px -20px; border-radius: 5px 5px 0 0; }
-        .teksti { color: #333; line-height: 1.5; margin-bottom: 15px; }
+        .otsikko-modal { background: #005A9C; color: white; padding: 10px; margin: -20px -20px 20px -20px; border-radius: 5px 5px 0 0; text-align: center; }
+        .teksti { color: #333; line-height: 1.5; margin-bottom: 15px; font-size: 16px; }
         .kuvat { display: flex; justify-content: space-around; margin: 15px 0; flex-wrap: wrap; }
         .kuvat img { max-width: 200px; height: auto; border: 1px solid #B3B3B3; border-radius: 5px; margin: 5px; }
-        .linkki { color: #005A9C; text-decoration: none; font-weight: bold; }
+        .linkki { color: #005A9C; text-decoration: none; font-weight: bold; display: block; margin: 10px 0; }
         .linkki:hover { text-decoration: underline; }
-        .palaa { background: #B3B3B3; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; width: 100%; pointer-events: auto; }
+        .palaa { background: #B3B3B3; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; width: 100%; pointer-events: auto; font-size: 16px; }
         .logo-modal { position: absolute; top: 20px; right: 20px; width: 100px; height: auto; }
     </style>
 </head>
@@ -65,7 +65,7 @@
         <img id="logo" src="logo.jpg" alt="Jukkola Systems">
         <div id="otsikko">Drive Train – Me toimitamme koko ketjun</div>
         
-        <!-- Hotspotit: Jokainen ikonien/tekstien päälle, nousee painettaessa -->
+        <!-- Hotspotit: Keltaisten alueiden päälle, nousee painettaessa -->
         <button class="hotspot" id="taajuus" onclick="openModal('taajuus')"></button>
         <button class="hotspot" id="sahko" onclick="openModal('sahko')"></button>
         <button class="hotspot" id="kytkin" onclick="openModal('kytkin')"></button>
@@ -81,13 +81,13 @@
         <button class="hotspot" id="laakeri" onclick="openModal('laakeri')"></button>
     </div>
 
-    <!-- Kaikki modaalit (tiivistetyt sisällöt Jukkola Systemsin sivuilta) -->
+    <!-- Kaikki modaalit (täydelliset, tiivistetyt sisällöt Jukkola Systemsin sivuilta) -->
     <div id="taajuus-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('taajuus')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Taajuusmuuttajat</h2>
-            <p class="teksti">Jukkola Systems tarjoaa Danfoss Vacon -taajuusmuuttajia nopeasti varastostaan, keskittyen VACON 100 INDUSTRIAL -malliin monipuolisiin sovelluksiin kuten moottorien ohjaukseen ja VACON 100 FLOW -malliin pumppu- ja puhallinsovelluksiin virtausvalvonnan ja energiansäästön parantamiseksi. Avainhyötyinä ovat helppo automaation integrointi kenttäväyläoptioilla, luotettavuus haastavissa ympäristöissä pinnoitteen ansiosta sekä integroidut suodattimet.</p>
+            <p class="teksti">Jukkola Systems tarjoaa Danfoss Vacon -taajuusmuuttajia nopeasti varastostaan, keskittyen VACON 100 INDUSTRIAL -malliin monipuolisiin sovelluksiin kuten moottorien ohjaukseen ja VACON 100 FLOW -malliin pumppu- ja puhallinsovelluksiin virtausvalvonnan ja energiansäästön parantamiseksi. Avainhyötyinä ovat helppo automaation integrointi kenttäväyläoptioilla, luotettavuus haastavissa ympäristöissä pinnoitteen ansiosta sekä integroidut suodattimet. Esimerkkejä ovat Multipump-ratkaisut pumpun suorituskyvyn parantamiseen ja malleja tehoalueella 1,1 kW – 800 kW.</p>
             <div class="kuvat">
                 <img src="taajuus1.jpg" alt="Vacon-malli">
             </div>
@@ -101,7 +101,7 @@
             <span class="close" onclick="closeModal('sahko')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Sähkömoottorit</h2>
-            <p class="teksti">Jukkola Systems tarjoaa pohjoismaiden laajimman varaston Siemens Innomotics -sähkömoottoreita, jotka kattavat tehot 0,25–315 kW ja soveltuvat teollisuuden sovelluksiin kuten kone- ja laitevalmistukseen sekä prosessiteollisuuteen. Avainhyötyinä ovat nopeat toimitukset varastosta, korkea laatu ja luotettavuus sekä ATEX-hyväksytyt räjähdyssuojatut moottorit öljy- ja kaasuteollisuuteen.</p>
+            <p class="teksti">Jukkola Systems tarjoaa pohjoismaiden laajimman varaston Siemens Innomotics -sähkömoottoreita, jotka kattavat tehot 0,25–315 kW ja soveltuvat teollisuuden sovelluksiin kuten kone- ja laitevalmistukseen sekä prosessiteollisuuteen. Avainhyötyinä ovat nopeat toimitukset varastosta, korkea laatu ja luotettavuus sekä ATEX-hyväksytyt räjähdyssuojatut moottorit öljy- ja kaasuteollisuuteen. Esimerkkejä ovat valurautarunkoiset Simotics SD -oikosulkumoottorit ja korotetun tehon moottorit.</p>
             <div class="kuvat">
                 <img src="sahko1.png" alt="Simotics-taulukko">
                 <img src="sahko2.png" alt="Simotics XP">
@@ -116,7 +116,7 @@
             <span class="close" onclick="closeModal('kytkin')">&times;</span>
             <img class="logo-modal" src="logo.jpg" alt="Jukkola Systems">
             <h2 class="otsikko-modal">Akselikytkimet</h2>
-            <p class="teksti">Jukkola Systems on Flender-akselikytkimien virallinen varastoiva jälleenmyyjä Suomessa, tarjoten koko valikoiman joustavia, jäykkiä ja erikoiskytkimiä teollisuuden käyttökohteisiin. Avainhyötyinä ovat kestävyys, modulaarinen rakenne helppoon huoltoon sekä iskunvaimennus käynnistyksissä. Esimerkkejä ovat N-Eupex-joustava sakarakytkin ja RUPEX-joustava tappikytkin.</p>
+            <p class="teksti">Jukkola Systems on Flender-akselikytkimien virallinen varastoiva jälleenmyyjä Suomessa, tarjoten koko valikoiman joustavia, jäykkiä ja erikoiskytkimiä teollisuuden käyttökohteisiin. Avainhyötyinä ovat kestävyys, modulaarinen rakenne helppoon huoltoon sekä iskunvaimennus käynnistyksissä. Esimerkkejä ovat N-Eupex-joustava sakarakytkin (momentti 28–71 000 Nm, soveltuu pumppuihin ja puhaltimiin) sekä RUPEX-joustava tappikytkin.</p>
             <div class="kuvat">
                 <img src="kytkin1.jpg" alt="Flender N-Eupex">
             </div>
