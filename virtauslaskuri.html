@@ -99,16 +99,30 @@
         );
       }
 
+      // Mukautettu slider/number input: sallii tyhjentämisen
       function SliderWithNumber({label,value,onChange,step=1,min=0,max=100,unit="",extra=null}){
         return (
           <div className="flex flex-col gap-2">
             <div className="flex items-end justify-between">
               <span className="text-sm text-gray-600">{label}</span>
               <div className="flex items-center gap-2 w-56">
-                <input type="number" step={step} min={min} max={max}
+                {/* number input ilman min/max -attribuutteja: tyhjä arvo sallittu */}
+                <input type="number" step={step}
                   value={Number.isFinite(value)?value:""}
-                  onChange={e=>{const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(v);}}
-                  onBlur={e=>{const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(clamp(v,min,max));}}
+                  onChange={e=>{
+                    const val = e.target.value;
+                    if(val === "") onChange(NaN);
+                    else {
+                      const v=parseFloat(val);
+                      if(!Number.isNaN(v)) onChange(v);
+                    }
+                  }}
+                  onBlur={e=>{
+                    const val = e.target.value;
+                    if(val === "") return;
+                    const v=parseFloat(val);
+                    if(!Number.isNaN(v)) onChange(clamp(v,min,max));
+                  }}
                   className="w-full rounded-xl border p-1.5 text-right" />
                 <span className="text-gray-500 text-sm w-16 text-right">{unit}</span>
               </div>
@@ -122,6 +136,7 @@
         );
       }
 
+      // NumberField: sallii tyhjä arvo, säilyttää min/max advanced-kentissä
       function NumberField({label,value,onChange,step=1,min=0,max=Number.POSITIVE_INFINITY,unit="",hint="",disabled=false}){
         return (
           <label className="flex flex-col gap-1">
@@ -129,8 +144,22 @@
             <div className="flex items-center gap-2">
               <input type="number" step={step} min={min} max={max}
                 value={Number.isFinite(value)?value:""}
-                onChange={e=>{ if(disabled) return; const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(v); }}
-                onBlur={e=>{ if(disabled) return; const v=parseFloat(e.target.value); if(!Number.isNaN(v)) onChange(clamp(v,min,max)); }}
+                onChange={e=>{
+                  if(disabled) return;
+                  const val = e.target.value;
+                  if(val === "") onChange(NaN);
+                  else {
+                    const v=parseFloat(val);
+                    if(!Number.isNaN(v)) onChange(v);
+                  }
+                }}
+                onBlur={e=>{
+                  if(disabled) return;
+                  const val = e.target.value;
+                  if(val === "") return;
+                  const v=parseFloat(val);
+                  if(!Number.isNaN(v)) onChange(clamp(v,min,max));
+                }}
                 disabled={disabled}
                 className={`w-full rounded-xl border p-2 focus:outline-none focus:ring text-right ${disabled?'bg-gray-100 text-gray-500':''}`} />
               <span className="text-gray-500 w-14 text-right">{unit}</span>
@@ -179,6 +208,10 @@
         const [eff,setEff]             = useState(0.7);
         const [hours,setHours]         = useState(4000);
         const [energyPrice,setEnergyPrice] = useState(0.12);
+        // Kokonaisenergian laskentaa varten: valintaruutu ja nostokorkeus
+        const [showTotalEnergy,setShowTotalEnergy] = useState(false);
+        // nostokorkeus (m) pumpun tuottamaa kokonaispainetta varten
+        const [totalHead,setTotalHead] = useState(0);
 
         // Massavirta + lukitukset
         const [massFlow,_setMassFlow]  = useState(998*areaFromDmm(100)*1.5); // kg/s
@@ -292,6 +325,24 @@
           return { mdot,Q_lpm,Q_m3h, Re,f, hf_fric,hf_minor,hf_total, dp_bar_total, dp_bar_fric_100, P_hyd,P_in, E_year_kWh,cost_year };
         },[diameterMM,velocity,length,rho,nu,epsMM,eff,hours,energyPrice,sumK]);
 
+        // Jos käyttäjä haluaa laskea nostokorkeuden vaikutuksen kokonaisenergian tarpeeseen,
+        // lasketaan pumpun nostokorkeuden aiheuttama lisäteho ja energia. Nämä arvot
+        // huomioidaan vain, jos showTotalEnergy on true.
+        const A_head = areaFromDmm(diameterMM);
+        const Q_head = velocity * A_head;                          // m³/s
+        const headPowerHyd = rho * 9.80665 * totalHead * Q_head;   // W (hydraulinen)
+        const headPowerIn  = headPowerHyd / Math.max(0.01, eff);   // W (sähkö)
+        const headEnergyYear = (headPowerIn * hours) / 1000;       // kWh/a
+        const headCostYear   = headEnergyYear * energyPrice;       // €/a
+        // Yhteenlasketut arvot (häviöt + nostokorkeus)
+        const totalPowerHyd  = results.P_hyd + headPowerHyd;
+        const totalPowerIn   = results.P_in  + headPowerIn;
+        const totalEnergyYear= results.E_year_kWh + headEnergyYear;
+        const totalCostYear  = results.cost_year + headCostYear;
+
+        // Määritä DN-valinnan arvo: jos sisähalkaisija ei täsmää vakiolistaan, näytetään tyhjä (---)
+        const dnSelectValue = dnList.includes(Number(diameterMM)) ? Number(diameterMM) : "";
+
         return (
           <div className="min-h-screen text-gray-900 p-4 sm:p-8">
             <div className="mx-auto max-w-6xl space-y-6">
@@ -324,8 +375,9 @@
                         <span className="text-sm text-gray-600">DN-pikavalinta</span>
                         <span className="text-xs text-gray-400">ID≈DN mm (arvio)</span>
                       </div>
-                      <select className="rounded-xl border p-2 w-full" value={diameterMM}
+                      <select className="rounded-xl border p-2 w-full" value={dnSelectValue}
                               onChange={e=>applyConstraints('D', parseFloat(e.target.value))}>
+                        <option value="">---</option>
                         {dnList.map(dn => <option key={dn} value={dn}>DN{dn}</option>)}
                       </select>
                     </div>
@@ -370,13 +422,27 @@
                       <ResultRow label="Q" value={results.Q_m3h} unit="m³/h" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Häviöt & energia</h3>
-                      <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
-                      <ResultRow label="Painehäviö / 100 m (putkikitka)" value={results.dp_bar_fric_100} unit="bar/100 m" digits={2} />
-                      <ResultRow label="Hydraulinen teho" value={results.P_hyd/1000} unit="kW" />
-                      <ResultRow label="Sähköteho" value={results.P_in/1000} unit="kW" />
-                      <ResultRow label="Vuotuinen energia" value={results.E_year_kWh} unit="kWh/a" />
-                      <ResultRow label="Vuotuinen kustannus" value={results.cost_year} unit="€ / a" digits={0} />
+                      <h3 className="text-sm uppercase tracking-wide text-gray-500">Energia</h3>
+                      {/* Häviöt (kitka + pienhäviöt) */}
+                      <div className="space-y-1">
+                        <h4 className="font-medium text-gray-700">Häviöt</h4>
+                        <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
+                        <ResultRow label="Painehäviö / 100 m (putkikitka)" value={results.dp_bar_fric_100} unit="bar/100 m" digits={2} />
+                        <ResultRow label="Hydraulinen teho" value={results.P_hyd/1000} unit="kW" />
+                        <ResultRow label="Sähköteho" value={results.P_in/1000} unit="kW" />
+                        <ResultRow label="Vuotuinen energia" value={results.E_year_kWh} unit="kWh/a" />
+                        <ResultRow label="Vuotuinen kustannus" value={results.cost_year} unit="€ / a" digits={0} />
+                      </div>
+                      {/* Kokonaisenergia sisältää nostokorkeuden. Näytetään vain jos valinta on päällä. */}
+                      {showTotalEnergy && (
+                        <div className="space-y-1 mt-4">
+                          <h4 className="font-medium text-gray-700">Kokonaisenergia</h4>
+                          <ResultRow label="Hydraulinen teho" value={totalPowerHyd/1000} unit="kW" />
+                          <ResultRow label="Sähköteho" value={totalPowerIn/1000} unit="kW" />
+                          <ResultRow label="Vuotuinen energia" value={totalEnergyYear} unit="kWh/a" />
+                          <ResultRow label="Vuotuinen kustannus" value={totalCostYear} unit="€ / a" digits={0} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -435,7 +501,21 @@
                                    step={1} min={0} max={8760} unit="h" />
                       <NumberField label="Sähkön hinta" value={energyPrice} onChange={setEnergyPrice}
                                    step={0.001} min={0} max={10} unit="€/kWh" />
-                      <div className="text-xs text-gray-500">Sähköteho ja vuotuinen energia lasketaan kokonaishäviöistä ja η:stä.</div>
+                      <div className="text-xs text-gray-500">Huomioi: alla näytettävät tehot ja energiat perustuvat vain putkiston aiheuttamiin häviöihin (kitkasta ja pienhäviöistä).</div>
+
+                      {/* Valintaruutu kokonaisenergian laskentaan */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <input id="showTotalEnergy" type="checkbox" checked={showTotalEnergy}
+                               onChange={e=>setShowTotalEnergy(e.target.checked)} />
+                        <label htmlFor="showTotalEnergy" className="text-sm text-gray-700">Laske myös nostokorkeus mukaan (kokonaisenergia)</label>
+                      </div>
+                      {/* Näytetään nostokorkeus-kenttä kun valinta on päällä */}
+                      {showTotalEnergy && (
+                        <div className="mt-2">
+                          <NumberField label="Kokonaisnostokorkeus" value={totalHead} onChange={setTotalHead}
+                                       step={0.1} min={0} max={1000} unit="m" hint="Pumppu nostaa vettä tämän korkeuseron verran" />
+                        </div>
+                      )}
 
                       <div className="space-y-3">
                         <h3 className="font-medium">Pienhäviöt (komponentit)</h3>
