@@ -289,7 +289,8 @@
             else { m = rhoUse*v*areaFromDmm(d); }
           }
 
-          d = clamp(d,5,1000);
+          // Älä rajoita minimihalkaisijaa 5 mm: sallitaan pienemmät arvot, jotta käyttäjä voi kirjoittaa vapaasti. Minimi 1 mm.
+          d = clamp(d,1,1000);
           v = clamp(v,0,10);
           m = clamp(m,0,2000);
 
@@ -407,7 +408,7 @@
                       label={<LockButton locked={lockD} onToggle={()=>setLocks('D')} label="Sisähalkaisija" />}
                       value={diameterMM}
                       onChange={v=>applyConstraints('D',v)}
-                      step={1} min={5} max={1000} unit="mm"
+                      step={1} min={1} max={1000} unit="mm"
                     />
 
                     <SliderWithNumber
