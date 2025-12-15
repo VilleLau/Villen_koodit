@@ -450,7 +450,7 @@
                       {/* Putkistohäviöt (kitka + pienhäviöt) */}
                       <div className="space-y-1">
                         <h4 className="font-medium text-gray-700">Putkistohäviöt</h4>
-                        <ResultRow label="Painehäviö" value={results.dp_bar_total} unit="bar" digits={2} />
+                        <ResultRow label="Painehäviö yhteensä" value={results.dp_bar_total} unit="bar" digits={2} />
                         <ResultRow label="Painehäviö / 100 m (putkikitka)" value={results.dp_bar_fric_100} unit="bar/100 m" digits={2} />
                         <ResultRow label="Hydraulinen teho" value={results.P_hyd/1000} unit="kW" />
                         <ResultRow label="Sähköteho" value={results.P_in/1000} unit="kW" />
