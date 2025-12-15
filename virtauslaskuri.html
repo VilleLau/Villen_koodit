@@ -187,6 +187,11 @@
 
         const [showAdvanced,setShowAdvanced] = useState(false);
 
+        // Valitse, onko käyttäjän syöttämä nostokorkeus pumpun puolella (alkupaine) vai putken loppupaine.
+        // "pump" tarkoittaa, että syötetty arvo on pumpun tuottama nostokorkeus. "end" tarkoittaa, että syötetty arvo on
+        // haluttu nostokorkeus putken päässä, jolloin pumpun tuottama nostokorkeus lasketaan lisäämällä putkistohäviö.
+        const [headType,setHeadType] = useState("pump");
+
         // Fluidi
         const [fluidKey,setFluidKey]   = useState("water");
         const [fluidTemp,setFluidTemp] = useState(20);
@@ -250,6 +255,13 @@
 
         function applyConstraints(source, value, ld=lockD, lv=lockV, lm=lockM, rhoArg){
           const rhoUse = (typeof rhoArg==='number') ? rhoArg : rho;
+          // Jos syötetty arvo ei ole numeerinen (esim. tyhjä kenttä), asetetaan vastaava tila NaN ja ei muuteta muita arvoja.
+          if(!Number.isFinite(value)){
+            if(source === 'D') _setDiameterMM(value);
+            else if(source === 'V') _setVelocity(value);
+            else if(source === 'M') _setMassFlow(value);
+            return;
+          }
           let d=diameterMM, v=velocity, m=massFlow;
           if(source==='D') d=value;
           if(source==='V') v=value;
@@ -330,7 +342,13 @@
         // huomioidaan vain, jos showTotalEnergy on true.
         const A_head = areaFromDmm(diameterMM);
         const Q_head = velocity * A_head;                          // m³/s
-        const headPowerHyd = rho * 9.80665 * totalHead * Q_head;   // W (hydraulinen)
+        // Laske pumpun ja loppupaineen nostokorkeudet syöttötyypin perusteella.
+        // pumpHeadM: pumpun tuottama nostokorkeus (m)
+        // endHeadM: paineen nostokorkeus putken päässä (m)
+        const pumpHeadM = headType === "end" ? totalHead + results.hf_total : totalHead;
+        const endHeadM  = headType === "end" ? totalHead : totalHead - results.hf_total;
+        // Laske pumpun teho ja energia pumpun nostokorkeuden perusteella
+        const headPowerHyd = rho * 9.80665 * pumpHeadM * Q_head;   // W (hydraulinen)
         const headPowerIn  = headPowerHyd / Math.max(0.01, eff);   // W (sähkö)
         const headEnergyYear = (headPowerIn * hours) / 1000;       // kWh/a
         const headCostYear   = headEnergyYear * energyPrice;       // €/a
@@ -339,6 +357,9 @@
         const totalPowerIn   = results.P_in  + headPowerIn;
         const totalEnergyYear= results.E_year_kWh + headEnergyYear;
         const totalCostYear  = results.cost_year + headCostYear;
+
+        // Kokonaisnostokorkeus pumpulle on pumpun tuottama nostokorkeus (pumpHeadM).
+        const totalLift = pumpHeadM;
 
         // Määritä DN-valinnan arvo: jos sisähalkaisija ei täsmää vakiolistaan, näytetään tyhjä (---)
         const dnSelectValue = dnList.includes(Number(diameterMM)) ? Number(diameterMM) : "";
@@ -411,6 +432,8 @@
 
                     <SliderWithNumber label="Putken pituus" value={length} onChange={setLength}
                                       step={1} min={0} max={5000} unit="m" />
+
+                    {/* Kokonaisenergia-asetukset poistettu tältä puolelta */}
                   </div>
 
                   {/* Oikean puolen tulokset */}
@@ -433,16 +456,93 @@
                         <ResultRow label="Vuotuinen energia" value={results.E_year_kWh} unit="kWh/a" />
                         <ResultRow label="Vuotuinen kustannus" value={results.cost_year} unit="€ / a" digits={0} />
                       </div>
-                      {/* Kokonaisenergia sisältää nostokorkeuden. Näytetään vain jos valinta on päällä. */}
-                      {showTotalEnergy && (
-                        <div className="space-y-1 mt-4">
-                          <h4 className="font-medium text-gray-700">Kokonaisenergia</h4>
-                          <ResultRow label="Hydraulinen teho" value={totalPowerHyd/1000} unit="kW" />
-                          <ResultRow label="Sähköteho" value={totalPowerIn/1000} unit="kW" />
-                          <ResultRow label="Vuotuinen energia" value={totalEnergyYear} unit="kWh/a" />
-                          <ResultRow label="Vuotuinen kustannus" value={totalCostYear} unit="€ / a" digits={0} />
+                      {/* Kokonaisenergia (pumppu + putkisto) - näytetään oikealla sarakkeessa */}
+                      <div className="mt-6 space-y-2 mb-8">
+                        <div className="flex items-center gap-2">
+                          <input id="showTotalEnergy" type="checkbox" checked={showTotalEnergy}
+                                 onChange={e=>setShowTotalEnergy(e.target.checked)} />
+                          <label htmlFor="showTotalEnergy" className="text-sm text-gray-700">Laske myös nostokorkeus mukaan</label>
                         </div>
-                      )}
+                        {showTotalEnergy && (
+                          <>
+                            {/* Valitse, onko syötetty arvo pumpun vai loppupaineen nostokorkeus. Valinta esitetään omalla rivillään. */}
+                            <div className="flex flex-col gap-1 mb-2">
+                              <label className="text-sm text-gray-600">Nostokorkeustyyppi</label>
+                              <select className="rounded-xl border p-2 text-sm w-full" value={headType}
+                                      onChange={e=>setHeadType(e.target.value)}>
+                                <option value="pump">Alkupaine (pumpun nostokorkeus)</option>
+                                <option value="end">Loppupaine (haluttu nostokorkeus putken päässä)</option>
+                              </select>
+                            </div>
+                            <NumberField label={headType === 'pump' ? 'Pumpun nostokorkeus' : 'Loppupaineen nostokorkeus'}
+                                         value={totalHead} onChange={setTotalHead}
+                                         step={0.1} min={0} max={1000} unit="m"
+                                         hint={headType === 'pump' ? 'Syötä pumpun tuottama nostokorkeus' : 'Syötä haluttu nostokorkeus putken päässä'} />
+                            {/* Näytä pumpun ja loppupaineen nostokorkeus sekä putkiston nostohäviö isommalla tekstillä */}
+                            <div className="mt-2 space-y-1">
+                              <div className="text-sm font-medium text-gray-700">Pumpun nostokorkeus: {Number.isFinite(pumpHeadM) ? pumpHeadM.toLocaleString(undefined,{maximumFractionDigits:1}) : "-"} m</div>
+                              <div className="text-sm font-medium text-gray-700">Loppupaineen nostokorkeus: {Number.isFinite(endHeadM) ? endHeadM.toLocaleString(undefined,{maximumFractionDigits:1}) : "-"} m</div>
+                              <div className="text-sm font-medium text-gray-700">Putkiston nostohäviö: {Number.isFinite(results.hf_total) ? results.hf_total.toLocaleString(undefined,{maximumFractionDigits:1}) : "-"} m</div>
+                            </div>
+                            <div className="bg-gray-50 border rounded-xl p-3 space-y-3">
+                              <div className="grid grid-cols-4 gap-2 font-medium text-sm text-gray-700">
+                                <div></div>
+                                <div className="text-center">Pumppu</div>
+                                <div className="text-center">Putkisto</div>
+                                <div className="text-center">Yhteensä</div>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2 items-baseline">
+                                <div className="text-gray-600">Hydraulinen teho</div>
+                                <div className="text-right font-semibold">
+                                  {(headPowerHyd/1000).toLocaleString(undefined,{maximumFractionDigits:2})} <span className="text-gray-500 font-normal">kW</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {(results.P_hyd/1000).toLocaleString(undefined,{maximumFractionDigits:2})} <span className="text-gray-500 font-normal">kW</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {(totalPowerHyd/1000).toLocaleString(undefined,{maximumFractionDigits:2})} <span className="text-gray-500 font-normal">kW</span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2 items-baseline">
+                                <div className="text-gray-600">Sähköteho</div>
+                                <div className="text-right font-semibold">
+                                  {(headPowerIn/1000).toLocaleString(undefined,{maximumFractionDigits:2})} <span className="text-gray-500 font-normal">kW</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {(results.P_in/1000).toLocaleString(undefined,{maximumFractionDigits:2})} <span className="text-gray-500 font-normal">kW</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {(totalPowerIn/1000).toLocaleString(undefined,{maximumFractionDigits:2})} <span className="text-gray-500 font-normal">kW</span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2 items-baseline">
+                                <div className="text-gray-600">Vuotuinen energia</div>
+                                <div className="text-right font-semibold">
+                                  {headEnergyYear.toLocaleString(undefined,{maximumFractionDigits:0})} <span className="text-gray-500 font-normal">kWh/a</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {results.E_year_kWh.toLocaleString(undefined,{maximumFractionDigits:0})} <span className="text-gray-500 font-normal">kWh/a</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {totalEnergyYear.toLocaleString(undefined,{maximumFractionDigits:0})} <span className="text-gray-500 font-normal">kWh/a</span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2 items-baseline">
+                                <div className="text-gray-600">Vuotuinen kustannus</div>
+                                <div className="text-right font-semibold">
+                                  {headCostYear.toLocaleString(undefined,{maximumFractionDigits:0})} <span className="text-gray-500 font-normal">€ / a</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {results.cost_year.toLocaleString(undefined,{maximumFractionDigits:0})} <span className="text-gray-500 font-normal">€ / a</span>
+                                </div>
+                                <div className="text-right font-semibold">
+                                  {totalCostYear.toLocaleString(undefined,{maximumFractionDigits:0})} <span className="text-gray-500 font-normal">€ / a</span>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -503,19 +603,6 @@
                                    step={0.001} min={0} max={10} unit="€/kWh" />
                       <div className="text-xs text-gray-500">Huomioi: alla näytettävät tehot ja energiat perustuvat vain putkiston aiheuttamiin häviöihin (kitkasta ja pienhäviöistä).</div>
 
-                      {/* Valintaruutu kokonaisenergian laskentaan */}
-                      <div className="flex items-center gap-2 mt-2">
-                        <input id="showTotalEnergy" type="checkbox" checked={showTotalEnergy}
-                               onChange={e=>setShowTotalEnergy(e.target.checked)} />
-                        <label htmlFor="showTotalEnergy" className="text-sm text-gray-700">Laske myös nostokorkeus mukaan (kokonaisenergia)</label>
-                      </div>
-                      {/* Näytetään nostokorkeus-kenttä kun valinta on päällä */}
-                      {showTotalEnergy && (
-                        <div className="mt-2">
-                          <NumberField label="Kokonaisnostokorkeus" value={totalHead} onChange={setTotalHead}
-                                       step={0.1} min={0} max={1000} unit="m" hint="Pumppu nostaa vettä tämän korkeuseron verran" />
-                        </div>
-                      )}
 
                       <div className="space-y-3">
                         <h3 className="font-medium">Pienhäviöt (komponentit)</h3>
