@@ -3,18 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Villen koodailut</title>
+    <title>Villen koodailut • Uusi etusivu</title>
+    <!--
+      Tämä on päivitetty versio etusivusta. Se säilyttää tumman teeman ja
+      animoidut elementit, mutta esittelee uuden ilmeen ja esittää
+      tärkeimmät työkalut selkeämmin. Metsävaratiedot ja hakkuusuunnittelu
+      jätetään sivun ulkopuolelle käyttäjän toiveen mukaisesti.
+    -->
     <link rel="icon" href="logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font (Inter) -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
     <style>
       html,body,#root { height: 100%; }
       body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif; }
-
       /* HERO: tausta + overlay + hienovarainen ruudukko */
       .bg-hero {
         background-image:
@@ -27,7 +29,6 @@
         background-repeat: no-repeat;
         background-attachment: fixed;
       }
-
       /* Hienovarainen ruudukko koko sivulle */
       .grid-overlay:before {
         content: "";
@@ -39,7 +40,6 @@
         mask-image: radial-gradient(ellipse at 50% -10%, black 20%, transparent 60%);
         z-index: 0;
       }
-
       /* Glass-kortit */
       .glass {
         backdrop-filter: blur(8px);
@@ -47,12 +47,10 @@
         background: linear-gradient(180deg, rgba(15,23,42,0.55), rgba(2,6,23,0.45));
         border: 1px solid rgba(148,163,184,0.15);
       }
-
       /* Nappien hehku + animaatio */
       .btn { position: relative; isolation: isolate; transition: transform .15s ease, box-shadow .15s ease; }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(59,130,246,.28); }
       .btn:active { transform: translateY(0); }
-
       /* Sinisen sävyiset napit (brändäämättä) */
       .btn-blue {
         background-image: linear-gradient(90deg, #0ea5e9, #3b82f6, #2563eb);
@@ -70,74 +68,106 @@
       }
       .btn-blue:hover::before, .btn-blue-secondary:hover::before { opacity: .6; }
       @keyframes shimmer { to { transform: rotate(1turn); } }
-
       /* Hienovaraiset hover-efektit korteille */
       .card { transition: transform .2s ease, border-color .2s ease, background .2s ease; }
       .card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.22); }
-
       /* Prefer-reduced-motion tuki */
       @media (prefers-reduced-motion: reduce) {
         .btn, .card { transition: none; }
         .btn:hover, .card:hover { transform: none; }
       }
-          /* Animoidut hehkuvat "blobit" taustalle */
-      .float-blob { position:absolute; width:420px; height:420px; border-radius:50%; filter: blur(40px); opacity:.18; pointer-events:none; }
-      .blob-sky { background: radial-gradient(circle at 30% 30%, rgba(56,189,248,.8), transparent 60%); }
-      .blob-blue { background: radial-gradient(circle at 70% 70%, rgba(37,99,235,.8), transparent 60%); }
-      @keyframes floatxy { 0%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(18px,-14px) scale(1.05);} 100%{ transform: translate(0,0) scale(1);} }
-      .animate-float { animation: floatxy 12s ease-in-out infinite; }
-
-      @media (prefers-reduced-motion: reduce) {
-        .btn, .card, .animate-float { animation: none !important; }
+      /* Animoidut hehkuvat "blobit" taustalle */
+      .float-blob {
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        filter: blur(40px);
+        opacity: .18;
+        pointer-events: none;
       }
-          /* ===== LOGO-ANIMAATIOT ===== */
-      .logo-spin { transform-origin: 60px 60px; animation: logoSpin 28s linear infinite; }
-      @keyframes logoSpin { to { transform: rotate(360deg); } }
-
-      .logo-orbit { transform-origin: 60px 60px; animation: logoOrbit 6s ease-in-out infinite; }
-      @keyframes logoOrbit { 0%{ transform: rotate(-6deg);} 50%{ transform: rotate(6deg);} 100%{ transform: rotate(-6deg);} }
-
-      .logo-dot { animation: dotPulse 2.2s ease-in-out infinite; }
-      .logo-dot:nth-child(2){ animation-delay: .3s; }
-      .logo-dot:nth-child(3){ animation-delay: .6s; }
-      @keyframes dotPulse { 0%,100%{ transform: scale(1); opacity:.9;} 50%{ transform: scale(1.15); opacity:1;} }
-
-      .logo-underline { stroke-dasharray: 240; stroke-dashoffset: 240; animation: underlineDraw 1.6s ease forwards 0.4s; }
-      @keyframes underlineDraw { to { stroke-dashoffset: 0; } }
-
-      @media (prefers-reduced-motion: reduce){
+      .blob-sky {
+        background: radial-gradient(circle at 30% 30%, rgba(56,189,248,.8), transparent 60%);
+      }
+      .blob-blue {
+        background: radial-gradient(circle at 70% 70%, rgba(37,99,235,.8), transparent 60%);
+      }
+      @keyframes floatxy {
+        0%   { transform: translate(0,0) scale(1); }
+        50%  { transform: translate(18px,-14px) scale(1.05); }
+        100% { transform: translate(0,0) scale(1); }
+      }
+      .animate-float {
+        animation: floatxy 12s ease-in-out infinite;
+      }
+      /* LOGO-animaatiot */
+      .logo-spin {
+        transform-origin: 60px 60px;
+        animation: logoSpin 28s linear infinite;
+      }
+      @keyframes logoSpin {
+        to { transform: rotate(360deg); }
+      }
+      .logo-orbit {
+        transform-origin: 60px 60px;
+        animation: logoOrbit 6s ease-in-out infinite;
+      }
+      @keyframes logoOrbit {
+        0%   { transform: rotate(-6deg); }
+        50%  { transform: rotate(6deg); }
+        100% { transform: rotate(-6deg); }
+      }
+      .logo-dot {
+        animation: dotPulse 2.2s ease-in-out infinite;
+      }
+      .logo-dot:nth-child(2) {
+        animation-delay: .3s;
+      }
+      .logo-dot:nth-child(3) {
+        animation-delay: .6s;
+      }
+      @keyframes dotPulse {
+        0%, 100% { transform: scale(1); opacity: .9; }
+        50%      { transform: scale(1.15); opacity: 1; }
+      }
+      .logo-underline {
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        animation: underlineDraw 1.6s ease forwards 0.4s;
+      }
+      @keyframes underlineDraw {
+        to { stroke-dashoffset: 0; }
+      }
+      /* Reduced motion resets for new animations */
+      @media (prefers-reduced-motion: reduce) {
+        .animate-float { animation: none !important; }
         .logo-spin, .logo-orbit, .logo-dot, .logo-underline { animation: none !important; }
       }
     </style>
   </head>
-
   <body class="bg-slate-950 text-slate-100 grid-overlay">
     <div class="min-h-screen bg-hero">
       <!-- Header -->
       <header class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img src="logo.png" alt="Logo" class="h-9 w-auto" onerror="this.style.display='none'">
+          <img src="logo.png" alt="Logo" class="h-9 w-auto" onerror="this.style.display='none'" />
           <span class="text-sm text-slate-300">Systeemi</span>
         </div>
         <nav class="hidden sm:flex items-center gap-2">
           <a href="#tools" class="px-3 py-1.5 rounded-full text-sm text-slate-200 hover:bg-white/10">Työkalut</a>
-          <a href="#about" class="px-3 py-1.5 rounded-full text-sm text-slate-200 hover:bg-white/10">Tietoa</a>
-          <a href="muuta.html" class="px-3 py-1.5 rounded-full text-sm text-slate-200 hover:bg-white/10">Muut</a>
+          <a href="muuta.html" class="px-3 py-1.5 rounded-full text-sm text-slate-200 hover:bg-white/10">Sitaattikone</a>
         </nav>
       </header>
-
       <!-- Hero -->
       <main class="relative z-[1]">
         <section class="relative max-w-6xl mx-auto px-4 pt-4 pb-16 lg:pb-24 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div class="space-y-6 relative z-[1]">
             <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-slate-300">
               <span class="h-2 w-2 rounded-full bg-sky-400 animate-pulse"></span>
-              AI-avusteiset työkalut kehitteillä
+              AI-koodatut työkalut ja kokeilut
             </div>
-
             <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">Villen koodailut</h1>
-
-            <!-- Animoitu vaakalogo -->
+            <!-- Animoitu logo muistuttaa alkuperäistä sivua -->
             <svg width="520" height="140" viewBox="0 0 520 140" fill="none" xmlns="http://www.w3.org/2000/svg" class="select-none">
               <!-- Gear background -->
               <g class="logo-spin">
@@ -156,7 +186,6 @@
                 <!-- Inner circle -->
                 <circle cx="60" cy="60" r="18" fill="#e6f6ff"/>
               </g>
-
               <!-- Orbits + nodes -->
               <g class="logo-orbit">
                 <circle cx="60" cy="60" r="44" stroke="#93c5fd" stroke-width="2" opacity=".35"/>
@@ -167,7 +196,6 @@
                 <circle class="logo-dot" cx="108" cy="60" r="4" fill="#60a5fa"/>
                 <circle class="logo-dot" cx="60" cy="112" r="4" fill="#93c5fd"/>
               </g>
-
               <!-- Text -->
               <g font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, 'Noto Sans', sans-serif">
                 <text x="140" y="70" font-size="44" font-weight="800" fill="#0b1220">
@@ -175,33 +203,32 @@
                 </text>
                 <text x="140" y="110" font-size="44" font-weight="700" fill="#e2e8f0">koodailut</text>
               </g>
-
               <!-- Underline -->
               <path class="logo-underline" d="M140 118 H 360" stroke="#22d3ee" stroke-width="6" stroke-linecap="round"/>
             </svg>
             <p class="text-lg text-slate-300 max-w-prose">
-              Testaillaan tekoälyllä tehtyä koodausta — pikatyökaluja arkeen ja
-              teknisiä kokeiluja tuotantoon. Ensimmäisinä: virtauslaskuri,
-              pumppuenergian arvio ja kevyt selainpeli.
+              Tervetuloa! Kehitän ja testaan tekoälyllä tuotettuja pieniä työkaluja
+              ja demoja teollisuuden ja arjen tarpeisiin. Valitse alta mikä
+              kiinnostaa – ilman metsävaratietoja tai hakkuusuunnittelua.
             </p>
-
             <div class="flex flex-wrap gap-3">
               <a href="virtauslaskuri.html" class="btn btn-blue inline-flex items-center gap-2 px-5 py-3 rounded-2xl shadow">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a1 1 0 0 0-1 1v6H6a1 1 0 0 0-.8 1.6l8 10A1 1 0 0 0 15 21v-6h6a1 1 0 0 0 .8-1.6l-8-10A1 1 0 0 0 13 3z"/></svg>
-                Avaa virtauslaskuri
+                Virtauslaskuri
               </a>
               <a href="pumppuenergia.html" class="btn btn-blue-secondary inline-flex items-center gap-2 px-5 py-3 rounded-2xl shadow">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
                 Pumppuenergia
               </a>
-              <a href="messunaytto_sipart_ps_2_energiansaasto.html" class="btn btn-blue inline-flex items-center gap-2 px-5 py-3 rounded-2xl shadow">PS2 energiansäästö</a>
-
-              <a href="saasto.html" class="btn glass inline-flex items-center gap-2 px-5 py-3 rounded-2xl">
+              <a href="peli.html" class="btn btn-blue inline-flex items-center gap-2 px-5 py-3 rounded-2xl shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+                Peli
+              </a>
+              <a href="muuta.html" class="btn glass inline-flex items-center gap-2 px-5 py-3 rounded-2xl">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3h14a2 2 0 0 1 2 2v3H3V5a2 2 0 0 1 2-2zm-2 8h18v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/></svg>
-                Muut työkalut
+                Sitaattikone
               </a>
             </div>
-
             <!-- Pikaluvut -->
             <div class="flex flex-wrap gap-4 pt-2 text-slate-300">
               <div class="glass rounded-xl px-4 py-3 text-center">
@@ -209,16 +236,15 @@
                 <div class="text-xs">Työkalua</div>
               </div>
               <div class="glass rounded-xl px-4 py-3 text-center">
-                <div class="text-2xl font-bold">v0.2</div>
-                <div class="text-xs">Esiversio</div>
+                <div class="text-2xl font-bold">v0.3</div>
+                <div class="text-xs">Päivitetty</div>
               </div>
               <div class="glass rounded-xl px-4 py-3 text-center">
                 <div class="text-2xl font-bold">AI</div>
-                <div class="text-xs">Generoitu UI</div>
+                <div class="text-xs">Uusi ilme</div>
               </div>
             </div>
           </div>
-
           <!-- Koristekuva / mockup -->
           <div class="relative">
             <div class="aspect-[16/10] w-full rounded-3xl border border-white/10 glass overflow-hidden shadow-2xl">
@@ -227,20 +253,18 @@
             <div class="absolute -bottom-4 -left-4 hidden sm:block">
               <div class="glass rounded-2xl px-4 py-3 text-sm flex items-center gap-2 border border-sky-300/20">
                 <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-                Live-demo: tausta & overlay
+                Tutustu demoihin
               </div>
             </div>
-          </div>
-          <!-- Animated blobs -->
+          <!-- Animoidut väriblobit taustalla -->
           <div class="float-blob blob-sky animate-float" style="left:-120px; top:-60px;"></div>
           <div class="float-blob blob-blue animate-float" style="right:-140px; bottom:-40px; animation-delay: -6s;"></div>
+          </div>
         </section>
-
         <!-- Tools / Kortit -->
         <section id="tools" class="max-w-6xl mx-auto px-4 pb-20">
-          <h2 class="text-xl font-semibold mb-6 text-slate-200">Muut koodailut</h2>
+          <h2 class="text-xl font-semibold mb-6 text-slate-200">Työkalut</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-
             <a href="peli.html" class="card glass rounded-2xl p-5 block border border-white/15 hover:bg-white/8">
               <div class="flex items-center justify-between">
                 <div class="text-slate-100 font-semibold">Paineisku-Stopperi</div>
@@ -248,7 +272,6 @@
               </div>
               <p class="mt-2 text-slate-300 text-sm">Yksinkertainen AI-selainpeli – opi venttiilien ja mittausten dynamiikkaa.</p>
             </a>
-
             <a href="virtauslaskuri.html" class="card glass rounded-2xl p-5 block border border-white/15 hover:bg-white/8">
               <div class="flex items-center justify-between">
                 <div class="text-slate-100 font-semibold">Virtauslaskuri</div>
@@ -256,7 +279,6 @@
               </div>
               <p class="mt-2 text-slate-300 text-sm">Nopea muunnos ja painehäviöiden hahmotus. API-vapaa – toimii offline.</p>
             </a>
-
             <a href="pumppuenergia.html" class="card glass rounded-2xl p-5 block border border-white/15 hover:bg-white/8">
               <div class="flex items-center justify-between">
                 <div class="text-slate-100 font-semibold">Pumppuenergia</div>
@@ -264,22 +286,10 @@
               </div>
               <p class="mt-2 text-slate-300 text-sm">Arvioi pumppauksen energiankulutusta ja säästöpotentiaalia.</p>
             </a>
-
           </div>
         </section>
-
-        <!-- About / note -->
-        <section id="about" class="max-w-6xl mx-auto px-4 pb-24">
-          <div class="glass rounded-3xl p-6 md:p-8 border border-white/15">
-            <h3 class="text-lg font-semibold">Miksi näin tumma?</h3>
-            <p class="mt-2 text-slate-300 text-sm leading-relaxed">
-              Tumma teema toimii hyvin esityksissä, tuo painikkeet esiin ja säästää silmiä.
-              Taustan väripilkut (sky/amber) tuovat eloa ilman, että teksti menettää erottuvuuttaan.
-            </p>
-          </div>
-        </section>
+        <!-- Poistettu "Miksi näin tumma?"-osio käyttäjän pyynnöstä -->
       </main>
-
       <footer class="text-center text-xs text-slate-400 py-10">
         © <script>document.write(new Date().getFullYear())</script> – Villen koodailut – All rights reserved
       </footer>
